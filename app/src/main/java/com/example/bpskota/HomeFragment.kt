@@ -1,0 +1,2439 @@
+package com.example.bpskota
+
+import android.animation.ObjectAnimator
+import android.content.Intent
+import android.graphics.Color
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.text.Html
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
+import android.widget.*
+import androidx.fragment.app.Fragment
+import com.bumptech.glide.Glide
+import com.example.bpskota.bps.model.*
+import com.example.bpskota.bps.repository.BpsRepository
+import com.google.gson.Gson
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.roundToInt
+
+class HomeFragment : Fragment() {
+
+    private var statistikAnimated = false
+    private var infografikAnimated = false
+    private var beritaAnimated = false
+    private var publikasiAnimated = false
+    private var userHasScrolled = false
+
+    private lateinit var repository: BpsRepository
+
+    private lateinit var statistikScrollView: HorizontalScrollView
+    private lateinit var statistikIndicator: LinearLayout
+
+    private val statistikHandler =
+        Handler(Looper.getMainLooper())
+
+    private var statistikCurrentPosition = 0
+    private var statistikCardCount = 0
+
+    private val statistikCardWidthDp = 158
+
+    private val statistikAutoScrollRunnable =
+        object : Runnable {
+
+            override fun run() {
+
+                if (
+                    !isAdded ||
+                    statistikCardCount <= 1
+                ) {
+                    return
+                }
+
+                val nextPosition =
+                    if (
+                        statistikCurrentPosition >=
+                        statistikCardCount - 1
+                    ) {
+                        0
+                    } else {
+                        statistikCurrentPosition + 1
+                    }
+
+                scrollToStatistik(
+                    nextPosition,
+                    true
+                )
+
+                statistikHandler.postDelayed(
+                    this,
+                    5000L
+                )
+            }
+        }
+
+    private val API_KEY =
+        "008edaaae5d450b1913b31a2cef618c3"
+
+    private val PDRB_TABLE_ID = "MTQ2IzI="
+    private val PDRB_VARIABLE_ID = "146"
+    private val PDRB_VERVAR_ID = 18
+    private val PDRB_SUBJECT_ID = 531
+
+    private val IKG_VARIABLE_ID = 134
+
+    private val daftarHargaVariable = listOf(
+        120,
+        30,
+        2,
+        116
+    )
+
+    data class StatistikTerkiniItem(
+        val variable: Int
+    )
+
+    private val daftarStatistikTerkini = listOf(
+        StatistikTerkiniItem(variable = 88),
+        StatistikTerkiniItem(variable = 92)
+    )
+
+    private val TAHUN_MULAI = 2026
+    private val TAHUN_MINIMUM = 2020
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+
+        return inflater.inflate(
+            R.layout.fragment_home,
+            container,
+            false
+        )
+    }
+
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?
+    ) {
+
+        super.onViewCreated(
+            view,
+            savedInstanceState
+        )
+
+        repository = BpsRepository()
+
+        setupNavigationListeners(view)
+        activateMarquee(view)
+        setupSeeAllAction(view)
+        setupScrollAnimation(view)
+        setupHorizontalScroll(view)
+        setupStatistikCarousel(view)
+
+        loadStatistikTerkini(view)
+        loadInfographics(view)
+        loadBerita(view)
+        loadPublikasi(view)
+    }
+
+    private fun setupNavigationListeners(
+        view: View
+    ) {
+
+        val menuMap = mapOf(
+
+            R.id.statistik1 to
+                    KependudukanActivity::class.java,
+
+            R.id.statistik2 to
+                    TenagakerjaActivity::class.java,
+
+            R.id.statistik3 to
+                    GenderActivity::class.java,
+
+            R.id.statistik4 to
+                    EkonomiActivity::class.java,
+
+            R.id.statistik5 to
+                    TempattinggalActivity::class.java,
+
+            R.id.statistik6 to
+                    PertanianActivity::class.java,
+
+            R.id.statistik7 to
+                    PendapatanActivity::class.java,
+
+            R.id.statistik9 to
+                    MasterwilayahActivity::class.java
+        )
+
+        menuMap.forEach {
+                (id, activityClass) ->
+
+            view.findViewById<View>(id)
+                .setOnClickListener {
+
+                    startActivity(
+                        Intent(
+                            requireContext(),
+                            activityClass
+                        )
+                    )
+                }
+        }
+    }
+
+    private fun activateMarquee(
+        view: View
+    ) {
+
+        val marqueeIds = listOf(
+            R.id.tvStat1,
+            R.id.tvStat2,
+            R.id.tvStat3,
+            R.id.tvStat4,
+            R.id.tvStat5,
+            R.id.tvStat6,
+            R.id.tvStat7,
+            R.id.tvStat8
+        )
+
+        marqueeIds.forEach { id ->
+
+            view.findViewById<TextView>(id)
+                .isSelected = true
+        }
+    }
+
+    private fun setupSeeAllAction(
+        view: View
+    ) {
+
+        val homeActivity =
+            activity as? HomeActivity
+
+        view.findViewById<TextView>(
+            R.id.infografikLihatSemua
+        )?.setOnClickListener {
+
+            homeActivity?.goToPage(1)
+        }
+
+        view.findViewById<TextView>(
+            R.id.beritaLihatSemua
+        )?.setOnClickListener {
+
+            homeActivity?.goToPage(2)
+        }
+
+        view.findViewById<TextView>(
+            R.id.publikasiLihatSemua
+        )?.setOnClickListener {
+
+            homeActivity?.goToPage(3)
+        }
+
+        view.findViewById<LinearLayout>(
+            R.id.other
+        )?.setOnClickListener {
+
+            homeActivity?.goToPage(4)
+        }
+    }
+
+    private fun setupHorizontalScroll(
+        view: View
+    ) {
+
+        val scrollViews = listOf(
+
+            view.findViewById<HorizontalScrollView>(
+                R.id.beritaScrollView
+            ),
+
+            view.findViewById<HorizontalScrollView>(
+                R.id.infografikScrollView
+            )
+        )
+
+        scrollViews.forEach { scrollView ->
+
+            scrollView.setOnTouchListener { v, event ->
+
+                when (event.actionMasked) {
+
+                    MotionEvent.ACTION_DOWN,
+                    MotionEvent.ACTION_MOVE -> {
+
+                        v.parent
+                            .requestDisallowInterceptTouchEvent(
+                                true
+                            )
+                    }
+
+                    MotionEvent.ACTION_UP,
+                    MotionEvent.ACTION_CANCEL -> {
+
+                        v.parent
+                            .requestDisallowInterceptTouchEvent(
+                                false
+                            )
+                    }
+                }
+
+                false
+            }
+        }
+    }
+
+    private fun setupStatistikCarousel(
+        view: View
+    ) {
+
+        statistikScrollView =
+            view.findViewById(
+                R.id.statistikTerkiniScrollView
+            )
+
+        statistikIndicator =
+            view.findViewById(
+                R.id.statistikIndicator
+            )
+
+        statistikScrollView.setOnScrollChangeListener {
+                _,
+                scrollX,
+                _,
+                _,
+                _ ->
+
+            val posisi =
+                (
+                        scrollX.toFloat() /
+                                dpToPx(
+                                    statistikCardWidthDp
+                                )
+                        )
+                    .roundToInt()
+
+            statistikCurrentPosition =
+                posisi.coerceIn(
+                    0,
+                    (statistikCardCount - 1)
+                        .coerceAtLeast(0)
+                )
+
+            updateStatistikIndicator()
+
+            animateStatistikCards(
+                scrollX
+            )
+        }
+
+        statistikScrollView.setOnTouchListener {
+                _,
+                event ->
+
+            when (
+                event.actionMasked
+            ) {
+
+                MotionEvent.ACTION_DOWN -> {
+
+                    statistikHandler.removeCallbacks(
+                        statistikAutoScrollRunnable
+                    )
+                }
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+
+                    statistikHandler.removeCallbacks(
+                        statistikAutoScrollRunnable
+                    )
+
+                    statistikHandler.postDelayed(
+                        statistikAutoScrollRunnable,
+                        5000L
+                    )
+                }
+            }
+
+            false
+        }
+    }
+
+    private fun loadStatistikTerkini(
+        view: View
+    ) {
+
+        val container =
+            view.findViewById<LinearLayout>(
+                R.id.statistikTerkiniContainer
+            )
+
+        container.removeAllViews()
+
+        statistikCurrentPosition = 0
+        statistikCardCount = 0
+
+        setupStatistikIndicator()
+
+        daftarStatistikTerkini.forEachIndexed {
+                index,
+                item ->
+
+            cariDataStatistikTerbaru(
+                variable = item.variable,
+                tahun = TAHUN_MULAI,
+                index = index,
+                container = container
+            )
+        }
+
+        loadPdrbTerkini(
+            container
+        )
+
+        loadIkgTerkini(
+            container
+        )
+
+        loadHargaTerkini(
+            container
+        )
+    }
+
+    private fun cariDataStatistikTerbaru(
+        variable: Int,
+        tahun: Int,
+        index: Int,
+        container: LinearLayout
+    ) {
+
+        if (tahun < TAHUN_MINIMUM) {
+            return
+        }
+
+        val th =
+            tahun - 1900
+
+        repository.getTenagaKerja(
+            "3574",
+            variable,
+            th,
+            API_KEY
+        ).enqueue(
+            object :
+                Callback<TenagaKerjaResponse> {
+
+                override fun onResponse(
+                    call: Call<TenagaKerjaResponse>,
+                    response: Response<TenagaKerjaResponse>
+                ) {
+
+                    val body =
+                        response.body()
+
+                    if (
+                        !response.isSuccessful ||
+                        body == null ||
+                        body.status != "OK"
+                    ) {
+
+                        cariDataStatistikTerbaru(
+                            variable,
+                            tahun - 1,
+                            index,
+                            container
+                        )
+
+                        return
+                    }
+
+                    val variableData =
+                        body.variable?.firstOrNull()
+
+                    val subject =
+                        body.subject?.firstOrNull()
+
+                    val tahunData =
+                        body.tahun?.firstOrNull()
+
+                    val nilai =
+                        body.dataContent
+                            ?.values
+                            ?.firstOrNull()
+
+                    if (
+                        variableData == null ||
+                        nilai == null
+                    ) {
+
+                        cariDataStatistikTerbaru(
+                            variable,
+                            tahun - 1,
+                            index,
+                            container
+                        )
+
+                        return
+                    }
+
+                    val judul =
+                        variableData.label
+                            ?: "Statistik"
+
+                    val kategori =
+                        subject?.label
+                            ?: variableData.subject
+                            ?: "-"
+
+                    val tahunLabel =
+                        tahunData?.label
+                            ?: tahun.toString()
+
+                    val unit =
+                        variableData.unit
+                            ?: ""
+
+                    if (!isAdded) return
+
+                    requireActivity()
+                        .runOnUiThread {
+
+                            if (!isAdded) {
+                                return@runOnUiThread
+                            }
+
+                            tampilkanStatistikTerkini(
+                                container = container,
+                                judul = judul,
+                                kategori = kategori,
+                                nilai = nilai,
+                                tahun = tahunLabel,
+                                unit = unit,
+                                index = index,
+                                bukaEkonomi = false
+                            )
+                        }
+                }
+
+                override fun onFailure(
+                    call: Call<TenagaKerjaResponse>,
+                    t: Throwable
+                ) {
+
+                    cariDataStatistikTerbaru(
+                        variable,
+                        tahun - 1,
+                        index,
+                        container
+                    )
+                }
+            }
+        )
+    }
+
+    private fun loadPdrbTerkini(
+        container: LinearLayout
+    ) {
+
+        Log.d(
+            "HOME_PDRB",
+            "Memuat tabel PDRB langsung"
+        )
+
+        repository.getEkonomiDetail(
+            domain = "3574",
+            id = PDRB_TABLE_ID,
+            tahun = TAHUN_MULAI,
+            apiKey = API_KEY
+        ).enqueue(
+            object :
+                Callback<EkonomiDetailResponse> {
+
+                override fun onResponse(
+                    call: Call<EkonomiDetailResponse>,
+                    response: Response<EkonomiDetailResponse>
+                ) {
+
+                    if (!response.isSuccessful) {
+
+                        Log.e(
+                            "HOME_PDRB",
+                            "Gagal mengambil detail PDRB. HTTP ${response.code()}"
+                        )
+
+                        return
+                    }
+
+                    val body =
+                        response.body()
+
+                    if (
+                        body == null ||
+                        body.status != "OK"
+                    ) {
+
+                        Log.e(
+                            "HOME_PDRB",
+                            "Response detail PDRB tidak valid"
+                        )
+
+                        return
+                    }
+
+                    prosesDetailPdrb(
+                        body = body,
+                        container = container
+                    )
+                }
+
+                override fun onFailure(
+                    call: Call<EkonomiDetailResponse>,
+                    t: Throwable
+                ) {
+
+                    Log.e(
+                        "HOME_PDRB",
+                        "Gagal mengambil detail PDRB",
+                        t
+                    )
+                }
+            }
+        )
+    }
+
+    private fun prosesDetailPdrb(
+        body: EkonomiDetailResponse,
+        container: LinearLayout
+    ) {
+
+        val variable =
+            body.variables?.firstOrNull {
+
+                it.valId?.toString() ==
+                        PDRB_VARIABLE_ID ||
+
+                        it.value?.toString() ==
+                        PDRB_VARIABLE_ID
+            }
+
+        if (variable == null) {
+
+            Log.e(
+                "HOME_PDRB",
+                "Variable $PDRB_VARIABLE_ID tidak ditemukan"
+            )
+
+            return
+        }
+
+        val vervar =
+            body.vervar?.firstOrNull {
+
+                (it.value ?: it.valId)
+                    ?.toString() ==
+                        PDRB_VERVAR_ID.toString()
+            }
+
+        if (vervar == null) {
+
+            Log.e(
+                "HOME_PDRB",
+                "Vervar $PDRB_VERVAR_ID tidak ditemukan"
+            )
+
+            return
+        }
+
+        val dataContent =
+            body.dataContent
+
+        if (dataContent == null) {
+
+            Log.e(
+                "HOME_PDRB",
+                "datacontent kosong"
+            )
+
+            return
+        }
+
+        val tahunData =
+            body.tahun
+                ?.sortedByDescending {
+                    it.label
+                        ?.toIntOrNull()
+                        ?: 0
+                }
+                ?.firstOrNull()
+
+        if (tahunData == null) {
+            return
+        }
+
+        val tahunVal =
+            tahunData.value
+                ?: tahunData.valId
+
+        if (tahunVal == null) {
+            return
+        }
+
+        val tahunFormatted =
+            tahunVal
+                .toString()
+                .padStart(
+                    4,
+                    '0'
+                )
+
+        val urutanTriwulan =
+            listOf(
+                34,
+                33,
+                32,
+                31
+            )
+
+        var triwulanTerpilih:
+                EkonomiItem? = null
+
+        var nilaiTerpilih:
+                Double? = null
+
+        var keyTerpilih:
+                String? = null
+
+        for (
+        kodeTriwulan in urutanTriwulan
+        ) {
+
+            val triwulan =
+                body.turtahun
+                    ?.firstOrNull {
+
+                        it.valId ==
+                                kodeTriwulan
+                    }
+
+            if (triwulan == null) {
+                continue
+            }
+
+            val key =
+                "${PDRB_VERVAR_ID}" +
+                        "${PDRB_VARIABLE_ID}" +
+                        "${tahunFormatted}" +
+                        "${kodeTriwulan}"
+
+            val jsonValue =
+                dataContent.get(
+                    key
+                )
+
+            if (
+                jsonValue != null &&
+                !jsonValue.isJsonNull
+            ) {
+
+                try {
+
+                    val nilai =
+                        jsonValue.asDouble
+
+                    triwulanTerpilih =
+                        triwulan
+
+                    nilaiTerpilih =
+                        nilai
+
+                    keyTerpilih =
+                        key
+
+                    break
+
+                } catch (e: Exception) {
+
+                    Log.e(
+                        "HOME_PDRB",
+                        "Gagal membaca nilai key=$key",
+                        e
+                    )
+                }
+            }
+        }
+
+        if (
+            triwulanTerpilih == null ||
+            nilaiTerpilih == null
+        ) {
+
+            val tahunTerakhir =
+                tahunData.label
+                    ?.toIntOrNull()
+                    ?: TAHUN_MULAI
+
+            if (
+                tahunTerakhir >
+                TAHUN_MINIMUM
+            ) {
+
+                cariPdrbTahunLain(
+                    body = body,
+                    tahunTarget =
+                    tahunTerakhir - 1,
+                    container = container
+                )
+            }
+
+            return
+        }
+
+        val nilai =
+            nilaiTerpilih
+
+        val triwulan =
+            triwulanTerpilih
+
+        val tahunLabel =
+            tahunData.label
+                ?: tahunFormatted
+
+        val triwulanLabel =
+            triwulan.label
+                ?: "Triwulan"
+
+        val subject =
+            body.subject?.firstOrNull()
+
+        val kategori =
+            subject?.label
+                ?: "Neraca Ekonomi"
+
+        if (!isAdded) return
+
+        requireActivity()
+            .runOnUiThread {
+
+                if (!isAdded) {
+                    return@runOnUiThread
+                }
+
+                tampilkanStatistikTerkini(
+                    container = container,
+                    judul = "Laju Pertumbuhan PDRB",
+                    kategori = kategori,
+                    nilai = nilai,
+                    tahun =
+                    "$tahunLabel • $triwulanLabel",
+                    unit = "Persen",
+                    index = 2,
+                    bukaEkonomi = true
+                )
+            }
+    }
+
+    private fun cariPdrbTahunLain(
+        body: EkonomiDetailResponse,
+        tahunTarget: Int,
+        container: LinearLayout
+    ) {
+
+        if (
+            tahunTarget <
+            TAHUN_MINIMUM
+        ) {
+            return
+        }
+
+        val dataContent =
+            body.dataContent
+                ?: return
+
+        val vervar =
+            body.vervar?.firstOrNull {
+
+                (it.value ?: it.valId)
+                    ?.toString() ==
+                        PDRB_VERVAR_ID.toString()
+            }
+                ?: return
+
+        val tahunData =
+            body.tahun?.firstOrNull {
+
+                it.label ==
+                        tahunTarget.toString()
+            }
+
+        if (tahunData == null) {
+            return
+        }
+
+        val tahunVal =
+            tahunData.value
+                ?: tahunData.valId
+                ?: return
+
+        val tahunFormatted =
+            tahunVal
+                .toString()
+                .padStart(
+                    4,
+                    '0'
+                )
+
+        val urutanTriwulan =
+            listOf(
+                34,
+                33,
+                32,
+                31
+            )
+
+        for (
+        kodeTriwulan in urutanTriwulan
+        ) {
+
+            val triwulan =
+                body.turtahun
+                    ?.firstOrNull {
+
+                        it.valId ==
+                                kodeTriwulan
+                    }
+                    ?: continue
+
+            val key =
+                "${PDRB_VERVAR_ID}" +
+                        "${PDRB_VARIABLE_ID}" +
+                        "${tahunFormatted}" +
+                        "${kodeTriwulan}"
+
+            val jsonValue =
+                dataContent.get(
+                    key
+                )
+
+            if (
+                jsonValue != null &&
+                !jsonValue.isJsonNull
+            ) {
+
+                val nilai =
+                    try {
+                        jsonValue.asDouble
+                    } catch (
+                        e: Exception
+                    ) {
+                        null
+                    }
+
+                if (nilai != null) {
+
+                    val subject =
+                        body.subject?.firstOrNull()
+
+                    if (!isAdded) return
+
+                    requireActivity()
+                        .runOnUiThread {
+
+                            if (!isAdded) {
+                                return@runOnUiThread
+                            }
+
+                            tampilkanStatistikTerkini(
+                                container = container,
+                                judul =
+                                "Laju Pertumbuhan PDRB",
+                                kategori =
+                                subject?.label
+                                    ?: "Neraca Ekonomi",
+                                nilai = nilai,
+                                tahun =
+                                "${tahunData.label ?: tahunTarget} • " +
+                                        "${triwulan.label ?: "Triwulan"}",
+                                unit = "Persen",
+                                index = 2,
+                                bukaEkonomi = true
+                            )
+                        }
+
+                    return
+                }
+            }
+        }
+    }
+
+    private fun loadIkgTerkini(
+        container: LinearLayout
+    ) {
+
+        cariIkgTerkini(
+            tahun = TAHUN_MULAI,
+            container = container
+        )
+    }
+
+    private fun cariIkgTerkini(
+        tahun: Int,
+        container: LinearLayout
+    ) {
+
+        if (tahun < TAHUN_MINIMUM) {
+            return
+        }
+
+        val kodeTahun =
+            tahun - 1900
+
+        repository.getTenagaKerja(
+            domain = "3574",
+            variable = IKG_VARIABLE_ID,
+            tahun = kodeTahun,
+            apiKey = API_KEY
+        ).enqueue(
+            object :
+                Callback<TenagaKerjaResponse> {
+
+                override fun onResponse(
+                    call: Call<TenagaKerjaResponse>,
+                    response: Response<TenagaKerjaResponse>
+                ) {
+
+                    if (!response.isSuccessful) {
+
+                        cariIkgTerkini(
+                            tahun - 1,
+                            container
+                        )
+
+                        return
+                    }
+
+                    val body =
+                        response.body()
+
+                    if (
+                        body == null ||
+                        body.status?.uppercase(
+                            Locale.ROOT
+                        ) != "OK"
+                    ) {
+
+                        cariIkgTerkini(
+                            tahun - 1,
+                            container
+                        )
+
+                        return
+                    }
+
+                    val nilai =
+                        body.dataContent
+                            ?.values
+                            ?.firstOrNull()
+
+                    if (nilai == null) {
+
+                        cariIkgTerkini(
+                            tahun - 1,
+                            container
+                        )
+
+                        return
+                    }
+
+                    val variableData =
+                        body.variable?.firstOrNull()
+
+                    val subject =
+                        body.subject?.firstOrNull()
+
+                    val tahunLabel =
+                        body.tahun
+                            ?.firstOrNull()
+                            ?.label
+                            ?: tahun.toString()
+
+                    val kategori =
+                        subject?.label
+                            ?: variableData?.subject
+                            ?: "Gender"
+
+                    if (!isAdded) return
+
+                    requireActivity()
+                        .runOnUiThread {
+
+                            if (!isAdded) {
+                                return@runOnUiThread
+                            }
+
+                            tampilkanStatistikTerkini(
+                                container = container,
+                                judul =
+                                "Indeks Ketimpangan Gender (IKG)",
+                                kategori = kategori,
+                                nilai = nilai,
+                                tahun = tahunLabel,
+                                unit = "",
+                                index = 3,
+                                bukaGender = true
+                            )
+                        }
+                }
+
+                override fun onFailure(
+                    call: Call<TenagaKerjaResponse>,
+                    t: Throwable
+                ) {
+
+                    cariIkgTerkini(
+                        tahun - 1,
+                        container
+                    )
+                }
+            }
+        )
+    }
+
+    private fun loadHargaTerkini(
+        container: LinearLayout
+    ) {
+
+        daftarHargaVariable.forEachIndexed {
+                index,
+                variable ->
+
+            cariHargaTerkini(
+                variable = variable,
+                tahun = TAHUN_MULAI,
+                index = index + 4,
+                container = container
+            )
+        }
+    }
+
+    private fun cariHargaTerkini(
+        variable: Int,
+        tahun: Int,
+        index: Int,
+        container: LinearLayout
+    ) {
+
+        if (tahun < TAHUN_MINIMUM) {
+
+            Log.e(
+                "HOME_HARGA",
+                "Tidak ada data untuk variable=$variable"
+            )
+
+            return
+        }
+
+        val kodeTahun =
+            tahun - 1900
+
+        repository.getHarga(
+            domain = "3574",
+            variable = variable,
+            tahun = kodeTahun,
+            apiKey = API_KEY
+        ).enqueue(
+            object :
+                Callback<HargaResponse> {
+
+                override fun onResponse(
+                    call: Call<HargaResponse>,
+                    response: Response<HargaResponse>
+                ) {
+
+                    if (!response.isSuccessful) {
+
+                        cariHargaTerkini(
+                            variable = variable,
+                            tahun = tahun - 1,
+                            index = index,
+                            container = container
+                        )
+
+                        return
+                    }
+
+                    val body =
+                        response.body()
+
+                    if (
+                        body == null ||
+                        body.status?.uppercase(
+                            Locale.ROOT
+                        ) != "OK"
+                    ) {
+
+                        cariHargaTerkini(
+                            variable = variable,
+                            tahun = tahun - 1,
+                            index = index,
+                            container = container
+                        )
+
+                        return
+                    }
+
+                    val nilai =
+                        body.dataContent
+                            ?.values
+                            ?.firstOrNull()
+
+                    if (nilai == null) {
+
+                        cariHargaTerkini(
+                            variable = variable,
+                            tahun = tahun - 1,
+                            index = index,
+                            container = container
+                        )
+
+                        return
+                    }
+
+                    val variableData =
+                        body.variable?.firstOrNull()
+
+                    val subject =
+                        body.subject?.firstOrNull()
+
+                    val tahunLabel =
+                        body.tahun
+                            ?.firstOrNull()
+                            ?.label
+                            ?: tahun.toString()
+
+                    val judul =
+                        variableData?.label
+                            ?: "Harga-Harga"
+
+                    val kategori =
+                        subject?.label
+                            ?: variableData?.subject
+                            ?: "Harga-Harga"
+
+                    val unit =
+                        variableData?.unit
+                            ?: ""
+
+                    if (!isAdded) return
+
+                    requireActivity()
+                        .runOnUiThread {
+
+                            if (!isAdded) {
+                                return@runOnUiThread
+                            }
+
+                            tampilkanStatistikTerkini(
+                                container = container,
+                                judul = judul,
+                                kategori = kategori,
+                                nilai = nilai,
+                                tahun = tahunLabel,
+                                unit = unit,
+                                index = index,
+                                bisaDiklik = false
+                            )
+                        }
+                }
+
+                override fun onFailure(
+                    call: Call<HargaResponse>,
+                    t: Throwable
+                ) {
+
+                    cariHargaTerkini(
+                        variable = variable,
+                        tahun = tahun - 1,
+                        index = index,
+                        container = container
+                    )
+                }
+            }
+        )
+    }
+
+    private fun tampilkanStatistikTerkini(
+        container: LinearLayout,
+        judul: String,
+        kategori: String,
+        nilai: Double,
+        tahun: String,
+        unit: String,
+        index: Int,
+        bukaEkonomi: Boolean = false,
+        bukaGender: Boolean = false,
+        bisaDiklik: Boolean = true
+    ) {
+
+        val card =
+            LayoutInflater.from(
+                requireContext()
+            ).inflate(
+                R.layout.card_home,
+                container,
+                false
+            )
+
+        card.findViewById<TextView>(
+            R.id.tvStatistikJudul
+        ).text =
+            judul
+
+        card.findViewById<TextView>(
+            R.id.tvStatistikKategori
+        ).text =
+            "$kategori • $tahun"
+
+        card.findViewById<TextView>(
+            R.id.tvStatistikPersentase
+        ).text =
+            when {
+
+                unit.contains(
+                    "%",
+                    true
+                ) ||
+                        unit.equals(
+                            "Persen",
+                            true
+                        ) -> {
+
+                    String.format(
+                        Locale.US,
+                        "%.2f%%",
+                        nilai
+                    )
+                }
+
+                judul.contains(
+                    "Ketimpangan Gender",
+                    ignoreCase = true
+                ) -> {
+
+                    String.format(
+                        Locale.US,
+                        "%.3f",
+                        nilai
+                    )
+                }
+
+                unit.isNotBlank() -> {
+
+                    String.format(
+                        Locale.US,
+                        "%.2f %s",
+                        nilai,
+                        unit
+                    )
+                }
+
+                else -> {
+
+                    String.format(
+                        Locale.US,
+                        "%.2f",
+                        nilai
+                    )
+                }
+            }
+
+        if (bisaDiklik) {
+
+            card.setOnClickListener {
+
+                val tujuan = when {
+
+                    bukaEkonomi -> {
+                        EkonomiActivity::class.java
+                    }
+
+                    bukaGender -> {
+                        GenderActivity::class.java
+                    }
+
+                    else -> {
+                        TenagakerjaActivity::class.java
+                    }
+                }
+
+                startActivity(
+                    Intent(
+                        requireContext(),
+                        tujuan
+                    )
+                )
+            }
+        }
+
+        container.addView(
+            card
+        )
+
+        statistikCardCount =
+            container.childCount
+
+        updateStatistikCarouselLayout()
+
+        animateCardIn(
+            card,
+            index
+        )
+
+        statistikHandler.removeCallbacks(
+            statistikAutoScrollRunnable
+        )
+
+        statistikHandler.postDelayed(
+            statistikAutoScrollRunnable,
+            5000L
+        )
+    }
+
+    private fun updateStatistikCarouselLayout() {
+
+        if (
+            !::statistikScrollView.isInitialized ||
+            !::statistikIndicator.isInitialized
+        ) {
+            return
+        }
+
+        val container =
+            statistikScrollView.findViewById<LinearLayout>(
+                R.id.statistikTerkiniContainer
+            )
+                ?: return
+
+        val screenWidth =
+            statistikScrollView.width
+
+        if (screenWidth <= 0) {
+            statistikScrollView.post {
+                updateStatistikCarouselLayout()
+            }
+            return
+        }
+
+        val duaCardWidth =
+            dpToPx(150 * 2 + 8)
+
+        val padding =
+            (
+                    screenWidth -
+                            duaCardWidth
+                    ) / 2
+
+        if (padding > 0) {
+
+            container.setPadding(
+                padding,
+                0,
+                padding,
+                0
+            )
+        }
+
+        setupStatistikIndicator()
+
+        statistikScrollView.post {
+
+            val maxPosition =
+                (
+                        statistikCardCount - 1
+                        )
+                    .coerceAtLeast(0)
+
+            statistikCurrentPosition =
+                statistikCurrentPosition.coerceIn(
+                    0,
+                    maxPosition
+                )
+
+            val targetX =
+                dpToPx(
+                    statistikCardWidthDp
+                ) *
+                        statistikCurrentPosition
+
+            statistikScrollView.scrollTo(
+                targetX,
+                0
+            )
+
+            updateStatistikIndicator()
+
+            animateStatistikCards(
+                targetX
+            )
+        }
+    }
+
+    private fun setupStatistikIndicator() {
+
+        if (
+            !::statistikIndicator.isInitialized
+        ) {
+            return
+        }
+
+        statistikIndicator.removeAllViews()
+
+        if (
+            statistikCardCount <= 0
+        ) {
+            return
+        }
+
+        repeat(
+            statistikCardCount
+        ) { index ->
+
+            val dot =
+                View(requireContext())
+
+            val active =
+                index ==
+                        statistikCurrentPosition
+
+            val size =
+                if (active) {
+                    8
+                } else {
+                    6
+                }
+
+            val params =
+                LinearLayout.LayoutParams(
+                    dpToPx(size),
+                    dpToPx(size)
+                )
+
+            params.marginStart =
+                dpToPx(3)
+
+            params.marginEnd =
+                dpToPx(3)
+
+            dot.layoutParams =
+                params
+
+            dot.background =
+                createDotBackground(
+                    active
+                )
+
+            statistikIndicator.addView(
+                dot
+            )
+        }
+    }
+
+    private fun updateStatistikIndicator() {
+
+        if (
+            !::statistikIndicator.isInitialized
+        ) {
+            return
+        }
+
+        for (
+        i in 0 until
+                statistikIndicator.childCount
+        ) {
+
+            val dot =
+                statistikIndicator.getChildAt(i)
+
+            val active =
+                i ==
+                        statistikCurrentPosition
+
+            val size =
+                if (active) {
+                    8
+                } else {
+                    6
+                }
+
+            val params =
+                dot.layoutParams
+
+            params.width =
+                dpToPx(size)
+
+            params.height =
+                dpToPx(size)
+
+            dot.layoutParams =
+                params
+
+            dot.background =
+                createDotBackground(
+                    active
+                )
+        }
+    }
+
+    private fun createDotBackground(
+        active: Boolean
+    ): android.graphics.drawable.GradientDrawable {
+
+        val drawable =
+            android.graphics.drawable.GradientDrawable()
+
+        drawable.shape =
+            android.graphics.drawable.GradientDrawable.OVAL
+
+        drawable.setColor(
+            Color.parseColor(
+                if (active) {
+                    "#F97316"
+                } else {
+                    "#D1D5DB"
+                }
+            )
+        )
+
+        return drawable
+    }
+
+    private fun scrollToStatistik(
+        position: Int,
+        animated: Boolean
+    ) {
+
+        if (
+            statistikCardCount <= 0
+        ) {
+            return
+        }
+
+        val posisi =
+            position.coerceIn(
+                0,
+                statistikCardCount - 1
+            )
+
+        statistikCurrentPosition =
+            posisi
+
+        val targetX =
+            dpToPx(
+                statistikCardWidthDp
+            ) *
+                    posisi
+
+        if (animated) {
+
+            val scrollView = view?.findViewById<HorizontalScrollView>(
+                R.id.statistikTerkiniScrollView
+            ) ?: return
+
+            val animator = ObjectAnimator.ofInt(
+                scrollView,
+                "scrollX",
+                scrollView.scrollX,
+                targetX
+            )
+
+            animator.duration = 800L
+            animator.interpolator = DecelerateInterpolator()
+            animator.start()
+
+            animator.duration = 800L
+            animator.interpolator = DecelerateInterpolator()
+            animator.start()
+
+        } else {
+
+            statistikScrollView.scrollTo(
+                targetX,
+                0
+            )
+        }
+
+        updateStatistikIndicator()
+    }
+
+    private fun animateStatistikCards(
+        scrollX: Int
+    ) {
+
+        if (
+            !::statistikScrollView.isInitialized
+        ) {
+            return
+        }
+
+        val container =
+            statistikScrollView.findViewById<LinearLayout>(
+                R.id.statistikTerkiniContainer
+            )
+                ?: return
+
+        val viewportCenter =
+            statistikScrollView.width / 2f
+
+        if (
+            viewportCenter <= 0
+        ) {
+            return
+        }
+
+        for (
+        i in 0 until
+                container.childCount
+        ) {
+
+            val card =
+                container.getChildAt(i)
+
+            val cardCenter =
+                card.left -
+                        scrollX +
+                        card.width / 2f
+
+            val distance =
+                abs(
+                    cardCenter -
+                            viewportCenter
+                )
+
+            val normalized =
+                (
+                        distance /
+                                viewportCenter
+                        )
+                    .coerceIn(
+                        0f,
+                        1f
+                    )
+
+            val alpha =
+                1f -
+                        (
+                                normalized *
+                                        0.35f
+                                )
+
+            val scale =
+                1f -
+                        (
+                                normalized *
+                                        0.08f
+                                )
+
+            card.alpha =
+                alpha.coerceIn(
+                    0.65f,
+                    1f
+                )
+
+            card.scaleX =
+                scale
+
+            card.scaleY =
+                scale
+        }
+    }
+
+    private fun dpToPx(
+        dp: Int
+    ): Int {
+
+        return (
+                dp *
+                        resources.displayMetrics.density
+                )
+            .roundToInt()
+    }
+
+    private fun loadInfographics(
+        view: View
+    ) {
+
+        val container =
+            view.findViewById<LinearLayout>(
+                R.id.infografikContainer
+            )
+
+        repository.getInfographicsHome(
+            API_KEY
+        ).enqueue(
+            object :
+                Callback<InfographicResponse> {
+
+                override fun onResponse(
+                    call: Call<InfographicResponse>,
+                    response: Response<InfographicResponse>
+                ) {
+
+                    val body =
+                        response.body()
+
+                    if (
+                        !response.isSuccessful ||
+                        body == null ||
+                        body.status != "OK" ||
+                        body.data == null
+                    ) {
+                        return
+                    }
+
+                    val gson =
+                        Gson()
+
+                    val data =
+                        mutableListOf<Infografik>()
+
+                    body.data.forEach { element ->
+
+                        if (
+                            element.isJsonArray
+                        ) {
+
+                            element.asJsonArray
+                                .forEach { item ->
+
+                                    try {
+
+                                        if (
+                                            item.isJsonObject
+                                        ) {
+
+                                            data.add(
+                                                gson.fromJson(
+                                                    item,
+                                                    Infografik::class.java
+                                                )
+                                            )
+                                        }
+
+                                    } catch (
+                                        e: Exception
+                                    ) {
+
+                                        Log.e(
+                                            "HOME_INFOGRAFIK",
+                                            "Gagal convert infografis",
+                                            e
+                                        )
+                                    }
+                                }
+                        }
+                    }
+
+                    val limaTerbaru =
+                        data
+                            .distinctBy {
+                                it.infId
+                            }
+                            .sortedByDescending {
+                                it.date ?: ""
+                            }
+                            .take(5)
+
+                    container.removeAllViews()
+
+                    limaTerbaru.forEach {
+
+                        tambahCardInfografik(
+                            container,
+                            it
+                        )
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<InfographicResponse>,
+                    t: Throwable
+                ) {
+                }
+            }
+        )
+    }
+
+    private fun tambahCardInfografik(
+        container: LinearLayout,
+        infographic: Infografik
+    ) {
+
+        val card =
+            LayoutInflater.from(
+                requireContext()
+            ).inflate(
+                R.layout.item_home,
+                container,
+                false
+            )
+
+        card.findViewById<TextView>(
+            R.id.tvHomeTitle
+        ).text =
+            infographic.title
+                ?: "Infografis"
+
+        card.findViewById<TextView>(
+            R.id.tvHomeDescription
+        ).text =
+            Html.fromHtml(
+                infographic.desc ?: "",
+                Html.FROM_HTML_MODE_LEGACY
+            )
+                .toString()
+                .trim()
+
+        Glide.with(this)
+            .load(
+                infographic.img
+            )
+            .placeholder(
+                R.drawable.ic_bpslogo
+            )
+            .error(
+                R.drawable.ic_bpslogo
+            )
+            .into(
+                card.findViewById(
+                    R.id.imgHome
+                )
+            )
+
+        container.addView(
+            card
+        )
+    }
+
+    private fun loadBerita(
+        view: View
+    ) {
+
+        repository.getNews(
+            "3574",
+            1,
+            10,
+            API_KEY
+        ) { response, error ->
+
+            if (
+                !isAdded ||
+                error != null ||
+                response == null
+            ) {
+                return@getNews
+            }
+
+            try {
+
+                val dataArray =
+                    response.getAsJsonArray(
+                        "data"
+                    )
+
+                if (
+                    dataArray.size() < 2
+                ) {
+                    return@getNews
+                }
+
+                val beritaTerbaru =
+                    dataArray[1]
+                        .asJsonArray
+                        .mapNotNull {
+
+                            try {
+
+                                Gson().fromJson(
+                                    it,
+                                    NewsItem::class.java
+                                )
+
+                            } catch (
+                                e: Exception
+                            ) {
+
+                                null
+                            }
+                        }
+                        .take(5)
+
+                requireActivity()
+                    .runOnUiThread {
+
+                        tampilkanBerita(
+                            view,
+                            beritaTerbaru
+                        )
+                    }
+
+            } catch (
+                e: Exception
+            ) {
+
+                Log.e(
+                    "HOME_BERITA",
+                    "Error",
+                    e
+                )
+            }
+        }
+    }
+
+    private fun tampilkanBerita(
+        view: View,
+        berita: List<NewsItem>
+    ) {
+
+        val container =
+            view.findViewById<LinearLayout>(
+                R.id.beritaContainer
+            )
+                ?: return
+
+        container.removeAllViews()
+
+        berita.forEach { item ->
+
+            val card =
+                LayoutInflater.from(
+                    requireContext()
+                ).inflate(
+                    R.layout.item_home,
+                    container,
+                    false
+                )
+
+            card.findViewById<TextView>(
+                R.id.tvHomeTitle
+            ).text =
+                item.title
+                    ?: "Berita"
+
+            card.findViewById<TextView>(
+                R.id.tvHomeDescription
+            ).text =
+                Html.fromHtml(
+                    item.news ?: "",
+                    Html.FROM_HTML_MODE_LEGACY
+                )
+                    .toString()
+                    .trim()
+
+            Glide.with(this)
+                .load(
+                    item.picture
+                )
+                .placeholder(
+                    R.drawable.ic_bpslogo
+                )
+                .error(
+                    R.drawable.ic_bpslogo
+                )
+                .into(
+                    card.findViewById(
+                        R.id.imgHome
+                    )
+                )
+
+            container.addView(
+                card
+            )
+        }
+    }
+
+    private fun loadPublikasi(
+        view: View
+    ) {
+
+        val container =
+            view.findViewById<LinearLayout>(
+                R.id.publicationContainer
+            )
+
+        repository.getPublikasi(
+            1,
+            "3574",
+            API_KEY
+        ) { response ->
+
+            if (
+                !isAdded ||
+                response == null
+            ) {
+                return@getPublikasi
+            }
+
+            try {
+
+                val publikasi =
+                    response
+                        .getPublikasi()
+                        .distinctBy {
+                            it.pub_id
+                        }
+                        .take(5)
+
+                requireActivity()
+                    .runOnUiThread {
+
+                        container.removeAllViews()
+
+                        publikasi.forEach {
+
+                            tambahCardPublikasi(
+                                container,
+                                it
+                            )
+                        }
+                    }
+
+            } catch (
+                e: Exception
+            ) {
+
+                Log.e(
+                    "HOME_PUBLIKASI",
+                    "Error",
+                    e
+                )
+            }
+        }
+    }
+
+    private fun tambahCardPublikasi(
+        container: LinearLayout,
+        publikasi: Publikasi
+    ) {
+
+        val card =
+            LayoutInflater.from(
+                requireContext()
+            ).inflate(
+                R.layout.item_home_panjang,
+                container,
+                false
+            )
+
+        card.findViewById<TextView>(
+            R.id.tvStatistikTitle
+        ).text =
+            publikasi.title
+                ?: "Publikasi"
+
+        card.findViewById<TextView>(
+            R.id.tvStatistikDescription
+        ).text =
+            Html.fromHtml(
+                publikasi.abstract ?: "",
+                Html.FROM_HTML_MODE_LEGACY
+            )
+                .toString()
+                .trim()
+
+        Glide.with(this)
+            .load(
+                publikasi.cover
+            )
+            .placeholder(
+                R.drawable.ic_publikasi
+            )
+            .error(
+                R.drawable.ic_publikasi
+            )
+            .into(
+                card.findViewById(
+                    R.id.imgStatistik
+                )
+            )
+
+        card.setOnClickListener {
+
+            (activity as? HomeActivity)
+                ?.goToPage(3)
+        }
+
+        container.addView(
+            card
+        )
+    }
+
+    private fun setupScrollAnimation(
+        view: View
+    ) {
+
+        val scrollView =
+            view.findViewById<ScrollView>(
+                R.id.homeScrollView
+            )
+
+        val statistik =
+            view.findViewById<View>(
+                R.id.sectionStatistik
+            )
+
+        val infografik =
+            view.findViewById<View>(
+                R.id.sectionInfografik
+            )
+
+        val berita =
+            view.findViewById<View>(
+                R.id.sectionBerita
+            )
+
+        val publikasi =
+            view.findViewById<View>(
+                R.id.sectionPublikasi
+            )
+
+        prepareSection(
+            berita
+        )
+
+        prepareSection(
+            publikasi
+        )
+
+        animateStatistik(
+            statistik
+        )
+
+        if (!infografikAnimated) {
+
+            infografikAnimated = true
+
+            animateFromBottom(
+                infografik,
+                delay = 0
+            )
+        }
+
+        scrollView
+            .viewTreeObserver
+            .addOnScrollChangedListener {
+
+                if (
+                    scrollView.scrollY > 20
+                ) {
+
+                    userHasScrolled = true
+                }
+
+                if (
+                    !userHasScrolled
+                ) {
+                    return@addOnScrollChangedListener
+                }
+
+                if (
+                    !infografikAnimated &&
+                    isViewVisible(
+                        infografik,
+                        scrollView
+                    )
+                ) {
+
+                    infografikAnimated = true
+
+                    animateFromBottom(
+                        infografik
+                    )
+                }
+
+                if (
+                    !beritaAnimated &&
+                    isViewVisible(
+                        berita,
+                        scrollView
+                    )
+                ) {
+
+                    beritaAnimated = true
+
+                    animateFromBottom(
+                        berita
+                    )
+                }
+
+                if (
+                    !publikasiAnimated &&
+                    isViewVisible(
+                        publikasi,
+                        scrollView
+                    )
+                ) {
+
+                    publikasiAnimated = true
+
+                    animateFromBottom(
+                        publikasi
+                    )
+                }
+            }
+    }
+
+    private fun prepareSection(
+        view: View
+    ) {
+
+        view.alpha = 0f
+        view.translationY = 120f
+    }
+
+    private fun animateFromBottom(
+        view: View,
+        delay: Long = 0
+    ) {
+
+        view.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .setDuration(700)
+            .setStartDelay(delay)
+            .setInterpolator(
+                DecelerateInterpolator(1.8f)
+            )
+            .start()
+    }
+
+    private fun animateCardIn(
+        card: View,
+        index: Int
+    ) {
+
+        card.alpha = 0f
+        card.translationY = -100f
+        card.scaleX = 0.90f
+        card.scaleY = 0.90f
+
+        card.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(550)
+            .setStartDelay(
+                index * 120L
+            )
+            .setInterpolator(
+                DecelerateInterpolator(1.8f)
+            )
+            .start()
+    }
+
+    private fun animateStatistik(
+        section: View
+    ) {
+
+        if (statistikAnimated) {
+            return
+        }
+
+        statistikAnimated = true
+
+        val container =
+            section.findViewById<ViewGroup>(
+                R.id.statistikContainer
+            )
+                ?: return
+
+        var index = 0
+
+        for (
+        i in 0 until container.childCount
+        ) {
+
+            val row =
+                container.getChildAt(i)
+                        as? ViewGroup
+                    ?: continue
+
+            for (
+            j in 0 until row.childCount
+            ) {
+
+                animateCardIn(
+                    row.getChildAt(j),
+                    index++
+                )
+            }
+        }
+    }
+
+    private fun isViewVisible(
+        view: View,
+        scrollView: ScrollView
+    ): Boolean {
+
+        val location =
+            IntArray(2)
+
+        view.getLocationOnScreen(
+            location
+        )
+
+        val scrollLocation =
+            IntArray(2)
+
+        scrollView.getLocationOnScreen(
+            scrollLocation
+        )
+
+        return location[1] <
+                (
+                        scrollLocation[1] +
+                                (
+                                        scrollView.height *
+                                                0.75f
+                                        )
+                        ) &&
+                (
+                        location[1] +
+                                view.height
+                        ) >
+                scrollLocation[1]
+    }
+
+    override fun onDestroyView() {
+
+        statistikHandler.removeCallbacks(
+            statistikAutoScrollRunnable
+        )
+
+        super.onDestroyView()
+
+        statistikAnimated = false
+        infografikAnimated = false
+        beritaAnimated = false
+        publikasiAnimated = false
+        userHasScrolled = false
+
+        statistikCurrentPosition = 0
+        statistikCardCount = 0
+    }
+}

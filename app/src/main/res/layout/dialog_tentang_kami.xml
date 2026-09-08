@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- ================================================= -->
+        <!-- HEADER -->
+        <!-- ================================================= -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- LOGO BPS -->
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                app:cardBackgroundColor="#FFF0E5"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_bpslogo"
+                    android:scaleType="centerInside"
+                    android:contentDescription="Logo BPS" />
+
+            </androidx.cardview.widget.CardView>
+
+
+            <!-- JUDUL -->
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="14dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Tentang Kami"
+                    android:textColor="#111827"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="BPS Kota Probolinggo"
+                    android:textColor="#6B7280"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+        <!-- ================================================= -->
+        <!-- GARIS -->
+        <!-- ================================================= -->
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="20dp"
+            android:background="#E5E7EB" />
+
+
+        <!-- ================================================= -->
+        <!-- SOSIAL MEDIA -->
+        <!-- ================================================= -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="Sosial Media"
+            android:textColor="#111827"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+
+        <!-- ================================================= -->
+        <!-- INSTAGRAM -->
+        <!-- ================================================= -->
+
+        <LinearLayout
+            android:id="@+id/socialInstagram"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground">
+
+            <!-- ICON -->
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_instagram"
+                android:contentDescription="Instagram" />
+
+
+            <!-- TEXT -->
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Instagram"
+                    android:textColor="#374151"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@bpskotaprobolinggo"
+                    android:textColor="#111827"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+        <!-- ================================================= -->
+        <!-- TIKTOK -->
+        <!-- ================================================= -->
+
+        <LinearLayout
+            android:id="@+id/socialTiktok"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground">
+
+            <!-- ICON -->
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_tiktok"
+                android:contentDescription="TikTok" />
+
+
+            <!-- TEXT -->
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="TikTok"
+                    android:textColor="#374151"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@bpskotaprobolinggo"
+                    android:textColor="#111827"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+        <!-- ================================================= -->
+        <!-- WHATSAPP -->
+        <!-- ================================================= -->
+
+        <LinearLayout
+            android:id="@+id/socialWhatsapp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground">
+
+            <!-- ICON -->
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_whatsapp"
+                android:contentDescription="WhatsApp" />
+
+
+            <!-- TEXT -->
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="WhatsApp"
+                    android:textColor="#374151"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tvWhatsapp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="085600003574"
+                    android:textColor="#111827"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+        <!-- ================================================= -->
+        <!-- KONTAK -->
+        <!-- ================================================= -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:text="Kontak &amp; Alamat"
+            android:textColor="#111827"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+
+        <!-- ================================================= -->
+        <!-- ALAMAT -->
+        <!-- ================================================= -->
+
+        <LinearLayout
+            android:id="@+id/socialAlamat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="top"
+            android:orientation="horizontal"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_mylocation"
+                app:tint="#F97316"
+                android:contentDescription="Alamat" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:text="Jl. Bromo No. 32, Kota Probolinggo, Jawa Timur 67222"
+                android:textColor="#4B5563"
+                android:textSize="12sp"
+                android:lineSpacingExtra="2dp" />
+
+        </LinearLayout>
+        <!-- ================================================= -->
+        <!-- EMAIL -->
+        <!-- ================================================= -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:id="@+id/socialEmail"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_dialog_email"
+                app:tint="#F97316"
+                android:contentDescription="Email" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:text="bps3574@bps.go.id"
+                android:textColor="#4B5563"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+
+        <!-- ================================================= -->
+        <!-- TOMBOL TUTUP -->
+        <!-- ================================================= -->
+
+        <TextView
+            android:id="@+id/btnTutupTentangKami"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="22dp"
+            android:background="#F97316"
+            android:gravity="center"
+            android:text="Tutup"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true" />
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

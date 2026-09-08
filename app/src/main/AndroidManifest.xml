@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Bpskota"
+        tools:targetApi="31">
+        <activity
+            android:name=".DetailKategoriActivity"
+            android:exported="false" />
+        <activity
+            android:name=".DataKategoriActivity"
+            android:exported="false" />
+        <activity
+            android:name=".KategoriListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".KependudukanDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PendapatanDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TempatTinggalDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".EkonomiDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".StatistikDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MasterwilayahActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PendapatanActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PertanianActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TempattinggalActivity"
+            android:exported="false" />
+        <activity
+            android:name=".EkonomiActivity"
+            android:exported="false" />
+        <activity
+            android:name=".GenderActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TenagakerjaActivity"
+            android:exported="false" />
+        <activity
+            android:name=".KependudukanActivity"
+            android:exported="false" />
+        <activity
+            android:name=".InfografikFragment"
+            android:exported="false" /> <!-- HOME ACTIVITY -->
+        <activity
+            android:name=".HomeActivity"
+            android:exported="false" /> <!-- MAIN / SPLASH ACTIVITY -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="28dp"
+    android:background="#FFFFFF">
+
+    <!-- ===================================================== -->
+    <!-- ICON DEVELOPER -->
+    <!-- ===================================================== -->
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="90dp"
+        android:layout_height="90dp"
+        app:cardBackgroundColor="#FFF0E5"
+        app:cardCornerRadius="45dp"
+        app:cardElevation="0dp">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="0dp"
+            android:src="@drawable/ic_person"
+            android:scaleType="centerInside"
+            android:contentDescription="Developer" />
+
+    </androidx.cardview.widget.CardView>
+
+
+    <!-- ===================================================== -->
+    <!-- NAMA DEVELOPER -->
+    <!-- ===================================================== -->
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Muhammad Abdullah Arridho, S.Kom"
+        android:textColor="#111827"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:gravity="center" />
+
+
+    <!-- ===================================================== -->
+    <!-- POSISI -->
+    <!-- ===================================================== -->
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Application Developer"
+        android:textColor="#F97316"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+
+    <!-- ===================================================== -->
+    <!-- DESKRIPSI -->
+    <!-- ===================================================== -->
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="Pengembang aplikasi yang berfokus pada pengembangan aplikasi mobile dan sistem informasi."
+        android:textColor="#6B7280"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:lineSpacingExtra="2dp" />
+
+
+    <TextView
+        android:id="@+id/btnCloseDeveloper"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="22dp"
+        android:background="#F97316"
+        android:gravity="center"
+        android:text="Tutup"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:clickable="true"
+        android:focusable="true" />
+
+</LinearLayout>

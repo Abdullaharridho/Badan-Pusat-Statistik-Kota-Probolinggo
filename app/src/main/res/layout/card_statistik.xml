@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+
+    android:id="@+id/cardStatistik"
+
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+
+    android:layout_marginBottom="14dp"
+
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+
+        android:orientation="vertical">
+
+        <!-- ================================================= -->
+        <!-- GARIS ORANGE -->
+        <!-- ================================================= -->
+
+        <View
+
+            android:layout_width="match_parent"
+            android:layout_height="5dp"
+
+            android:background="#F97316" />
+
+
+        <!-- ================================================= -->
+        <!-- ISI CARD -->
+        <!-- ================================================= -->
+
+        <LinearLayout
+
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:orientation="vertical"
+
+            android:padding="16dp">
+
+
+            <!-- ================================================= -->
+            <!-- NAMA KECAMATAN -->
+            <!-- ================================================= -->
+
+            <TextView
+
+                android:id="@+id/tvNamaWilayah"
+
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                android:text="Kecamatan"
+
+                android:textColor="#111827"
+                android:textSize="18sp"
+                android:textStyle="bold"
+
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+
+            <!-- ================================================= -->
+            <!-- PEMBATAS -->
+            <!-- ================================================= -->
+
+            <View
+
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp"
+
+                android:background="#E5E7EB" />
+
+
+            <!-- ================================================= -->
+            <!-- CONTAINER SEMUA VARIABLE -->
+            <!-- ================================================= -->
+
+            <LinearLayout
+
+                android:id="@+id/containerVariable"
+
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                android:orientation="vertical" />
+
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

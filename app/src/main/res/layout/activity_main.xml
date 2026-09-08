@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8FAFC"
+    tools:context=".MainActivity">
+
+
+    <!-- ========================================================= -->
+    <!-- DEKORASI POJOK KANAN ATAS -->
+    <!-- ========================================================= -->
+
+
+
+
+    <!-- ========================================================= -->
+    <!-- CONTAINER UTAMA -->
+    <!-- ========================================================= -->
+
+    <LinearLayout
+        android:id="@+id/loadingContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+
+        <!-- ===================================================== -->
+        <!-- ANIMASI LOADING -->
+        <!-- ===================================================== -->
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/loadingAnimation"
+            android:layout_width="250dp"
+            android:layout_height="250dp"
+            android:contentDescription="Loading"
+            android:scaleType="centerInside"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="true" />
+
+
+        <!-- ===================================================== -->
+        <!-- CONTAINER TEKS -->
+        <!-- ===================================================== -->
+
+        <LinearLayout
+            android:id="@+id/textContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:orientation="vertical">
+
+
+            <!-- ================================================= -->
+            <!-- TEKS BPS -->
+            <!-- ================================================= -->
+
+            <TextView
+                android:id="@+id/textBps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans"
+                android:letterSpacing="0.08"
+                android:text="BADAN PUSAT STATISTIK"
+                android:textColor="#173B67"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+
+            <!-- ================================================= -->
+            <!-- TEKS KOTA -->
+            <!-- ================================================= -->
+
+            <TextView
+                android:id="@+id/textKota"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:fontFamily="sans"
+                android:letterSpacing="0.15"
+                android:text="KOTA PROBOLINGGO"
+                android:textColor="#64748B"
+                android:textSize="13sp"
+                android:textStyle="normal" />
+
+        </LinearLayout>
+
+
+        <!-- ===================================================== -->
+        <!-- PROGRESS BAR -->
+        <!-- ===================================================== -->
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginTop="28dp"
+            android:indeterminate="true"
+            android:indeterminateTint="#173B67" />
+
+    </LinearLayout>
+
+
+    <!-- ========================================================= -->
+    <!-- COPYRIGHT -->
+    <!-- ========================================================= -->
+
+    <TextView
+        android:id="@+id/textFooter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="28dp"
+        android:text="© 2026 BPS Kota Probolinggo"
+        android:textColor="#94A3B8"
+        android:textSize="11sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

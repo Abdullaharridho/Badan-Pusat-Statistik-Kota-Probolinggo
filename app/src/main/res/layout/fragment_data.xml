@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F6F2EE">
+
+    <!-- ========================================================= -->
+    <!-- KONTEN UTAMA -->
+    <!-- ========================================================= -->
+
+    <ScrollView
+        android:id="@+id/dataScrollView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingBottom="120dp"
+        android:scrollbars="none"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:id="@+id/dataContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="20dp">
+
+
+            <!-- ================================================= -->
+            <!-- JUDUL HALAMAN -->
+            <!-- ================================================= -->
+
+            <TextView
+                android:id="@+id/tvDataTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Data Statistik"
+                android:textColor="#111827"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvDataSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Temukan dan jelajahi berbagai data statistik Kota Probolinggo."
+                android:textColor="#6B7280"
+                android:textSize="13sp"
+                android:lineSpacingExtra="2dp" />
+
+
+            <!-- ================================================= -->
+            <!-- SEARCH BAR -->
+            <!-- ================================================= -->
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/searchDataContainer"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="20dp"
+                app:cardBackgroundColor="#FFFFFF"
+                app:cardCornerRadius="26dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_menu_search"
+                        app:tint="#9CA3AF" />
+
+                    <EditText
+                        android:id="@+id/etSearchData"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginStart="12dp"
+                        android:background="@null"
+                        android:hint="Cari data statistik..."
+                        android:textColor="#111827"
+                        android:textColorHint="#9CA3AF"
+                        android:textSize="14sp"
+                        android:inputType="text"
+                        android:imeOptions="actionSearch"
+                        android:maxLines="1" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+
+            <!-- ================================================= -->
+            <!-- SECTION KATEGORI DATA -->
+            <!-- ================================================= -->
+
+            <LinearLayout
+                android:id="@+id/sectionKategoriData"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="28dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tvKategoriTitle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Kategori Data"
+                        android:textColor="#111827"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvKategoriLihatSemua"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Lihat semua"
+                        android:textColor="#F97316"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:padding="4dp" />
+
+                </LinearLayout>
+
+
+                <!-- ================================================= -->
+                <!-- GRID KATEGORI -->
+                <!-- ================================================= -->
+
+                <LinearLayout
+                    android:id="@+id/kategoriDataContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical">
+
+
+                    <!-- ===================== -->
+                    <!-- BARIS 1 -->
+                    <!-- ===================== -->
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:baselineAligned="false">
+
+                        <!-- KEPENDUDUKAN -->
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/cardDataPenduduk"
+                            android:layout_width="0dp"
+                            android:layout_height="130dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="6dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardBackgroundColor="#FFFFFF"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="2dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="12dp">
+
+                                <ImageView
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:src="@drawable/ic_penduduk"
+                                    app:tint="#000000" />
+
+                                <TextView
+                                    android:id="@+id/tvDataPenduduk"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="10dp"
+                                    android:text="Kependudukan"
+                                    android:textColor="#374151"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    android:gravity="center" />
+
+                            </LinearLayout>
+
+                        </androidx.cardview.widget.CardView>
+
+
+                        <!-- KETENAGAKERJAAN -->
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/cardDataTenagaKerja"
+                            android:layout_width="0dp"
+                            android:layout_height="130dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardBackgroundColor="#FFFFFF"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="2dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="12dp">
+
+                                <ImageView
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:src="@drawable/ic_pekerja"
+                                    app:tint="#000000" />
+
+                                <TextView
+                                    android:id="@+id/tvDataTenagaKerja"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="10dp"
+                                    android:text="Tenaga Kerja"
+                                    android:textColor="#374151"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    android:gravity="center" />
+
+                            </LinearLayout>
+
+                        </androidx.cardview.widget.CardView>
+
+
+                        <!-- EKONOMI -->
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/cardDataEkonomi"
+                            android:layout_width="0dp"
+                            android:layout_height="130dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="6dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardBackgroundColor="#FFFFFF"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="2dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="12dp">
+
+                                <ImageView
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:src="@drawable/ic_ekonomi"
+                                    app:tint="#000000" />
+
+                                <TextView
+                                    android:id="@+id/tvDataEkonomi"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="10dp"
+                                    android:text="Neraca Ekonomi"
+                                    android:textColor="#374151"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    android:gravity="center" />
+
+                            </LinearLayout>
+
+                        </androidx.cardview.widget.CardView>
+
+                    </LinearLayout>
+
+
+                    <!-- ===================== -->
+                    <!-- BARIS 2 -->
+                    <!-- ===================== -->
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal"
+                        android:baselineAligned="false">
+
+                        <!-- SOSIAL -->
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/cardDataSosial"
+                            android:layout_width="0dp"
+                            android:layout_height="130dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="6dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardBackgroundColor="#FFFFFF"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="2dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="12dp">
+
+                                <ImageView
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:src="@drawable/ic_gender"
+                                    app:tint="#000000" />
+
+                                <TextView
+                                    android:id="@+id/tvDataSosial"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="10dp"
+                                    android:text="Gender"
+                                    android:textColor="#374151"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    android:gravity="center" />
+
+                            </LinearLayout>
+
+                        </androidx.cardview.widget.CardView>
+
+
+                        <!-- PERUMAHAN -->
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/cardDataPerumahan"
+                            android:layout_width="0dp"
+                            android:layout_height="130dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardBackgroundColor="#FFFFFF"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="2dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="12dp">
+
+                                <ImageView
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:src="@drawable/ic_rumah"
+                                    app:tint="#000000" />
+
+                                <TextView
+                                    android:id="@+id/tvDataPerumahan"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="10dp"
+                                    android:text="Kondisi Tempat Tinggal"
+                                    android:textColor="#514237"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    android:gravity="center" />
+
+                            </LinearLayout>
+
+                        </androidx.cardview.widget.CardView>
+
+
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/cardDataPertanian"
+                            android:layout_width="0dp"
+                            android:layout_height="130dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="6dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardBackgroundColor="#FFFFFF"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="2dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="12dp">
+
+                                <ImageView
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:src="@drawable/ic_pertanian"
+                                    app:tint="#000000" />
+
+                                <TextView
+                                    android:id="@+id/tvDataPertanian"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="10dp"
+                                    android:text="Pertanian"
+                                    android:textColor="#374151"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    android:gravity="center" />
+
+                            </LinearLayout>
+
+                        </androidx.cardview.widget.CardView>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+
+            <!-- ================================================= -->
+            <!-- DATA TERBARU -->
+            <!-- ================================================= -->
+
+            <LinearLayout
+                android:id="@+id/sectionDataTerbaru"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="28dp"
+                android:layout_marginBottom="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Data Terbaru"
+                        android:textColor="#111827"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/dataLihatSemua"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Lihat semua"
+                        android:textColor="#F97316"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:padding="4dp" />
+
+                </LinearLayout>
+
+
+                <!-- LOADING -->
+
+                <ProgressBar
+                    android:id="@+id/progressData"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="24dp" />
+
+
+                <!-- CONTAINER CARD DINAMIS -->
+
+                <LinearLayout
+                    android:id="@+id/dataApiContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="vertical" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
