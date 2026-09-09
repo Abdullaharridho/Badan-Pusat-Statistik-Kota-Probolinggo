@@ -16,4 +16,7 @@ class MainPagerAdapter(
     override fun createFragment(position: Int): Fragment {
         return fragments[position]
     }
+    fun getFragment(position: Int): Fragment {
+        return fragments[position]
+    }
 }

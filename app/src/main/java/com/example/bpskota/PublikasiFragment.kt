@@ -24,7 +24,10 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.airbnb.lottie.LottieAnimationView
 import com.airbnb.lottie.LottieDrawable
 import com.bumptech.glide.Glide
@@ -36,10 +39,13 @@ import com.bumptech.glide.request.target.Target
 import com.example.bpskota.bps.model.Publikasi
 import com.example.bpskota.bps.repository.BpsRepository
 
-class PublikasiFragment : Fragment() {
+class PublikasiFragment : Fragment(), RefreshableFragment {
 
     companion object {
         private const val TAG = "PublikasiFragment"
+
+        // Posisi Publikasi pada ViewPager2.
+        private const val PAGE_INDEX = 3
     }
 
     private val API_KEY = "008edaaae5d450b1913b31a2cef618c3"
@@ -59,11 +65,18 @@ class PublikasiFragment : Fragment() {
 
     private val repository = BpsRepository()
 
+    // Container scroll vertikal pada layout Publikasi.
+    private var verticalScrollView: View? = null
+
+    // Menandai bahwa proses loading sedang berasal dari pull-to-refresh.
+    private var sedangRefresh = false
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+
         Log.d(TAG, "onCreateView")
 
         return inflater.inflate(
@@ -77,7 +90,11 @@ class PublikasiFragment : Fragment() {
         view: View,
         savedInstanceState: Bundle?
     ) {
-        super.onViewCreated(view, savedInstanceState)
+
+        super.onViewCreated(
+            view,
+            savedInstanceState
+        )
 
         Log.d(TAG, "onViewCreated")
 
@@ -95,8 +112,15 @@ class PublikasiFragment : Fragment() {
 
         publikasiLoading =
             view.findViewById(R.id.PublikasiLoading)
+
         cardInfoPublikasi =
             view.findViewById(R.id.cardInfoPublikasi)
+
+        // Cari container yang digunakan untuk scroll vertikal.
+        verticalScrollView =
+            findVerticalScrollContainer(view)
+
+        setupSwipeRefreshState()
 
         mulaiLoading()
 
@@ -106,12 +130,154 @@ class PublikasiFragment : Fragment() {
         loadSemuaPublikasi()
     }
 
+    // =========================================================
+    // CARI CONTAINER SCROLL
+    // =========================================================
+
+    private fun findVerticalScrollContainer(
+        root: View
+    ): View? {
+
+        if (root is android.widget.ScrollView) {
+            return root
+        }
+
+        if (root is NestedScrollView) {
+            return root
+        }
+
+        if (root is RecyclerView) {
+            return root
+        }
+
+        if (root is ViewGroup) {
+
+            for (i in 0 until root.childCount) {
+
+                val child =
+                    root.getChildAt(i)
+
+                val result =
+                    findVerticalScrollContainer(child)
+
+                if (result != null) {
+                    return result
+                }
+            }
+        }
+
+        return null
+    }
+
+    // =========================================================
+    // SETUP PULL TO REFRESH
+    // =========================================================
+
+    private fun setupSwipeRefreshState() {
+
+        val scrollView =
+            verticalScrollView ?: return
+
+        scrollView.setOnScrollChangeListener {
+                _,
+                _,
+                _,
+                _,
+                _ ->
+
+            updateRefreshState()
+        }
+
+        scrollView.post {
+            updateRefreshState()
+        }
+    }
+
+    // =========================================================
+    // UPDATE STATUS REFRESH
+    // =========================================================
+
+    override fun updateRefreshState() {
+
+        if (!isAdded) return
+
+        val homeActivity =
+            activity as? HomeActivity
+                ?: return
+
+        // Hanya aktif pada halaman Publikasi.
+        if (homeActivity.currentPage != PAGE_INDEX) {
+            return
+        }
+
+        val scrollView =
+            verticalScrollView
+                ?: return
+
+        // Pull-to-refresh hanya aktif ketika posisi
+        // scroll sudah berada paling atas.
+        val isAtTop =
+            !scrollView.canScrollVertically(-1)
+
+        homeActivity.setSwipeRefreshEnabled(
+            isAtTop
+        )
+    }
+
+    // =========================================================
+    // REFRESH DATA
+    // =========================================================
+
+    override fun refreshData() {
+
+        if (!isAdded) return
+
+        val homeActivity =
+            activity as? HomeActivity
+                ?: return
+
+        // Pastikan Publikasi sedang aktif.
+        if (homeActivity.currentPage != PAGE_INDEX) {
+            return
+        }
+
+        val scrollView =
+            verticalScrollView
+
+        // Jangan refresh jika masih berada di tengah/bawah.
+        if (
+            scrollView != null &&
+            scrollView.canScrollVertically(-1)
+        ) {
+            return
+        }
+
+        Log.d(
+            TAG,
+            "Pull-to-refresh Publikasi dimulai"
+        )
+
+        sedangRefresh = true
+
+        loadSemuaPublikasi()
+    }
+
+    // =========================================================
+    // LOADING
+    // =========================================================
+
     private fun mulaiLoading() {
 
-        Log.d(TAG, "Memulai loading publikasi")
+        Log.d(
+            TAG,
+            "Memulai loading publikasi"
+        )
 
-        publikasiLoading.visibility = View.VISIBLE
-        cardInfoPublikasi.visibility = View.GONE
+        publikasiLoading.visibility =
+            View.VISIBLE
+
+        cardInfoPublikasi.visibility =
+            View.GONE
 
         publikasiLoading.setAnimation(
             "Loading_Animation.json"
@@ -137,14 +303,20 @@ class PublikasiFragment : Fragment() {
         )
 
         publikasiLoading.cancelAnimation()
+
         publikasiLoading.visibility =
             View.GONE
+
         cardInfoPublikasi.visibility =
             View.VISIBLE
 
         publikasiContainer.visibility =
             View.VISIBLE
     }
+
+    // =========================================================
+    // SEARCH
+    // =========================================================
 
     private fun setupSearch() {
 
@@ -185,6 +357,10 @@ class PublikasiFragment : Fragment() {
         )
     }
 
+    // =========================================================
+    // FILTER
+    // =========================================================
+
     private fun setupFilter() {
 
         btnFilterPublikasi.setOnClickListener {
@@ -197,6 +373,10 @@ class PublikasiFragment : Fragment() {
             tampilkanDialogTahun()
         }
     }
+
+    // =========================================================
+    // LOAD SEMUA PUBLIKASI
+    // =========================================================
 
     private fun loadSemuaPublikasi() {
 
@@ -215,6 +395,23 @@ class PublikasiFragment : Fragment() {
             "DOMAIN = $DOMAIN"
         )
 
+        // Saat refresh, tampilkan loading internal
+        // seperti proses loading biasa.
+        if (sedangRefresh) {
+
+            publikasiLoading.visibility =
+                View.VISIBLE
+
+            publikasiLoading.setAnimation(
+                "Loading_Animation.json"
+            )
+
+            publikasiLoading.repeatCount =
+                LottieDrawable.INFINITE
+
+            publikasiLoading.playAnimation()
+        }
+
         semuaPublikasi.clear()
 
         Log.d(
@@ -229,10 +426,12 @@ class PublikasiFragment : Fragment() {
         ) { response ->
 
             if (!isAdded) {
+
                 Log.d(
                     TAG,
                     "Fragment sudah tidak terpasang"
                 )
+
                 return@getPublikasi
             }
 
@@ -278,7 +477,9 @@ class PublikasiFragment : Fragment() {
                 "Jumlah publikasi halaman 1 = ${publikasiHalamanPertama.size}"
             )
 
-            publikasiHalamanPertama.forEachIndexed { index, publikasi ->
+            publikasiHalamanPertama.forEachIndexed {
+                    index,
+                    publikasi ->
 
                 Log.d(
                     TAG,
@@ -330,6 +531,10 @@ class PublikasiFragment : Fragment() {
             }
         }
     }
+
+    // =========================================================
+    // LOAD HALAMAN BERIKUTNYA
+    // =========================================================
 
     private fun loadHalamanBerikutnya(
         halaman: Int,
@@ -395,7 +600,9 @@ class PublikasiFragment : Fragment() {
                     "Jumlah publikasi halaman $halaman = ${publikasi.size}"
                 )
 
-                publikasi.forEachIndexed { index, item ->
+                publikasi.forEachIndexed {
+                        index,
+                        item ->
 
                     Log.d(
                         TAG,
@@ -422,6 +629,10 @@ class PublikasiFragment : Fragment() {
             )
         }
     }
+
+    // =========================================================
+    // SELESAI LOAD SEMUA DATA
+    // =========================================================
 
     private fun selesaiLoadSemuaPublikasi() {
 
@@ -453,11 +664,14 @@ class PublikasiFragment : Fragment() {
         )
 
         semuaPublikasi.clear()
+
         semuaPublikasi.addAll(
             publikasiUnik
         )
 
-        semuaPublikasi.forEachIndexed { index, publikasi ->
+        semuaPublikasi.forEachIndexed {
+                index,
+                publikasi ->
 
             Log.d(
                 TAG,
@@ -473,11 +687,30 @@ class PublikasiFragment : Fragment() {
 
         tampilkanHasil()
 
+        // Matikan spinner SwipeRefresh setelah seluruh
+        // proses refresh selesai.
+        if (sedangRefresh) {
+
+            sedangRefresh = false
+
+            (activity as? HomeActivity)
+                ?.finishSwipeRefresh()
+        }
+
+        // Evaluasi ulang apakah refresh masih boleh digunakan.
+        view?.post {
+            updateRefreshState()
+        }
+
         Log.d(
             TAG,
             "========================================"
         )
     }
+
+    // =========================================================
+    // GAGAL LOAD
+    // =========================================================
 
     private fun gagalLoadPublikasi() {
 
@@ -489,6 +722,7 @@ class PublikasiFragment : Fragment() {
         )
 
         publikasiLoading.cancelAnimation()
+
         publikasiLoading.visibility =
             View.GONE
 
@@ -500,12 +734,28 @@ class PublikasiFragment : Fragment() {
         tvJumlahPublikasi.text =
             "Gagal memuat"
 
+        if (sedangRefresh) {
+
+            sedangRefresh = false
+
+            (activity as? HomeActivity)
+                ?.finishSwipeRefresh()
+        }
+
+        view?.post {
+            updateRefreshState()
+        }
+
         Toast.makeText(
             requireContext(),
             "Gagal memuat data publikasi",
             Toast.LENGTH_SHORT
         ).show()
     }
+
+    // =========================================================
+    // TAMPILKAN HASIL
+    // =========================================================
 
     private fun tampilkanHasil() {
 
@@ -555,6 +805,10 @@ class PublikasiFragment : Fragment() {
         }
     }
 
+    // =========================================================
+    // AMBIL TAHUN
+    // =========================================================
+
     private fun ambilTahun(
         publikasi: Publikasi
     ): String? {
@@ -569,6 +823,10 @@ class PublikasiFragment : Fragment() {
             }
             ?.substring(0, 4)
     }
+
+    // =========================================================
+    // DIALOG FILTER TAHUN
+    // =========================================================
 
     private fun tampilkanDialogTahun() {
 
@@ -643,6 +901,10 @@ class PublikasiFragment : Fragment() {
             .show()
     }
 
+    // =========================================================
+    // CARD PUBLIKASI
+    // =========================================================
+
     private fun tambahCardPublikasi(
         container: LinearLayout,
         publikasi: Publikasi
@@ -688,7 +950,8 @@ class PublikasiFragment : Fragment() {
             publikasi.title
                 ?: "Publikasi"
 
-        description.text =""
+        description.text =
+            ""
 
         imageLoading.visibility =
             View.VISIBLE
@@ -703,7 +966,9 @@ class PublikasiFragment : Fragment() {
             .placeholder(
                 R.drawable.ic_bpslogo
             )
-            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .diskCacheStrategy(
+                DiskCacheStrategy.ALL
+            )
             .error(
                 R.drawable.ic_bpslogo
             )
@@ -769,6 +1034,11 @@ class PublikasiFragment : Fragment() {
 
         container.addView(card)
     }
+
+    // =========================================================
+    // POPUP DETAIL PUBLIKASI
+    // =========================================================
+
     private fun tampilkanPopupPublikasi(
         publikasi: Publikasi
     ) {
@@ -778,19 +1048,21 @@ class PublikasiFragment : Fragment() {
             "Membuka popup publikasi: pub_id=${publikasi.pub_id}"
         )
 
-        val dialog = Dialog(requireContext())
+        val dialog =
+            Dialog(requireContext())
 
         dialog.requestWindowFeature(
             Window.FEATURE_NO_TITLE
         )
 
-        val view = LayoutInflater.from(
-            requireContext()
-        ).inflate(
-            R.layout.dialog_detail_home,
-            null,
-            false
-        )
+        val view =
+            LayoutInflater.from(
+                requireContext()
+            ).inflate(
+                R.layout.dialog_detail_home,
+                null,
+                false
+            )
 
         // =========================
         // FIND VIEW
@@ -816,12 +1088,10 @@ class PublikasiFragment : Fragment() {
                 R.id.tvDetailHomeDescription
             )
 
-        // LinearLayout khusus tombol download
         val containerDownload =
             view.findViewById<LinearLayout>(
                 R.id.containerDownload
             )
-
 
         // =========================
         // SET DATA AWAL
@@ -838,7 +1108,6 @@ class PublikasiFragment : Fragment() {
         description.text =
             "Memuat deskripsi..."
 
-
         // =========================
         // LOAD COVER
         // =========================
@@ -852,7 +1121,6 @@ class PublikasiFragment : Fragment() {
                 R.drawable.ic_bpslogo
             )
             .into(image)
-
 
         // =========================
         // TOMBOL DOWNLOAD
@@ -909,7 +1177,6 @@ class PublikasiFragment : Fragment() {
                         return@setOnClickListener
                     }
 
-
                     // =========================
                     // NAMA FILE
                     // =========================
@@ -930,7 +1197,6 @@ class PublikasiFragment : Fragment() {
                                 it.isNotBlank()
                             }
                             ?: "Publikasi"
-
 
                     // =========================
                     // KONFIRMASI DOWNLOAD
@@ -954,10 +1220,6 @@ class PublikasiFragment : Fragment() {
                         ) { _, _ ->
 
                             try {
-
-                                // =========================
-                                // DOWNLOAD MANAGER
-                                // =========================
 
                                 val request =
                                     DownloadManager.Request(
@@ -995,29 +1257,21 @@ class PublikasiFragment : Fragment() {
                                     true
                                 )
 
-
-                                // =========================
-                                // DOWNLOAD MANAGER SERVICE
-                                // =========================
-
                                 val downloadManager =
                                     requireContext()
                                         .getSystemService(
                                             Context.DOWNLOAD_SERVICE
                                         ) as DownloadManager
 
-
                                 downloadManager.enqueue(
                                     request
                                 )
-
 
                                 Toast.makeText(
                                     requireContext(),
                                     "Download dimulai",
                                     Toast.LENGTH_SHORT
                                 ).show()
-
 
                                 Log.d(
                                     TAG,
@@ -1043,7 +1297,6 @@ class PublikasiFragment : Fragment() {
                 }
             }
 
-
         // =========================
         // MASUKKAN BUTTON KE CONTAINER
         // =========================
@@ -1056,7 +1309,6 @@ class PublikasiFragment : Fragment() {
             )
         )
 
-
         // =========================
         // TAMPILKAN DIALOG
         // =========================
@@ -1066,7 +1318,6 @@ class PublikasiFragment : Fragment() {
         )
 
         dialog.show()
-
 
         // =========================
         // STYLE DIALOG
@@ -1083,7 +1334,6 @@ class PublikasiFragment : Fragment() {
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
 
-
         // =========================
         // AMBIL DETAIL PUBLIKASI
         // =========================
@@ -1095,7 +1345,6 @@ class PublikasiFragment : Fragment() {
 
         val pubId =
             publikasi.pub_id
-
 
         // =========================
         // CEK PUB ID
@@ -1114,7 +1363,6 @@ class PublikasiFragment : Fragment() {
             return
         }
 
-
         // =========================
         // REQUEST DETAIL
         // =========================
@@ -1128,7 +1376,6 @@ class PublikasiFragment : Fragment() {
             if (!isAdded) {
                 return@getPublikasiDetail
             }
-
 
             // =========================
             // RESPONSE NULL
@@ -1147,7 +1394,6 @@ class PublikasiFragment : Fragment() {
                 return@getPublikasiDetail
             }
 
-
             Log.d(
                 TAG,
                 "Response detail diterima: pub_id=$pubId"
@@ -1158,7 +1404,6 @@ class PublikasiFragment : Fragment() {
                 "Status detail = ${response.status}"
             )
 
-
             // =========================
             // AMBIL ABSTRACT
             // =========================
@@ -1166,12 +1411,10 @@ class PublikasiFragment : Fragment() {
             val abstractText =
                 response.data?.abstract
 
-
             Log.d(
                 TAG,
                 "Abstract detail = $abstractText"
             )
-
 
             // =========================
             // BERSIHKAN HTML
@@ -1200,6 +1443,10 @@ class PublikasiFragment : Fragment() {
         }
     }
 
+    // =========================================================
+    // DESTROY VIEW
+    // =========================================================
+
     override fun onDestroyView() {
 
         Log.d(
@@ -1207,8 +1454,14 @@ class PublikasiFragment : Fragment() {
             "onDestroyView"
         )
 
+        sedangRefresh = false
+
         publikasiLoading.cancelAnimation()
 
+        verticalScrollView = null
+
+        (activity as? HomeActivity)
+            ?.finishSwipeRefresh()
 
         super.onDestroyView()
     }

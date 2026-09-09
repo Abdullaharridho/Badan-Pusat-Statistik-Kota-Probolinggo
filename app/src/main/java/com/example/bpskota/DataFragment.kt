@@ -9,9 +9,13 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.bpskota.bps.model.AllSimdasiResponse
 import com.example.bpskota.bps.model.AllStaticTableResponse
 import com.example.bpskota.bps.model.AllVariableResponse
@@ -19,7 +23,8 @@ import com.example.bpskota.bps.repository.BpsAllDataRepository
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 
-class DataFragment : Fragment() {
+
+class DataFragment : Fragment(), RefreshableFragment {
 
     companion object {
 
@@ -31,6 +36,9 @@ class DataFragment : Fragment() {
 
         private const val API_KEY =
             "008edaaae5d450b1913b31a2cef618c3"
+
+        // Posisi DataFragment pada ViewPager2.
+        private const val PAGE_INDEX = 4
     }
 
 
@@ -43,6 +51,16 @@ class DataFragment : Fragment() {
     private lateinit var progressData: ProgressBar
 
     private lateinit var etSearchData: EditText
+
+
+    // =====================================================
+    // SCROLL
+    //
+    // Container scroll dicari otomatis dari XML.
+    // Tidak membutuhkan ID XML baru.
+    // =====================================================
+
+    private var verticalScrollView: View? = null
 
 
     // =====================================================
@@ -124,6 +142,23 @@ class DataFragment : Fragment() {
             view.findViewById(
                 R.id.etSearchData
             )
+
+
+        // =================================================
+        // CARI CONTAINER SCROLL
+        // =================================================
+
+        verticalScrollView =
+            findVerticalScrollContainer(
+                view
+            )
+
+
+        // =================================================
+        // SETUP SWIPE REFRESH
+        // =================================================
+
+        setupSwipeRefreshState()
 
 
         // =================================================
@@ -245,21 +280,6 @@ class DataFragment : Fragment() {
         }
 
 
-        // =================================================
-        // LIHAT SEMUA DATA
-        // =================================================
-
-        view.findViewById<View>(
-            R.id.dataLihatSemua
-        ).setOnClickListener {
-
-            Toast.makeText(
-                requireContext(),
-                "Menampilkan semua data",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
 
         // =================================================
         // SEARCH
@@ -276,10 +296,289 @@ class DataFragment : Fragment() {
 
 
         // =================================================
-        // LOAD DATA
+        // LOAD DATA AWAL
         // =================================================
 
         loadAllData()
+    }
+
+
+    // =====================================================
+    // SETUP SWIPE REFRESH STATE
+    //
+    // Refresh hanya boleh aktif ketika:
+    //
+    // 1. DataFragment sedang aktif.
+    // 2. Scroll berada di posisi paling atas.
+    //
+    // Jika user masih berada di tengah/bawah,
+    // SwipeRefreshLayout dinonaktifkan.
+    // =====================================================
+
+    private fun setupSwipeRefreshState() {
+
+        val scrollView =
+            verticalScrollView
+                ?: return
+
+        val swipeRefreshHome =
+            requireActivity().findViewById<SwipeRefreshLayout>(
+                R.id.swipeRefreshHome
+            )
+
+        // Listener dipasang pada container scroll utama.
+        scrollView.setOnScrollChangeListener {
+
+                _,
+                _,
+                _,
+                _,
+                _ ->
+
+            updateRefreshState()
+        }
+
+
+        // Pastikan state awal diperiksa setelah layout selesai.
+        scrollView.post {
+
+            updateRefreshState()
+        }
+    }
+
+
+    // =====================================================
+    // UPDATE REFRESH STATE
+    //
+    // Dipanggil ketika posisi scroll berubah
+    // atau ketika user berpindah halaman ViewPager2.
+    // =====================================================
+
+    override fun updateRefreshState() {
+
+        if (!isAdded) {
+            return
+        }
+
+        val scrollView =
+            verticalScrollView
+                ?: return
+
+        val swipeRefreshHome =
+            requireActivity().findViewById<SwipeRefreshLayout>(
+                R.id.swipeRefreshHome
+            )
+
+        val homeActivity =
+            activity as? HomeActivity
+                ?: return
+
+
+        // =================================================
+        // DATA FRAGMENT HARUS SEDANG AKTIF
+        // =================================================
+
+        if (
+            homeActivity.currentPage != PAGE_INDEX
+        ) {
+            return
+        }
+
+
+        // =================================================
+        // CEK POSISI PALING ATAS
+        // =================================================
+        //
+        // canScrollVertically(-1):
+        //
+        // true  = masih bisa scroll ke atas
+        // false = sudah mentok paling atas
+        // =================================================
+
+        val isAtTop =
+            !scrollView.canScrollVertically(-1)
+
+
+        // =================================================
+        // AKTIFKAN REFRESH HANYA DI PALING ATAS
+        // =================================================
+
+        swipeRefreshHome.isEnabled =
+            isAtTop
+    }
+
+
+    // =====================================================
+    // CARI CONTAINER VERTICAL SCROLL
+    //
+    // Fungsi ini mencari ScrollView, NestedScrollView,
+    // atau RecyclerView di dalam layout fragment.
+    //
+    // Dengan cara ini kita tidak perlu menambahkan ID baru
+    // pada XML.
+    // =====================================================
+
+    private fun findVerticalScrollContainer(
+        root: View
+    ): View? {
+
+        // =================================================
+        // SCROLLVIEW
+        // =================================================
+
+        if (
+            root is ScrollView
+        ) {
+            return root
+        }
+
+
+        // =================================================
+        // NESTED SCROLLVIEW
+        // =================================================
+
+        if (
+            root is NestedScrollView
+        ) {
+            return root
+        }
+
+
+        // =================================================
+        // RECYCLERVIEW
+        // =================================================
+
+        if (
+            root is RecyclerView
+        ) {
+            return root
+        }
+
+
+        // =================================================
+        // CARI SECARA REKURSIF
+        // =================================================
+
+        if (
+            root is ViewGroup
+        ) {
+
+            for (
+            i in 0 until root.childCount
+            ) {
+
+                val child =
+                    root.getChildAt(i)
+
+                val result =
+                    findVerticalScrollContainer(
+                        child
+                    )
+
+                if (
+                    result != null
+                ) {
+                    return result
+                }
+            }
+        }
+
+
+        return null
+    }
+
+
+    // =====================================================
+    // REFRESH DATA
+    //
+    // Dipanggil oleh HomeActivity ketika user melakukan
+    // pull-to-refresh pada DataFragment.
+    // =====================================================
+
+    override fun refreshData() {
+
+        if (!isAdded) {
+            return
+        }
+
+
+        // =================================================
+        // PASTIKAN DATA FRAGMENT SEDANG AKTIF
+        // =================================================
+
+        val homeActivity =
+            activity as? HomeActivity
+                ?: return
+
+        if (
+            homeActivity.currentPage != PAGE_INDEX
+        ) {
+            return
+        }
+
+
+        // =================================================
+        // PENGAMAN POSISI SCROLL
+        //
+        // Walaupun SwipeRefreshLayout seharusnya sudah
+        // disabled ketika belum di atas, tetap lakukan
+        // pengecekan di sini agar data tidak reload
+        // secara tidak sengaja.
+        // =================================================
+
+        val scrollView =
+            verticalScrollView
+
+        if (
+            scrollView != null &&
+            scrollView.canScrollVertically(-1)
+        ) {
+
+            finishSwipeRefresh()
+
+            return
+        }
+
+
+        Log.d(
+            TAG,
+            "================================"
+        )
+
+        Log.d(
+            TAG,
+            "REFRESH DATA FRAGMENT"
+        )
+
+        Log.d(
+            TAG,
+            "================================"
+        )
+
+
+        // =================================================
+        // LOAD ULANG SEMUA DATA
+        // =================================================
+
+        loadAllData()
+    }
+
+
+    // =====================================================
+    // SELESAIKAN SWIPE REFRESH
+    // =====================================================
+
+    private fun finishSwipeRefresh() {
+
+        if (!isAdded) {
+            return
+        }
+
+        val homeActivity =
+            activity as? HomeActivity
+                ?: return
+
+        homeActivity.finishSwipeRefresh()
     }
 
 
@@ -288,6 +587,11 @@ class DataFragment : Fragment() {
     // =====================================================
 
     private fun loadAllData() {
+
+        if (!isAdded) {
+            return
+        }
+
 
         progressData.visibility =
             View.VISIBLE
@@ -318,6 +622,11 @@ class DataFragment : Fragment() {
     private fun loadSimdasiPage(
         page: Int
     ) {
+
+        if (!isAdded) {
+            return
+        }
+
 
         Log.d(
             TAG,
@@ -576,6 +885,11 @@ class DataFragment : Fragment() {
         page: Int
     ) {
 
+        if (!isAdded) {
+            return
+        }
+
+
         Log.d(
             TAG,
             "Mengambil STATIC TABLE page=$page"
@@ -815,6 +1129,11 @@ class DataFragment : Fragment() {
         page: Int
     ) {
 
+        if (!isAdded) {
+            return
+        }
+
+
         Log.d(
             TAG,
             "Mengambil VARIABLE page=$page"
@@ -1046,6 +1365,11 @@ class DataFragment : Fragment() {
 
     private fun selesaiLoadSemuaData() {
 
+        if (!isAdded) {
+            return
+        }
+
+
         progressData.visibility =
             View.GONE
 
@@ -1072,6 +1396,26 @@ class DataFragment : Fragment() {
 
 
         tampilkanDataTerbaru()
+
+
+        // =================================================
+        // MATIKAN SPINNER PULL TO REFRESH
+        //
+        // Hanya berpengaruh jika proses ini berasal
+        // dari pull-to-refresh.
+        // =================================================
+
+        finishSwipeRefresh()
+
+
+        // =================================================
+        // PERBARUI STATUS REFRESH
+        // =================================================
+
+        verticalScrollView?.post {
+
+            updateRefreshState()
+        }
     }
 
 
@@ -1232,8 +1576,8 @@ class DataFragment : Fragment() {
     //
     // BAGIAN DETAIL KETIKA CARD DIKLIK:
     //
-    // SIMDASI -> StatistikDetailActivity
-    // STATIC  -> DetailKategoriActivity
+    // SIMDASI  -> StatistikDetailActivity
+    // STATIC   -> DetailKategoriActivity
     // VARIABLE -> DetailKategoriActivity
     // =====================================================
 
@@ -1422,10 +1766,6 @@ class DataFragment : Fragment() {
                 )
 
 
-                // -----------------------------------------
-                // VALIDASI ID
-                // -----------------------------------------
-
                 if (
                     idTabel.isBlank()
                 ) {
@@ -1440,10 +1780,6 @@ class DataFragment : Fragment() {
                 }
 
 
-                // -----------------------------------------
-                // INTENT
-                // -----------------------------------------
-
                 val intent =
                     Intent(
                         requireContext(),
@@ -1451,19 +1787,11 @@ class DataFragment : Fragment() {
                     )
 
 
-                // -----------------------------------------
-                // ID TABEL
-                // -----------------------------------------
-
                 intent.putExtra(
                     StatistikDetailActivity.EXTRA_ID_TABEL,
                     idTabel
                 )
 
-
-                // -----------------------------------------
-                // JUDUL
-                // -----------------------------------------
 
                 intent.putExtra(
                     StatistikDetailActivity.EXTRA_JUDUL,
@@ -1473,19 +1801,11 @@ class DataFragment : Fragment() {
                 )
 
 
-                // -----------------------------------------
-                // KODE
-                // -----------------------------------------
-
                 intent.putExtra(
                     StatistikDetailActivity.EXTRA_KODE,
                     kode
                 )
 
-
-                // -----------------------------------------
-                // TAHUN TERBARU
-                // -----------------------------------------
 
                 if (
                     tahunTerbaru > 0
@@ -1498,10 +1818,6 @@ class DataFragment : Fragment() {
                 }
 
 
-                // -----------------------------------------
-                // SEMUA TAHUN TERSEDIA
-                // -----------------------------------------
-
                 intent.putIntegerArrayListExtra(
                     StatistikDetailActivity.EXTRA_KETERSEDIAAN_TAHUN,
                     ArrayList(
@@ -1509,10 +1825,6 @@ class DataFragment : Fragment() {
                     )
                 )
 
-
-                // -----------------------------------------
-                // BUKA DETAIL
-                // -----------------------------------------
 
                 startActivity(
                     intent
@@ -1556,10 +1868,6 @@ class DataFragment : Fragment() {
                 )
 
 
-            // ---------------------------------------------
-            // TAMPILAN
-            // ---------------------------------------------
-
             tvTahun.text =
                 tahun
 
@@ -1575,10 +1883,6 @@ class DataFragment : Fragment() {
                     title
                 )
 
-
-            // ---------------------------------------------
-            // KLIK CARD STATIC
-            // ---------------------------------------------
 
             view.setOnClickListener {
 
@@ -1603,10 +1907,6 @@ class DataFragment : Fragment() {
                 )
 
 
-                // -----------------------------------------
-                // VALIDASI ID
-                // -----------------------------------------
-
                 if (
                     id.isBlank()
                 ) {
@@ -1621,10 +1921,6 @@ class DataFragment : Fragment() {
                 }
 
 
-                // -----------------------------------------
-                // INTENT
-                // -----------------------------------------
-
                 val intent =
                     Intent(
                         requireContext(),
@@ -1632,29 +1928,17 @@ class DataFragment : Fragment() {
                     )
 
 
-                // -----------------------------------------
-                // ID
-                // -----------------------------------------
-
                 intent.putExtra(
                     "ID",
                     id
                 )
 
 
-                // -----------------------------------------
-                // TYPE
-                // -----------------------------------------
-
                 intent.putExtra(
                     "TYPE",
                     "STATIC"
                 )
 
-
-                // -----------------------------------------
-                // JUDUL
-                // -----------------------------------------
 
                 intent.putExtra(
                     "JUDUL",
@@ -1664,10 +1948,6 @@ class DataFragment : Fragment() {
                 )
 
 
-                // -----------------------------------------
-                // KATEGORI
-                // -----------------------------------------
-
                 intent.putExtra(
                     "KATEGORI",
                     subject.ifBlank {
@@ -1676,19 +1956,11 @@ class DataFragment : Fragment() {
                 )
 
 
-                // -----------------------------------------
-                // SUMBER
-                // -----------------------------------------
-
                 intent.putExtra(
                     "SUMBER",
                     "BPS Kota Probolinggo"
                 )
 
-
-                // -----------------------------------------
-                // BUKA DETAIL
-                // -----------------------------------------
 
                 startActivity(
                     intent
@@ -1738,10 +2010,6 @@ class DataFragment : Fragment() {
                 )
 
 
-            // ---------------------------------------------
-            // TAMPILAN
-            // ---------------------------------------------
-
             tvTahun.text =
                 tahun
 
@@ -1757,10 +2025,6 @@ class DataFragment : Fragment() {
                     title
                 )
 
-
-            // ---------------------------------------------
-            // KLIK CARD VARIABLE
-            // ---------------------------------------------
 
             view.setOnClickListener {
 
@@ -1790,10 +2054,6 @@ class DataFragment : Fragment() {
                 )
 
 
-                // -----------------------------------------
-                // VALIDASI ID
-                // -----------------------------------------
-
                 if (
                     id.isBlank()
                 ) {
@@ -1808,10 +2068,6 @@ class DataFragment : Fragment() {
                 }
 
 
-                // -----------------------------------------
-                // INTENT
-                // -----------------------------------------
-
                 val intent =
                     Intent(
                         requireContext(),
@@ -1819,29 +2075,17 @@ class DataFragment : Fragment() {
                     )
 
 
-                // -----------------------------------------
-                // ID VARIABLE
-                // -----------------------------------------
-
                 intent.putExtra(
                     "ID",
                     id
                 )
 
 
-                // -----------------------------------------
-                // TYPE
-                // -----------------------------------------
-
                 intent.putExtra(
                     "TYPE",
                     "VARIABLE"
                 )
 
-
-                // -----------------------------------------
-                // JUDUL
-                // -----------------------------------------
 
                 intent.putExtra(
                     "JUDUL",
@@ -1851,10 +2095,6 @@ class DataFragment : Fragment() {
                 )
 
 
-                // -----------------------------------------
-                // KATEGORI
-                // -----------------------------------------
-
                 intent.putExtra(
                     "KATEGORI",
                     kategori.ifBlank {
@@ -1863,19 +2103,11 @@ class DataFragment : Fragment() {
                 )
 
 
-                // -----------------------------------------
-                // SUMBER
-                // -----------------------------------------
-
                 intent.putExtra(
                     "SUMBER",
                     "BPS Kota Probolinggo"
                 )
 
-
-                // -----------------------------------------
-                // TAHUN
-                // -----------------------------------------
 
                 val tahunInt =
                     getTahunVariableAsInt(
@@ -1893,10 +2125,6 @@ class DataFragment : Fragment() {
                     )
                 }
 
-
-                // -----------------------------------------
-                // BUKA DETAIL
-                // -----------------------------------------
 
                 startActivity(
                     intent
@@ -1956,12 +2184,6 @@ class DataFragment : Fragment() {
 
     // =====================================================
     // FORMAT TAHUN SIMDASI
-    //
-    // [2017,2018,2019,2020,2021,2022,2023]
-    //
-    // HASIL:
-    //
-    // 2017 - 2023
     // =====================================================
 
     private fun formatTahunSimdasi(
@@ -2024,10 +2246,6 @@ class DataFragment : Fragment() {
         obj: JsonObject
     ): String {
 
-        // -----------------------------------------------
-        // PRIORITAS 1
-        // -----------------------------------------------
-
         val tahun =
             getString(
                 obj,
@@ -2044,11 +2262,6 @@ class DataFragment : Fragment() {
             )
         }
 
-
-        // -----------------------------------------------
-        // PRIORITAS 2
-        // updt_date
-        // -----------------------------------------------
 
         val updateDate =
             getString(
@@ -2269,19 +2482,11 @@ class DataFragment : Fragment() {
 
             return when {
 
-                // -----------------------------------------
-                // KODE TAHUN BPS
-                // -----------------------------------------
-
                 angka in 0..199 -> {
 
                     (angka + 1900).toString()
                 }
 
-
-                // -----------------------------------------
-                // TAHUN ASLI
-                // -----------------------------------------
 
                 angka in 1900..2100 -> {
 
@@ -2318,10 +2523,6 @@ class DataFragment : Fragment() {
 
         return text
 
-            // ---------------------------------------------
-            // Hapus <sup>...</sup>
-            // ---------------------------------------------
-
             .replace(
                 Regex(
                     "<sup[^>]*>.*?</sup>",
@@ -2329,10 +2530,6 @@ class DataFragment : Fragment() {
                 ),
                 ""
             )
-
-            // ---------------------------------------------
-            // Hapus <sub>...</sub>
-            // ---------------------------------------------
 
             .replace(
                 Regex(
@@ -2342,10 +2539,6 @@ class DataFragment : Fragment() {
                 ""
             )
 
-            // ---------------------------------------------
-            // Hapus seluruh tag HTML
-            // ---------------------------------------------
-
             .replace(
                 Regex(
                     "<[^>]*>",
@@ -2353,10 +2546,6 @@ class DataFragment : Fragment() {
                 ),
                 ""
             )
-
-            // ---------------------------------------------
-            // HTML entity
-            // ---------------------------------------------
 
             .replace(
                 "&nbsp;",
@@ -2387,10 +2576,6 @@ class DataFragment : Fragment() {
                 "&#39;",
                 "'"
             )
-
-            // ---------------------------------------------
-            // Rapikan spasi
-            // ---------------------------------------------
 
             .replace(
                 Regex("\\s+"),
@@ -2694,5 +2879,28 @@ class DataFragment : Fragment() {
         dataApiContainer.addView(
             tv
         )
+    }
+
+
+    // =====================================================
+    // DESTROY VIEW
+    // =====================================================
+
+    override fun onDestroyView() {
+
+        // Pastikan spinner tidak tertinggal aktif ketika
+        // Fragment dihancurkan.
+        if (isAdded) {
+            finishSwipeRefresh()
+        }
+
+        verticalScrollView =
+            null
+
+        semuaData.clear()
+
+        sumberData.clear()
+
+        super.onDestroyView()
     }
 }

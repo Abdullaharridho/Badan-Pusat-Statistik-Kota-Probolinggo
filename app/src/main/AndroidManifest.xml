@@ -16,6 +16,9 @@
         android:theme="@style/Theme.Bpskota"
         tools:targetApi="31">
         <activity
+            android:name=".SearchActivity"
+            android:exported="false" />
+        <activity
             android:name=".DetailKategoriActivity"
             android:exported="false" />
         <activity

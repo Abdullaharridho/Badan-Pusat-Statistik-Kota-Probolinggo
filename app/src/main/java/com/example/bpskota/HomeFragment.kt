@@ -16,6 +16,7 @@ import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import android.widget.*
 import androidx.fragment.app.Fragment
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.CustomTarget
@@ -30,7 +31,7 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class HomeFragment : Fragment() {
+class HomeFragment : Fragment(), RefreshableFragment {
 
     // ============================================================
     // ANIMATION STATE
@@ -160,11 +161,197 @@ class HomeFragment : Fragment() {
         setupScrollAnimation(view)
         setupHorizontalScroll(view)
         setupStatistikCarousel(view)
+        setupSwipeRefreshState(view)
 
         loadStatistikTerkini(view)
         loadInfographics(view)
         loadBerita(view)
         loadPublikasi(view)
+    }
+    // =========================================================
+// SETUP SWIPE REFRESH
+// =========================================================
+
+    private fun setupSwipeRefreshState(
+        view: View
+    ) {
+
+        val homeScrollView =
+            view.findViewById<ScrollView>(
+                R.id.homeScrollView
+            )
+
+
+        val swipeRefreshHome =
+            requireActivity().findViewById<SwipeRefreshLayout>(
+                R.id.swipeRefreshHome
+            )
+
+
+        fun updateState() {
+
+            if (!isAdded) {
+                return
+            }
+
+
+            val homeActivity =
+                activity as? HomeActivity
+
+
+            if (homeActivity == null) {
+                return
+            }
+
+
+            /*
+             * HomeFragment hanya boleh mengatur
+             * SwipeRefreshLayout ketika halaman
+             * Home sedang aktif.
+             */
+            if (
+                homeActivity.currentPage != 0
+            ) {
+                return
+            }
+
+
+            /*
+             * Cek apakah ScrollView masih bisa
+             * bergerak ke atas.
+             *
+             * true  = masih di tengah/bawah
+             * false = sudah mentok paling atas
+             */
+            val isAtTop =
+                !homeScrollView.canScrollVertically(-1)
+
+
+            swipeRefreshHome.isEnabled =
+                isAtTop
+        }
+
+
+        /*
+         * Update ketika posisi ScrollView berubah.
+         */
+        homeScrollView.setOnScrollChangeListener {
+
+                _,
+                _,
+                _,
+                _,
+                _ ->
+
+            updateState()
+        }
+
+
+        /*
+         * Jalankan setelah layout selesai.
+         */
+        homeScrollView.post {
+
+            updateState()
+        }
+    }
+    // =========================================================
+// UPDATE STATUS REFRESH
+// =========================================================
+
+    override fun updateRefreshState() {
+
+        if (!isAdded) {
+            return
+        }
+
+
+        val currentView =
+            view ?: return
+
+
+        val homeScrollView =
+            currentView.findViewById<ScrollView>(
+                R.id.homeScrollView
+            )
+
+
+        val swipeRefreshHome =
+            requireActivity().findViewById<SwipeRefreshLayout>(
+                R.id.swipeRefreshHome
+            )
+
+
+        /*
+         * Pastikan HomeFragment memang sedang
+         * menjadi halaman aktif.
+         */
+        val homeActivity =
+            activity as? HomeActivity
+                ?: return
+
+
+        if (
+            homeActivity.currentPage != 0
+        ) {
+            return
+        }
+
+
+        /*
+         * Refresh hanya aktif jika ScrollView
+         * sudah benar-benar mentok paling atas.
+         */
+        val isAtTop =
+            !homeScrollView.canScrollVertically(-1)
+
+
+        swipeRefreshHome.isEnabled =
+            isAtTop
+    }
+
+    // ============================================================
+    // REFRESH
+    // ============================================================
+
+    override fun refreshData() {
+
+        if (!isAdded) {
+            return
+        }
+
+        val currentView =
+            view ?: return
+
+        // Hentikan auto-scroll sementara
+        statistikHandler.removeCallbacks(
+            statistikAutoScrollRunnable
+        )
+
+        // Reset posisi carousel
+        statistikCurrentPosition = 0
+        statistikCardCount = 0
+
+        // Muat ulang seluruh data Home
+        loadStatistikTerkini(
+            currentView
+        )
+
+        loadInfographics(
+            currentView
+        )
+
+        loadBerita(
+            currentView
+        )
+
+        loadPublikasi(
+            currentView
+        )
+
+        // Selesai refresh
+        (activity as? HomeActivity)
+            ?.finishSwipeRefresh()
     }
 
     // ============================================================
@@ -2530,10 +2717,6 @@ class HomeFragment : Fragment() {
                 R.id.sectionPublikasi
             )
 
-        // --------------------------------------------------------
-        // SECTION YANG MUNCUL SAAT SCROLL
-        // --------------------------------------------------------
-
         prepareSection(
             berita
         )
@@ -2542,17 +2725,9 @@ class HomeFragment : Fragment() {
             publikasi
         )
 
-        // --------------------------------------------------------
-        // STATISTIK LANGSUNG MUNCUL
-        // --------------------------------------------------------
-
         animateStatistik(
             statistik
         )
-
-        // --------------------------------------------------------
-        // INFOGRAFIK LANGSUNG MUNCUL
-        // --------------------------------------------------------
 
         if (!infografikAnimated) {
 
@@ -2563,10 +2738,6 @@ class HomeFragment : Fragment() {
                 delay = 0L
             )
         }
-
-        // --------------------------------------------------------
-        // CEK SETELAH LAYOUT SELESAI
-        // --------------------------------------------------------
 
         scrollView.post {
 
@@ -2581,10 +2752,6 @@ class HomeFragment : Fragment() {
                 publikasi
             )
         }
-
-        // --------------------------------------------------------
-        // CEK SETIAP SCROLL
-        // --------------------------------------------------------
 
         scrollView
             .viewTreeObserver
@@ -2618,10 +2785,6 @@ class HomeFragment : Fragment() {
             return
         }
 
-        // --------------------------------------------------------
-        // INFOGRAFIK
-        // --------------------------------------------------------
-
         if (
             !infografikAnimated &&
             isViewVisible(
@@ -2637,10 +2800,6 @@ class HomeFragment : Fragment() {
             )
         }
 
-        // --------------------------------------------------------
-        // BERITA
-        // --------------------------------------------------------
-
         if (
             !beritaAnimated &&
             isViewVisible(
@@ -2655,10 +2814,6 @@ class HomeFragment : Fragment() {
                 berita
             )
         }
-
-        // --------------------------------------------------------
-        // PUBLIKASI
-        // --------------------------------------------------------
 
         if (
             !publikasiAnimated &&
@@ -2688,9 +2843,6 @@ class HomeFragment : Fragment() {
 
         view.alpha = 0f
 
-        // Sebelumnya 120f.
-        // 60f terasa lebih natural dan tidak membuat
-        // section seperti "melompat" dari bawah.
         view.translationY = dpToPx(
             60
         ).toFloat()
@@ -2734,7 +2886,6 @@ class HomeFragment : Fragment() {
 
         card.alpha = 0f
 
-        // Gerakan lebih kecil supaya tidak terasa patah.
         card.translationY =
             -dpToPx(
                 45
@@ -2848,8 +2999,6 @@ class HomeFragment : Fragment() {
             viewTop +
                     view.height
 
-        // View dianggap mulai terlihat ketika
-        // minimal sebagian area masuk viewport.
         return viewTop < scrollBottom &&
                 viewBottom > scrollTop
     }
