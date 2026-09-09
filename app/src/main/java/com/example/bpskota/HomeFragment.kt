@@ -3,6 +3,7 @@ package com.example.bpskota
 import android.animation.ObjectAnimator
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -16,6 +17,9 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.*
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.example.bpskota.bps.model.*
 import com.example.bpskota.bps.repository.BpsRepository
 import com.google.gson.Gson
@@ -28,13 +32,20 @@ import kotlin.math.roundToInt
 
 class HomeFragment : Fragment() {
 
+    // ============================================================
+    // ANIMATION STATE
+    // ============================================================
+
     private var statistikAnimated = false
     private var infografikAnimated = false
     private var beritaAnimated = false
     private var publikasiAnimated = false
-    private var userHasScrolled = false
 
     private lateinit var repository: BpsRepository
+
+    // ============================================================
+    // STATISTIK CAROUSEL
+    // ============================================================
 
     private lateinit var statistikScrollView: HorizontalScrollView
     private lateinit var statistikIndicator: LinearLayout
@@ -81,6 +92,10 @@ class HomeFragment : Fragment() {
             }
         }
 
+    // ============================================================
+    // API CONFIGURATION
+    // ============================================================
+
     private val API_KEY =
         "008edaaae5d450b1913b31a2cef618c3"
 
@@ -109,6 +124,10 @@ class HomeFragment : Fragment() {
 
     private val TAHUN_MULAI = 2026
     private val TAHUN_MINIMUM = 2020
+
+    // ============================================================
+    // LIFECYCLE
+    // ============================================================
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -148,6 +167,10 @@ class HomeFragment : Fragment() {
         loadPublikasi(view)
     }
 
+    // ============================================================
+    // NAVIGATION
+    // ============================================================
+
     private fun setupNavigationListeners(
         view: View
     ) {
@@ -179,8 +202,7 @@ class HomeFragment : Fragment() {
                     MasterwilayahActivity::class.java
         )
 
-        menuMap.forEach {
-                (id, activityClass) ->
+        menuMap.forEach { (id, activityClass) ->
 
             view.findViewById<View>(id)
                 .setOnClickListener {
@@ -194,6 +216,10 @@ class HomeFragment : Fragment() {
                 }
         }
     }
+
+    // ============================================================
+    // MARQUEE
+    // ============================================================
 
     private fun activateMarquee(
         view: View
@@ -216,6 +242,10 @@ class HomeFragment : Fragment() {
                 .isSelected = true
         }
     }
+
+    // ============================================================
+    // SEE ALL
+    // ============================================================
 
     private fun setupSeeAllAction(
         view: View
@@ -252,6 +282,10 @@ class HomeFragment : Fragment() {
             homeActivity?.goToPage(4)
         }
     }
+
+    // ============================================================
+    // HORIZONTAL SCROLL
+    // ============================================================
 
     private fun setupHorizontalScroll(
         view: View
@@ -297,6 +331,10 @@ class HomeFragment : Fragment() {
             }
         }
     }
+
+    // ============================================================
+    // STATISTIK CAROUSEL
+    // ============================================================
 
     private fun setupStatistikCarousel(
         view: View
@@ -374,6 +412,10 @@ class HomeFragment : Fragment() {
             false
         }
     }
+
+    // ============================================================
+    // LOAD STATISTIK TERKINI
+    // ============================================================
 
     private fun loadStatistikTerkini(
         view: View
@@ -547,6 +589,10 @@ class HomeFragment : Fragment() {
         )
     }
 
+    // ============================================================
+    // PDRB
+    // ============================================================
+
     private fun loadPdrbTerkini(
         container: LinearLayout
     ) {
@@ -716,9 +762,6 @@ class HomeFragment : Fragment() {
         var nilaiTerpilih:
                 Double? = null
 
-        var keyTerpilih:
-                String? = null
-
         for (
         kodeTriwulan in urutanTriwulan
         ) {
@@ -761,9 +804,6 @@ class HomeFragment : Fragment() {
 
                     nilaiTerpilih =
                         nilai
-
-                    keyTerpilih =
-                        key
 
                     break
 
@@ -865,14 +905,13 @@ class HomeFragment : Fragment() {
             body.dataContent
                 ?: return
 
-        val vervar =
-            body.vervar?.firstOrNull {
+        body.vervar?.firstOrNull {
 
-                (it.value ?: it.valId)
-                    ?.toString() ==
-                        PDRB_VERVAR_ID.toString()
-            }
-                ?: return
+            (it.value ?: it.valId)
+                ?.toString() ==
+                    PDRB_VERVAR_ID.toString()
+
+        } ?: return
 
         val tahunData =
             body.tahun?.firstOrNull {
@@ -980,6 +1019,10 @@ class HomeFragment : Fragment() {
             }
         }
     }
+
+    // ============================================================
+    // IKG
+    // ============================================================
 
     private fun loadIkgTerkini(
         container: LinearLayout
@@ -1113,6 +1156,10 @@ class HomeFragment : Fragment() {
             }
         )
     }
+
+    // ============================================================
+    // HARGA
+    // ============================================================
 
     private fun loadHargaTerkini(
         container: LinearLayout
@@ -1277,6 +1324,10 @@ class HomeFragment : Fragment() {
         )
     }
 
+    // ============================================================
+    // TAMPILKAN STATISTIK
+    // ============================================================
+
     private fun tampilkanStatistikTerkini(
         container: LinearLayout,
         judul: String,
@@ -1414,6 +1465,10 @@ class HomeFragment : Fragment() {
         )
     }
 
+    // ============================================================
+    // STATISTIK CAROUSEL LAYOUT
+    // ============================================================
+
     private fun updateStatistikCarouselLayout() {
 
         if (
@@ -1433,14 +1488,18 @@ class HomeFragment : Fragment() {
             statistikScrollView.width
 
         if (screenWidth <= 0) {
+
             statistikScrollView.post {
                 updateStatistikCarouselLayout()
             }
+
             return
         }
 
         val duaCardWidth =
-            dpToPx(150 * 2 + 8)
+            dpToPx(
+                150 * 2 + 8
+            )
 
         val padding =
             (
@@ -1461,6 +1520,10 @@ class HomeFragment : Fragment() {
         setupStatistikIndicator()
 
         statistikScrollView.post {
+
+            if (!isAdded) {
+                return@post
+            }
 
             val maxPosition =
                 (
@@ -1492,6 +1555,10 @@ class HomeFragment : Fragment() {
             )
         }
     }
+
+    // ============================================================
+    // STATISTIK INDICATOR
+    // ============================================================
 
     private fun setupStatistikIndicator() {
 
@@ -1622,6 +1689,10 @@ class HomeFragment : Fragment() {
         return drawable
     }
 
+    // ============================================================
+    // SCROLL STATISTIK
+    // ============================================================
+
     private fun scrollToStatistik(
         position: Int,
         animated: Boolean
@@ -1650,23 +1721,28 @@ class HomeFragment : Fragment() {
 
         if (animated) {
 
-            val scrollView = view?.findViewById<HorizontalScrollView>(
-                R.id.statistikTerkiniScrollView
-            ) ?: return
+            val scrollView =
+                view?.findViewById<HorizontalScrollView>(
+                    R.id.statistikTerkiniScrollView
+                )
+                    ?: return
 
-            val animator = ObjectAnimator.ofInt(
-                scrollView,
-                "scrollX",
-                scrollView.scrollX,
-                targetX
-            )
+            val animator =
+                ObjectAnimator.ofInt(
+                    scrollView,
+                    "scrollX",
+                    scrollView.scrollX,
+                    targetX
+                )
 
-            animator.duration = 800L
-            animator.interpolator = DecelerateInterpolator()
-            animator.start()
+            animator.duration =
+                800L
 
-            animator.duration = 800L
-            animator.interpolator = DecelerateInterpolator()
+            animator.interpolator =
+                DecelerateInterpolator(
+                    1.5f
+                )
+
             animator.start()
 
         } else {
@@ -1679,6 +1755,10 @@ class HomeFragment : Fragment() {
 
         updateStatistikIndicator()
     }
+
+    // ============================================================
+    // ANIMATE STATISTIK CARDS BASED ON POSITION
+    // ============================================================
 
     private fun animateStatistikCards(
         scrollX: Int
@@ -1738,19 +1818,19 @@ class HomeFragment : Fragment() {
                 1f -
                         (
                                 normalized *
-                                        0.35f
+                                        0.30f
                                 )
 
             val scale =
                 1f -
                         (
                                 normalized *
-                                        0.08f
+                                        0.06f
                                 )
 
             card.alpha =
                 alpha.coerceIn(
-                    0.65f,
+                    0.70f,
                     1f
                 )
 
@@ -1762,6 +1842,10 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // ============================================================
+    // DP TO PX
+    // ============================================================
+
     private fun dpToPx(
         dp: Int
     ): Int {
@@ -1772,6 +1856,10 @@ class HomeFragment : Fragment() {
                 )
             .roundToInt()
     }
+
+    // ============================================================
+    // INFOGRAFIK
+    // ============================================================
 
     private fun loadInfographics(
         view: View
@@ -1858,15 +1946,61 @@ class HomeFragment : Fragment() {
                             }
                             .take(5)
 
-                    container.removeAllViews()
-
-                    limaTerbaru.forEach {
-
-                        tambahCardInfografik(
-                            container,
-                            it
-                        )
+                    if (!isAdded) {
+                        return
                     }
+
+                    requireActivity()
+                        .runOnUiThread {
+
+                            if (!isAdded) {
+                                return@runOnUiThread
+                            }
+
+                            container.removeAllViews()
+
+                            limaTerbaru.forEach {
+
+                                tambahCardInfografik(
+                                    container,
+                                    it
+                                )
+                            }
+
+                            val scrollView =
+                                view.findViewById<ScrollView>(
+                                    R.id.homeScrollView
+                                )
+
+                            val infografik =
+                                view.findViewById<View>(
+                                    R.id.sectionInfografik
+                                )
+
+                            val berita =
+                                view.findViewById<View>(
+                                    R.id.sectionBerita
+                                )
+
+                            val publikasi =
+                                view.findViewById<View>(
+                                    R.id.sectionPublikasi
+                                )
+
+                            scrollView.post {
+
+                                if (!isAdded) {
+                                    return@post
+                                }
+
+                                checkSectionAnimations(
+                                    scrollView,
+                                    infografik,
+                                    berita,
+                                    publikasi
+                                )
+                            }
+                        }
                 }
 
                 override fun onFailure(
@@ -1908,9 +2042,23 @@ class HomeFragment : Fragment() {
                 .toString()
                 .trim()
 
-        Glide.with(this)
-            .load(
-                infographic.img
+        val progressImage =
+            card.findViewById<ProgressBar>(
+                R.id.progressImage
+            )
+
+        val image =
+            card.findViewById<ImageView>(
+                R.id.imgHome
+            )
+
+        progressImage.visibility =
+            View.VISIBLE
+
+        Glide.with(image)
+            .load(infographic.img)
+            .diskCacheStrategy(
+                DiskCacheStrategy.ALL
             )
             .placeholder(
                 R.drawable.ic_bpslogo
@@ -1919,15 +2067,52 @@ class HomeFragment : Fragment() {
                 R.drawable.ic_bpslogo
             )
             .into(
-                card.findViewById(
-                    R.id.imgHome
-                )
+                object : CustomTarget<Drawable>() {
+
+                    override fun onResourceReady(
+                        resource: Drawable,
+                        transition: Transition<in Drawable>?
+                    ) {
+
+                        image.setImageDrawable(
+                            resource
+                        )
+
+                        progressImage.visibility =
+                            View.GONE
+                    }
+
+                    override fun onLoadFailed(
+                        errorDrawable: Drawable?
+                    ) {
+
+                        image.setImageResource(
+                            R.drawable.ic_bpslogo
+                        )
+
+                        progressImage.visibility =
+                            View.GONE
+                    }
+
+                    override fun onLoadCleared(
+                        placeholder: Drawable?
+                    ) {
+
+                        image.setImageDrawable(
+                            placeholder
+                        )
+                    }
+                }
             )
 
         container.addView(
             card
         )
     }
+
+    // ============================================================
+    // BERITA
+    // ============================================================
 
     private fun loadBerita(
         view: View
@@ -1985,10 +2170,48 @@ class HomeFragment : Fragment() {
                 requireActivity()
                     .runOnUiThread {
 
+                        if (!isAdded) {
+                            return@runOnUiThread
+                        }
+
                         tampilkanBerita(
                             view,
                             beritaTerbaru
                         )
+
+                        val scrollView =
+                            view.findViewById<ScrollView>(
+                                R.id.homeScrollView
+                            )
+
+                        val infografik =
+                            view.findViewById<View>(
+                                R.id.sectionInfografik
+                            )
+
+                        val beritaSection =
+                            view.findViewById<View>(
+                                R.id.sectionBerita
+                            )
+
+                        val publikasi =
+                            view.findViewById<View>(
+                                R.id.sectionPublikasi
+                            )
+
+                        scrollView.post {
+
+                            if (!isAdded) {
+                                return@post
+                            }
+
+                            checkSectionAnimations(
+                                scrollView,
+                                infografik,
+                                beritaSection,
+                                publikasi
+                            )
+                        }
                     }
 
             } catch (
@@ -2044,9 +2267,23 @@ class HomeFragment : Fragment() {
                     .toString()
                     .trim()
 
-            Glide.with(this)
-                .load(
-                    item.picture
+            val progressImage =
+                card.findViewById<ProgressBar>(
+                    R.id.progressImage
+                )
+
+            val image =
+                card.findViewById<ImageView>(
+                    R.id.imgHome
+                )
+
+            progressImage.visibility =
+                View.VISIBLE
+
+            Glide.with(image)
+                .load(item.picture)
+                .diskCacheStrategy(
+                    DiskCacheStrategy.ALL
                 )
                 .placeholder(
                     R.drawable.ic_bpslogo
@@ -2055,9 +2292,42 @@ class HomeFragment : Fragment() {
                     R.drawable.ic_bpslogo
                 )
                 .into(
-                    card.findViewById(
-                        R.id.imgHome
-                    )
+                    object : CustomTarget<Drawable>() {
+
+                        override fun onResourceReady(
+                            resource: Drawable,
+                            transition: Transition<in Drawable>?
+                        ) {
+
+                            image.setImageDrawable(
+                                resource
+                            )
+
+                            progressImage.visibility =
+                                View.GONE
+                        }
+
+                        override fun onLoadFailed(
+                            errorDrawable: Drawable?
+                        ) {
+
+                            image.setImageResource(
+                                R.drawable.ic_bpslogo
+                            )
+
+                            progressImage.visibility =
+                                View.GONE
+                        }
+
+                        override fun onLoadCleared(
+                            placeholder: Drawable?
+                        ) {
+
+                            image.setImageDrawable(
+                                placeholder
+                            )
+                        }
+                    }
                 )
 
             container.addView(
@@ -2065,6 +2335,10 @@ class HomeFragment : Fragment() {
             )
         }
     }
+
+    // ============================================================
+    // PUBLIKASI
+    // ============================================================
 
     private fun loadPublikasi(
         view: View
@@ -2101,6 +2375,10 @@ class HomeFragment : Fragment() {
                 requireActivity()
                     .runOnUiThread {
 
+                        if (!isAdded) {
+                            return@runOnUiThread
+                        }
+
                         container.removeAllViews()
 
                         publikasi.forEach {
@@ -2108,6 +2386,40 @@ class HomeFragment : Fragment() {
                             tambahCardPublikasi(
                                 container,
                                 it
+                            )
+                        }
+
+                        val scrollView =
+                            view.findViewById<ScrollView>(
+                                R.id.homeScrollView
+                            )
+
+                        val infografik =
+                            view.findViewById<View>(
+                                R.id.sectionInfografik
+                            )
+
+                        val berita =
+                            view.findViewById<View>(
+                                R.id.sectionBerita
+                            )
+
+                        val publikasiSection =
+                            view.findViewById<View>(
+                                R.id.sectionPublikasi
+                            )
+
+                        scrollView.post {
+
+                            if (!isAdded) {
+                                return@post
+                            }
+
+                            checkSectionAnimations(
+                                scrollView,
+                                infografik,
+                                berita,
+                                publikasiSection
                             )
                         }
                     }
@@ -2159,6 +2471,9 @@ class HomeFragment : Fragment() {
             .load(
                 publikasi.cover
             )
+            .diskCacheStrategy(
+                DiskCacheStrategy.ALL
+            )
             .placeholder(
                 R.drawable.ic_publikasi
             )
@@ -2181,6 +2496,10 @@ class HomeFragment : Fragment() {
             card
         )
     }
+
+    // ============================================================
+    // MAIN SCROLL ANIMATION
+    // ============================================================
 
     private fun setupScrollAnimation(
         view: View
@@ -2211,6 +2530,10 @@ class HomeFragment : Fragment() {
                 R.id.sectionPublikasi
             )
 
+        // --------------------------------------------------------
+        // SECTION YANG MUNCUL SAAT SCROLL
+        // --------------------------------------------------------
+
         prepareSection(
             berita
         )
@@ -2219,9 +2542,17 @@ class HomeFragment : Fragment() {
             publikasi
         )
 
+        // --------------------------------------------------------
+        // STATISTIK LANGSUNG MUNCUL
+        // --------------------------------------------------------
+
         animateStatistik(
             statistik
         )
+
+        // --------------------------------------------------------
+        // INFOGRAFIK LANGSUNG MUNCUL
+        // --------------------------------------------------------
 
         if (!infografikAnimated) {
 
@@ -2229,122 +2560,210 @@ class HomeFragment : Fragment() {
 
             animateFromBottom(
                 infografik,
-                delay = 0
+                delay = 0L
             )
         }
+
+        // --------------------------------------------------------
+        // CEK SETELAH LAYOUT SELESAI
+        // --------------------------------------------------------
+
+        scrollView.post {
+
+            if (!isAdded) {
+                return@post
+            }
+
+            checkSectionAnimations(
+                scrollView,
+                infografik,
+                berita,
+                publikasi
+            )
+        }
+
+        // --------------------------------------------------------
+        // CEK SETIAP SCROLL
+        // --------------------------------------------------------
 
         scrollView
             .viewTreeObserver
             .addOnScrollChangedListener {
 
-                if (
-                    scrollView.scrollY > 20
-                ) {
-
-                    userHasScrolled = true
-                }
-
-                if (
-                    !userHasScrolled
-                ) {
+                if (!isAdded) {
                     return@addOnScrollChangedListener
                 }
 
-                if (
-                    !infografikAnimated &&
-                    isViewVisible(
-                        infografik,
-                        scrollView
-                    )
-                ) {
-
-                    infografikAnimated = true
-
-                    animateFromBottom(
-                        infografik
-                    )
-                }
-
-                if (
-                    !beritaAnimated &&
-                    isViewVisible(
-                        berita,
-                        scrollView
-                    )
-                ) {
-
-                    beritaAnimated = true
-
-                    animateFromBottom(
-                        berita
-                    )
-                }
-
-                if (
-                    !publikasiAnimated &&
-                    isViewVisible(
-                        publikasi,
-                        scrollView
-                    )
-                ) {
-
-                    publikasiAnimated = true
-
-                    animateFromBottom(
-                        publikasi
-                    )
-                }
+                checkSectionAnimations(
+                    scrollView,
+                    infografik,
+                    berita,
+                    publikasi
+                )
             }
     }
+
+    // ============================================================
+    // CHECK SECTION ANIMATION
+    // ============================================================
+
+    private fun checkSectionAnimations(
+        scrollView: ScrollView,
+        infografik: View,
+        berita: View,
+        publikasi: View
+    ) {
+
+        if (!isAdded) {
+            return
+        }
+
+        // --------------------------------------------------------
+        // INFOGRAFIK
+        // --------------------------------------------------------
+
+        if (
+            !infografikAnimated &&
+            isViewVisible(
+                infografik,
+                scrollView
+            )
+        ) {
+
+            infografikAnimated = true
+
+            animateFromBottom(
+                infografik
+            )
+        }
+
+        // --------------------------------------------------------
+        // BERITA
+        // --------------------------------------------------------
+
+        if (
+            !beritaAnimated &&
+            isViewVisible(
+                berita,
+                scrollView
+            )
+        ) {
+
+            beritaAnimated = true
+
+            animateFromBottom(
+                berita
+            )
+        }
+
+        // --------------------------------------------------------
+        // PUBLIKASI
+        // --------------------------------------------------------
+
+        if (
+            !publikasiAnimated &&
+            isViewVisible(
+                publikasi,
+                scrollView
+            )
+        ) {
+
+            publikasiAnimated = true
+
+            animateFromBottom(
+                publikasi
+            )
+        }
+    }
+
+    // ============================================================
+    // PREPARE SECTION
+    // ============================================================
 
     private fun prepareSection(
         view: View
     ) {
 
+        view.animate().cancel()
+
         view.alpha = 0f
-        view.translationY = 120f
+
+        // Sebelumnya 120f.
+        // 60f terasa lebih natural dan tidak membuat
+        // section seperti "melompat" dari bawah.
+        view.translationY = dpToPx(
+            60
+        ).toFloat()
     }
+
+    // ============================================================
+    // SECTION ANIMATION
+    // ============================================================
 
     private fun animateFromBottom(
         view: View,
-        delay: Long = 0
+        delay: Long = 0L
     ) {
+
+        view.animate().cancel()
 
         view.animate()
             .alpha(1f)
             .translationY(0f)
-            .setDuration(700)
+            .setDuration(650L)
             .setStartDelay(delay)
             .setInterpolator(
-                DecelerateInterpolator(1.8f)
+                DecelerateInterpolator(
+                    1.5f
+                )
             )
+            .withLayer()
             .start()
     }
+
+    // ============================================================
+    // STATISTIK CARD ANIMATION
+    // ============================================================
 
     private fun animateCardIn(
         card: View,
         index: Int
     ) {
 
+        card.animate().cancel()
+
         card.alpha = 0f
-        card.translationY = -100f
-        card.scaleX = 0.90f
-        card.scaleY = 0.90f
+
+        // Gerakan lebih kecil supaya tidak terasa patah.
+        card.translationY =
+            -dpToPx(
+                45
+            ).toFloat()
+
+        card.scaleX = 0.96f
+        card.scaleY = 0.96f
 
         card.animate()
             .alpha(1f)
             .translationY(0f)
             .scaleX(1f)
             .scaleY(1f)
-            .setDuration(550)
+            .setDuration(500L)
             .setStartDelay(
-                index * 120L
+                index.coerceAtMost(6) * 70L
             )
             .setInterpolator(
-                DecelerateInterpolator(1.8f)
+                DecelerateInterpolator(
+                    1.5f
+                )
             )
+            .withLayer()
             .start()
     }
+
+    // ============================================================
+    // STATISTIK SECTION ANIMATION
+    // ============================================================
 
     private fun animateStatistik(
         section: View
@@ -2385,10 +2804,21 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // ============================================================
+    // CHECK VIEW VISIBILITY
+    // ============================================================
+
     private fun isViewVisible(
         view: View,
         scrollView: ScrollView
     ): Boolean {
+
+        if (
+            view.height <= 0 ||
+            scrollView.height <= 0
+        ) {
+            return false
+        }
 
         val location =
             IntArray(2)
@@ -2404,20 +2834,29 @@ class HomeFragment : Fragment() {
             scrollLocation
         )
 
-        return location[1] <
-                (
-                        scrollLocation[1] +
-                                (
-                                        scrollView.height *
-                                                0.75f
-                                        )
-                        ) &&
-                (
-                        location[1] +
-                                view.height
-                        ) >
-                scrollLocation[1]
+        val scrollTop =
+            scrollLocation[1]
+
+        val scrollBottom =
+            scrollTop +
+                    scrollView.height
+
+        val viewTop =
+            location[1]
+
+        val viewBottom =
+            viewTop +
+                    view.height
+
+        // View dianggap mulai terlihat ketika
+        // minimal sebagian area masuk viewport.
+        return viewTop < scrollBottom &&
+                viewBottom > scrollTop
     }
+
+    // ============================================================
+    // DESTROY VIEW
+    // ============================================================
 
     override fun onDestroyView() {
 
@@ -2431,7 +2870,6 @@ class HomeFragment : Fragment() {
         infografikAnimated = false
         beritaAnimated = false
         publikasiAnimated = false
-        userHasScrolled = false
 
         statistikCurrentPosition = 0
         statistikCardCount = 0

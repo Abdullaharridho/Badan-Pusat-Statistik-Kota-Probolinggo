@@ -4,12 +4,14 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.airbnb.lottie.LottieAnimationView
 import com.example.bpskota.bps.model.EkonomiListResponse
 import com.example.bpskota.bps.model.EkonomiTable
 import com.example.bpskota.bps.repository.BpsRepository
@@ -59,6 +61,22 @@ class EkonomiActivity : AppCompatActivity() {
                 R.id.btnFilter
             )
 
+        val lottieLoading =
+            findViewById<LottieAnimationView>(
+                R.id.lottieLoading
+            )
+
+        // ============================================================
+        // LOAD ANIMASI LOTTIE
+        // ============================================================
+
+        lottieLoading.setAnimation(
+            "Loading_Animation.json"
+        )
+
+        lottieLoading.repeatCount =
+            android.view.animation.Animation.INFINITE
+
         btnBack.setOnClickListener {
             finish()
         }
@@ -70,7 +88,8 @@ class EkonomiActivity : AppCompatActivity() {
         }
 
         loadEkonomiTables(
-            cardContainer
+            cardContainer,
+            lottieLoading
         )
     }
 
@@ -79,10 +98,20 @@ class EkonomiActivity : AppCompatActivity() {
     // ============================================================
 
     private fun loadEkonomiTables(
-        cardContainer: LinearLayout
+        cardContainer: LinearLayout,
+        lottieLoading: LottieAnimationView
     ) {
 
         cardContainer.removeAllViews()
+
+        // ============================================================
+        // MULAI LOADING
+        // ============================================================
+
+        lottieLoading.visibility =
+            View.VISIBLE
+
+        lottieLoading.playAnimation()
 
         Log.d(
             "EKONOMI",
@@ -108,6 +137,15 @@ class EkonomiActivity : AppCompatActivity() {
                     call: Call<EkonomiListResponse>,
                     response: Response<EkonomiListResponse>
                 ) {
+
+                    // ====================================================
+                    // REQUEST SELESAI
+                    // ====================================================
+
+                    lottieLoading.cancelAnimation()
+
+                    lottieLoading.visibility =
+                        View.GONE
 
                     if (!response.isSuccessful) {
 
@@ -343,6 +381,15 @@ class EkonomiActivity : AppCompatActivity() {
                     call: Call<EkonomiListResponse>,
                     t: Throwable
                 ) {
+
+                    // ====================================================
+                    // REQUEST GAGAL
+                    // ====================================================
+
+                    lottieLoading.cancelAnimation()
+
+                    lottieLoading.visibility =
+                        View.GONE
 
                     Log.e(
                         "EKONOMI",
@@ -625,10 +672,6 @@ class EkonomiActivity : AppCompatActivity() {
     // CARD
     // ============================================================
 
-    // ============================================================
-// CARD
-// ============================================================
-
     private fun addTableCard(
         container: LinearLayout,
         table: EkonomiTable,
@@ -763,5 +806,5 @@ class EkonomiActivity : AppCompatActivity() {
         container.addView(
             card
         )
-        }
+    }
 }

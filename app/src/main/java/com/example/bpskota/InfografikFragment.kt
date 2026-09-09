@@ -1,5 +1,7 @@
 package com.example.bpskota
 
+import android.graphics.drawable.Drawable
+import com.bumptech.glide.request.transition.Transition
 import android.os.Bundle
 import android.text.Html
 import android.text.Editable
@@ -7,13 +9,11 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
 import com.example.bpskota.bps.model.Infografik
 import com.example.bpskota.bps.model.InfographicResponse
 import com.example.bpskota.bps.repository.BpsRepository
@@ -364,6 +364,10 @@ class InfografikFragment : Fragment() {
                     card.findViewById<ImageView>(
                         R.id.imgHome
                     )
+                val progressImage =
+                    card.findViewById<ProgressBar>(
+                        R.id.progressImage
+                    )
 
                 val title =
                     card.findViewById<TextView>(
@@ -384,16 +388,39 @@ class InfografikFragment : Fragment() {
                         infographic.desc ?: ""
                     )
 
+
+
+                progressImage.visibility = View.VISIBLE
+
                 Glide.with(this)
                     .load(infographic.img)
-                    .placeholder(
-                        R.drawable.ic_bpslogo
-                    )
-                    .error(
-                        R.drawable.ic_bpslogo
-                    )
-                    .into(image)
+                    .placeholder(R.drawable.ic_bpslogo)
+                    .error(R.drawable.ic_bpslogo)
+                    .into(
+                        object : CustomTarget<Drawable>() {
 
+                            override fun onResourceReady(
+                                resource: Drawable,
+                                transition: Transition<in Drawable>?
+                            ) {
+                                image.setImageDrawable(resource)
+                                progressImage.visibility = View.GONE
+                            }
+
+                            override fun onLoadFailed(
+                                errorDrawable: Drawable?
+                            ) {
+                                image.setImageResource(R.drawable.ic_bpslogo)
+                                progressImage.visibility = View.GONE
+                            }
+
+                            override fun onLoadCleared(
+                                placeholder: Drawable?
+                            ) {
+                                image.setImageDrawable(placeholder)
+                            }
+                        }
+                    )
                 card.setOnClickListener {
                     tampilkanDetailInfografik(infographic)
                 }

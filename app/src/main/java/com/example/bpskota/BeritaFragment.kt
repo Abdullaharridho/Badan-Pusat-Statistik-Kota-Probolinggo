@@ -890,6 +890,10 @@ class BeritaFragment : Fragment() {
                     card.findViewById<ImageView>(
                         R.id.imgHome
                     )
+                val progressImage =
+                    card.findViewById<android.widget.ProgressBar>(
+                        R.id.progressImage
+                    )
 
                 val title =
                     card.findViewById<TextView>(
@@ -913,15 +917,18 @@ class BeritaFragment : Fragment() {
                         .toString()
                         .trim()
 
+                progressImage.visibility = View.VISIBLE
+
                 Glide.with(this@BeritaFragment)
                     .load(item.picture)
                     .diskCacheStrategy(
                         com.bumptech.glide.load.engine.DiskCacheStrategy.ALL
                     )
-                    .thumbnail(0.25f)
                     .placeholder(R.drawable.ic_bpslogo)
                     .error(R.drawable.ic_bpslogo)
                     .into(image)
+
+                progressImage.visibility = View.GONE
                 card.setOnClickListener {
 
                     Log.d(

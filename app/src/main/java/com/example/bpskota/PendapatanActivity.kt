@@ -7,10 +7,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.airbnb.lottie.LottieAnimationView
 import com.example.bpskota.bps.model.KonsumsiDetailResponse
 import com.example.bpskota.bps.model.KonsumsiResponse
 import com.example.bpskota.bps.model.KonsumsiVariable
@@ -64,7 +64,7 @@ class PendapatanActivity : AppCompatActivity() {
 
     private lateinit var cardContainer: LinearLayout
 
-    private lateinit var progressLoading: ProgressBar
+    private lateinit var progressLoading: LottieAnimationView
 
     private lateinit var btnFilter: ImageView
 
@@ -99,6 +99,14 @@ class PendapatanActivity : AppCompatActivity() {
             findViewById(
                 R.id.progressLoading
             )
+
+        // ========================================================
+        // LOAD LOTTIE ANIMATION
+        // ========================================================
+
+        progressLoading.setAnimation(
+            "Loading_Animation.json"
+        )
 
         btnBack.setOnClickListener {
 
@@ -590,7 +598,8 @@ class PendapatanActivity : AppCompatActivity() {
                             )
                         }
                     }
-                })
+                }
+            )
         }
     }
 
@@ -1025,23 +1034,26 @@ class PendapatanActivity : AppCompatActivity() {
     }
 
     // ============================================================
-    // LOADING
+    // LOADING - LOTTIE
     // ============================================================
 
     private fun tampilkanLoading(
         tampil: Boolean
     ) {
 
-        progressLoading.visibility =
-            if (
-                tampil
-            ) {
+        if (tampil) {
 
+            progressLoading.visibility =
                 View.VISIBLE
 
-            } else {
+            progressLoading.playAnimation()
 
+        } else {
+
+            progressLoading.cancelAnimation()
+
+            progressLoading.visibility =
                 View.GONE
-            }
+        }
     }
 }

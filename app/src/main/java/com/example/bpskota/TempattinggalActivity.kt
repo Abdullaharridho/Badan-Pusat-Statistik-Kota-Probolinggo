@@ -6,13 +6,14 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.airbnb.lottie.LottieAnimationView
 import com.example.bpskota.bps.model.TempatTinggalResponse
 import com.example.bpskota.bps.model.TempatTinggalVariable
 import com.example.bpskota.bps.repository.BpsRepository
@@ -54,7 +55,7 @@ class TempattinggalActivity : AppCompatActivity() {
     }
 
     private lateinit var cardContainer: LinearLayout
-    private lateinit var progressLoading: ProgressBar
+    private lateinit var progressLoading: LottieAnimationView
     private lateinit var btnFilter: ImageView
     private lateinit var tvHeaderTitle: TextView
 
@@ -128,6 +129,14 @@ class TempattinggalActivity : AppCompatActivity() {
                 R.id.tvHeaderTitle
             )
 
+        // ========================================================
+        // LOTTIE LOADING
+        // ========================================================
+
+        progressLoading.setAnimation(
+            "Loading_Animation.json"
+        )
+
         btnBack.setOnClickListener {
 
             finish()
@@ -154,8 +163,14 @@ class TempattinggalActivity : AppCompatActivity() {
 
         cardContainer.removeAllViews()
 
+        // ========================================================
+        // MULAI LOTTIE
+        // ========================================================
+
         progressLoading.visibility =
-            ProgressBar.VISIBLE
+            View.VISIBLE
+
+        progressLoading.playAnimation()
 
         Log.d(
             TAG,
@@ -363,8 +378,14 @@ class TempattinggalActivity : AppCompatActivity() {
 
         runOnUiThread {
 
+            // ====================================================
+            // STOP LOTTIE
+            // ====================================================
+
+            progressLoading.cancelAnimation()
+
             progressLoading.visibility =
-                ProgressBar.GONE
+                View.GONE
 
             semuaVariable.clear()
 
@@ -661,18 +682,12 @@ class TempattinggalActivity : AppCompatActivity() {
 
         cardContainer.removeAllViews()
 
-        progressLoading.visibility =
-            ProgressBar.VISIBLE
-
         // ========================================================
-        // TIDAK REQUEST KE SEMUA VARIABLE
+        // TIDAK ADA REQUEST BARU
         //
         // Card tetap ditampilkan.
         // Ketersediaan data dicek ketika detail dibuka.
         // ========================================================
-
-        progressLoading.visibility =
-            ProgressBar.GONE
 
         tampilkanHasil()
     }

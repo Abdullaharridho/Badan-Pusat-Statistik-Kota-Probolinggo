@@ -1556,9 +1556,7 @@ class KependudukanActivity : AppCompatActivity() {
                 R.id.tvJudul
             )
 
-        tvKode.text =
-            variabel.varId?.toString()
-                ?: "-"
+        tvKode.visibility = View.GONE
 
         tvTahun.text =
             tahunTerpilih?.toString()

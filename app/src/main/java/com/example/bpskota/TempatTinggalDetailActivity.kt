@@ -19,10 +19,10 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -30,6 +30,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.airbnb.lottie.LottieAnimationView
 import com.example.bpskota.bps.model.TempatTinggalDataResponse
 import com.example.bpskota.bps.repository.BpsRepository
 import retrofit2.Call
@@ -44,9 +45,11 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
 
     companion object {
 
-        private const val TAG = "TEMPAT_TINGGAL_DETAIL"
+        private const val TAG =
+            "TEMPAT_TINGGAL_DETAIL"
 
-        private const val DOMAIN = "3574"
+        private const val DOMAIN =
+            "3574"
 
         private const val API_KEY =
             "008edaaae5d450b1913b31a2cef618c3"
@@ -63,9 +66,11 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
         private const val CHANNEL_ID =
             "bps_tempat_tinggal_download_channel"
 
-        private const val NOTIFICATION_ID = 3001
+        private const val NOTIFICATION_ID =
+            3001
 
-        private const val REQUEST_NOTIFICATION_PERMISSION = 3002
+        private const val REQUEST_NOTIFICATION_PERMISSION =
+            3002
     }
 
     private lateinit var tvDetailJudul: TextView
@@ -76,18 +81,29 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
     private lateinit var tvDetailWilayah: TextView
     private lateinit var tvDetailSumber: TextView
     private lateinit var tvDetailData: LinearLayout
-    private lateinit var progressLoading: ProgressBar
 
-    private val repository = BpsRepository()
+    private lateinit var progressLoading: LottieAnimationView
 
-    private var varId = -1
+    private val repository =
+        BpsRepository()
 
-    private var tahunTerpilih = 2025
+    private var varId =
+        -1
 
-    private var detailData: TempatTinggalDataResponse? = null
+    private var tahunTerpilih =
+        2025
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    private var detailData:
+            TempatTinggalDataResponse? =
+        null
+
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
+
+        super.onCreate(
+            savedInstanceState
+        )
 
         setContentView(
             R.layout.activity_tempat_tinggal_detail
@@ -100,6 +116,7 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
         ambilIntent()
 
         if (varId <= 0) {
+
             Toast.makeText(
                 this,
                 "ID variabel tidak ditemukan",
@@ -116,31 +133,53 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
     private fun initView() {
 
         tvDetailJudul =
-            findViewById(R.id.tvDetailJudul)
+            findViewById(
+                R.id.tvDetailJudul
+            )
 
         tvDetailTahun =
-            findViewById(R.id.tvDetailTahun)
+            findViewById(
+                R.id.tvDetailTahun
+            )
 
         tvDetailKode =
-            findViewById(R.id.tvDetailKode)
+            findViewById(
+                R.id.tvDetailKode
+            )
 
         tvDetailBab =
-            findViewById(R.id.tvDetailBab)
+            findViewById(
+                R.id.tvDetailBab
+            )
 
         tvDetailSubject =
-            findViewById(R.id.tvDetailSubject)
+            findViewById(
+                R.id.tvDetailSubject
+            )
 
         tvDetailWilayah =
-            findViewById(R.id.tvDetailWilayah)
+            findViewById(
+                R.id.tvDetailWilayah
+            )
 
         tvDetailSumber =
-            findViewById(R.id.tvDetailSumber)
+            findViewById(
+                R.id.tvDetailSumber
+            )
 
         tvDetailData =
-            findViewById(R.id.tvDetailData)
+            findViewById(
+                R.id.tvDetailData
+            )
 
         progressLoading =
-            findViewById(R.id.progressLoading)
+            findViewById(
+                R.id.progressLoading
+            )
+
+        progressLoading.setAnimation(
+            "Loading_Animation.json"
+        )
     }
 
     private fun ambilIntent() {
@@ -185,13 +224,18 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
 
         Log.d(
             TAG,
-            "KODE TAHUN BPS = ${kodeTahunBps(tahunTerpilih)}"
+            "KODE TAHUN BPS = ${
+                kodeTahunBps(
+                    tahunTerpilih
+                )
+            }"
         )
     }
 
     private fun kodeTahunBps(
         tahun: Int
     ): Int {
+
         return tahun - 1900
     }
 
@@ -200,12 +244,14 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
         findViewById<ImageView>(
             R.id.btnBack
         ).setOnClickListener {
+
             finish()
         }
 
         findViewById<ImageView>(
             R.id.btnDownload
         ).setOnClickListener {
+
             tampilkanDialogDownload()
         }
     }
@@ -213,14 +259,22 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
     private fun tampilkanDialogDownload() {
 
         AlertDialog.Builder(this)
-            .setTitle("Download PDF")
+            .setTitle(
+                "Download PDF"
+            )
             .setMessage(
                 "Apakah Anda ingin mengunduh data statistik ini dalam bentuk PDF?"
             )
-            .setNegativeButton("Tidak") { dialog, _ ->
+            .setNegativeButton(
+                "Tidak"
+            ) { dialog, _ ->
+
                 dialog.dismiss()
             }
-            .setPositiveButton("Ya") { _, _ ->
+            .setPositiveButton(
+                "Ya"
+            ) { _, _ ->
+
                 downloadPdf()
             }
             .show()
@@ -230,6 +284,8 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
 
         progressLoading.visibility =
             View.VISIBLE
+
+        progressLoading.playAnimation()
 
         tvDetailData.removeAllViews()
 
@@ -252,8 +308,7 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                     response: Response<TempatTinggalDataResponse>
                 ) {
 
-                    progressLoading.visibility =
-                        View.GONE
+                    stopLoading()
 
                     Log.d(
                         TAG,
@@ -323,7 +378,9 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
 
                     if (
                         body.status
-                            ?.uppercase(Locale.ROOT) != "OK"
+                            ?.uppercase(
+                                Locale.ROOT
+                            ) != "OK"
                     ) {
 
                         tampilkanPesan(
@@ -335,7 +392,9 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
 
                     if (
                         body.dataAvailability
-                            ?.lowercase(Locale.ROOT) != "available"
+                            ?.lowercase(
+                                Locale.ROOT
+                            ) != "available"
                     ) {
 
                         tampilkanPesan(
@@ -356,9 +415,12 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                         return
                     }
 
-                    detailData = body
+                    detailData =
+                        body
 
-                    tampilkanDetail(body)
+                    tampilkanDetail(
+                        body
+                    )
                 }
 
                 override fun onFailure(
@@ -366,8 +428,7 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                     t: Throwable
                 ) {
 
-                    progressLoading.visibility =
-                        View.GONE
+                    stopLoading()
 
                     Log.e(
                         TAG,
@@ -381,6 +442,19 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 }
             }
         )
+    }
+
+    private fun stopLoading() {
+
+        if (
+            ::progressLoading.isInitialized
+        ) {
+
+            progressLoading.cancelAnimation()
+
+            progressLoading.visibility =
+                View.GONE
+        }
     }
 
     private fun tampilkanDetail(
@@ -398,7 +472,9 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 variable.label
                     ?: tvDetailJudul.text
 
-            if (!variable.unit.isNullOrBlank()) {
+            if (
+                !variable.unit.isNullOrBlank()
+            ) {
 
                 tvDetailData.addView(
                     buatInfoUnit(
@@ -411,7 +487,9 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
         tvDetailTahun.text =
             tahunTerpilih.toString()
 
-        if (body.vervar.isNullOrEmpty()) {
+        if (
+            body.vervar.isNullOrEmpty()
+        ) {
 
             tampilkanPesan(
                 "Data wilayah tidak tersedia"
@@ -420,7 +498,9 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
             return
         }
 
-        if (body.dataContent.isNullOrEmpty()) {
+        if (
+            body.dataContent.isNullOrEmpty()
+        ) {
 
             tampilkanPesan(
                 "Data statistik tidak tersedia untuk tahun $tahunTerpilih"
@@ -435,7 +515,9 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
             )
         )
 
-        tampilkanData(body)
+        tampilkanData(
+            body
+        )
     }
 
     private fun tampilkanData(
@@ -446,7 +528,8 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
             body.variable?.firstOrNull()
 
         val dataContent =
-            body.dataContent ?: return
+            body.dataContent
+                ?: return
 
         val variableVal =
             variable?.value
@@ -471,15 +554,20 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 ?.value
                 ?: 0
 
-        var jumlahDitampilkan = 0
+        var jumlahDitampilkan =
+            0
 
-        for (item in body.vervar.orEmpty()) {
+        for (
+        item in body.vervar.orEmpty()
+        ) {
 
             val vervarVal =
-                item.value ?: continue
+                item.value
+                    ?: continue
 
             val label =
-                item.label ?: "-"
+                item.label
+                    ?: "-"
 
             val key =
                 "${vervarVal}${variableVal}0${tahunVal}${turTahunVal}"
@@ -494,16 +582,20 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
 
             if (nilai != null) {
 
-                tambahBarisData(
+                tambahCardStatistik(
                     label = label,
-                    nilai = formatNilai(nilai)
+                    nilai = formatNilai(
+                        nilai
+                    )
                 )
 
                 jumlahDitampilkan++
             }
         }
 
-        if (jumlahDitampilkan == 0) {
+        if (
+            jumlahDitampilkan == 0
+        ) {
 
             tampilkanPesan(
                 "Data statistik tidak tersedia untuk tahun $tahunTerpilih"
@@ -511,53 +603,32 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
         }
     }
 
-    private fun tambahBarisData(
+    private fun tambahCardStatistik(
         label: String,
         nilai: String
     ) {
 
-        val container =
-            LinearLayout(this)
+        val card =
+            LayoutInflater
+                .from(this)
+                .inflate(
+                    R.layout.card_statistik,
+                    tvDetailData,
+                    false
+                )
 
-        container.orientation =
-            LinearLayout.VERTICAL
-
-        container.setPadding(
-            dpToPx(16),
-            dpToPx(14),
-            dpToPx(16),
-            dpToPx(14)
-        )
-
-        container.setBackgroundColor(
-            Color.WHITE
-        )
-
-        container.layoutParams =
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin =
-                    dpToPx(10)
-            }
-
-        val tvLabel =
-            TextView(this)
-
-        tvLabel.text =
-            label
-
-        tvLabel.textSize =
-            14f
-
-        tvLabel.setTextColor(
-            Color.rgb(
-                75,
-                85,
-                99
+        val tvNamaWilayah =
+            card.findViewById<TextView>(
+                R.id.tvNamaWilayah
             )
-        )
+
+        val containerVariable =
+            card.findViewById<LinearLayout>(
+                R.id.containerVariable
+            )
+
+        tvNamaWilayah.text =
+            label
 
         val tvNilai =
             TextView(this)
@@ -583,15 +654,18 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
 
         tvNilai.setPadding(
             0,
-            dpToPx(5),
+            dpToPx(4),
             0,
             0
         )
 
-        container.addView(tvLabel)
-        container.addView(tvNilai)
+        containerVariable.addView(
+            tvNilai
+        )
 
-        tvDetailData.addView(container)
+        tvDetailData.addView(
+            card
+        )
     }
 
     private fun buatInfoUnit(
@@ -623,6 +697,7 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
+
                 bottomMargin =
                     dpToPx(16)
             }
@@ -676,8 +751,13 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
         value.gravity =
             Gravity.END
 
-        container.addView(label)
-        container.addView(value)
+        container.addView(
+            label
+        )
+
+        container.addView(
+            value
+        )
 
         return container
     }
@@ -722,18 +802,26 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
         value: Double
     ): String {
 
-        return if (value % 1.0 == 0.0) {
+        return if (
+            value % 1.0 == 0.0
+        ) {
 
             NumberFormat
                 .getNumberInstance(
-                    Locale("id", "ID")
+                    Locale(
+                        "id",
+                        "ID"
+                    )
                 )
                 .format(value)
 
         } else {
 
             String.format(
-                Locale("id", "ID"),
+                Locale(
+                    "id",
+                    "ID"
+                ),
                 "%.2f",
                 value
             )
@@ -769,7 +857,9 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
             dpToPx(30)
         )
 
-        tvDetailData.addView(text)
+        tvDetailData.addView(
+            text
+        )
     }
 
     private fun downloadPdf() {
@@ -788,7 +878,9 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
             return
         }
 
-        if (body.dataContent.isNullOrEmpty()) {
+        if (
+            body.dataContent.isNullOrEmpty()
+        ) {
 
             Toast.makeText(
                 this,
@@ -807,11 +899,15 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
             val judul =
                 variable?.label
                     ?.replace(
-                        Regex("[^a-zA-Z0-9\\s]"),
+                        Regex(
+                            "[^a-zA-Z0-9\\s]"
+                        ),
                         ""
                     )
                     ?.replace(
-                        Regex("\\s+"),
+                        Regex(
+                            "\\s+"
+                        ),
                         "_"
                     )
                     ?.take(60)
@@ -823,7 +919,8 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
             val pdfDocument =
                 PdfDocument()
 
-            var pageNumber = 1
+            var pageNumber =
+                1
 
             var page =
                 createPdfPage(
@@ -840,14 +937,17 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
             val pageHeight =
                 page.info.pageHeight
 
-            val margin = 40f
+            val margin =
+                40f
 
-            var y = 50f
+            var y =
+                50f
 
             val titlePaint =
                 Paint().apply {
 
-                    textSize = 18f
+                    textSize =
+                        18f
 
                     typeface =
                         Typeface.create(
@@ -855,13 +955,15 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                             Typeface.BOLD
                         )
 
-                    isAntiAlias = true
+                    isAntiAlias =
+                        true
                 }
 
             val headerPaint =
                 Paint().apply {
 
-                    textSize = 11f
+                    textSize =
+                        11f
 
                     typeface =
                         Typeface.create(
@@ -869,29 +971,35 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                             Typeface.BOLD
                         )
 
-                    isAntiAlias = true
+                    isAntiAlias =
+                        true
                 }
 
             val normalPaint =
                 Paint().apply {
 
-                    textSize = 10f
+                    textSize =
+                        10f
 
-                    isAntiAlias = true
+                    isAntiAlias =
+                        true
                 }
 
             val labelPaint =
                 Paint().apply {
 
-                    textSize = 10f
+                    textSize =
+                        10f
 
-                    isAntiAlias = true
+                    isAntiAlias =
+                        true
                 }
 
             val valuePaint =
                 Paint().apply {
 
-                    textSize = 10f
+                    textSize =
+                        10f
 
                     typeface =
                         Typeface.create(
@@ -899,7 +1007,8 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                             Typeface.BOLD
                         )
 
-                    isAntiAlias = true
+                    isAntiAlias =
+                        true
                 }
 
             canvas.drawText(
@@ -909,7 +1018,8 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 titlePaint
             )
 
-            y += 28f
+            y +=
+                28f
 
             canvas.drawText(
                 variable?.label
@@ -919,7 +1029,8 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 headerPaint
             )
 
-            y += 20f
+            y +=
+                20f
 
             canvas.drawText(
                 "Tahun: $tahunTerpilih",
@@ -928,7 +1039,8 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 normalPaint
             )
 
-            y += 16f
+            y +=
+                16f
 
             canvas.drawText(
                 "Subject: ${body.subject ?: "-"}",
@@ -937,9 +1049,12 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 normalPaint
             )
 
-            y += 16f
+            y +=
+                16f
 
-            if (!variable?.unit.isNullOrBlank()) {
+            if (
+                !variable?.unit.isNullOrBlank()
+            ) {
 
                 canvas.drawText(
                     "Satuan: ${variable?.unit}",
@@ -948,7 +1063,8 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                     normalPaint
                 )
 
-                y += 16f
+                y +=
+                    16f
             }
 
             canvas.drawText(
@@ -958,7 +1074,8 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 normalPaint
             )
 
-            y += 28f
+            y +=
+                28f
 
             canvas.drawLine(
                 margin,
@@ -968,14 +1085,18 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 normalPaint
             )
 
-            y += 25f
+            y +=
+                25f
 
             val variableVal =
                 variable?.value
 
             if (variableVal == null) {
 
-                pdfDocument.finishPage(page)
+                pdfDocument.finishPage(
+                    page
+                )
+
                 pdfDocument.close()
 
                 Toast.makeText(
@@ -999,17 +1120,23 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                     ?: 0
 
             val dataContent =
-                body.dataContent ?: emptyMap()
+                body.dataContent
+                    ?: emptyMap()
 
-            var jumlahData = 0
+            var jumlahData =
+                0
 
-            for (item in body.vervar.orEmpty()) {
+            for (
+            item in body.vervar.orEmpty()
+            ) {
 
                 val vervarVal =
-                    item.value ?: continue
+                    item.value
+                        ?: continue
 
                 val label =
-                    item.label ?: "-"
+                    item.label
+                        ?: "-"
 
                 val key =
                     "${vervarVal}${variableVal}0${tahunVal}${turTahunVal}"
@@ -1026,9 +1153,14 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                     continue
                 }
 
-                if (y > pageHeight - 70f) {
+                if (
+                    y >
+                    pageHeight - 70f
+                ) {
 
-                    pdfDocument.finishPage(page)
+                    pdfDocument.finishPage(
+                        page
+                    )
 
                     pageNumber++
 
@@ -1041,7 +1173,8 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                     canvas =
                         page.canvas
 
-                    y = 50f
+                    y =
+                        50f
                 }
 
                 canvas.drawText(
@@ -1052,18 +1185,25 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 )
 
                 canvas.drawText(
-                    formatNilai(nilai),
-                    pageWidth - margin - 100f,
+                    formatNilai(
+                        nilai
+                    ),
+                    pageWidth -
+                            margin -
+                            100f,
                     y,
                     valuePaint
                 )
 
-                y += 20f
+                y +=
+                    20f
 
                 jumlahData++
             }
 
-            if (jumlahData == 0) {
+            if (
+                jumlahData == 0
+            ) {
 
                 canvas.drawText(
                     "Data statistik tidak tersedia",
@@ -1073,7 +1213,9 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 )
             }
 
-            pdfDocument.finishPage(page)
+            pdfDocument.finishPage(
+                page
+            )
 
             val uri =
                 savePdfToDownloads(
@@ -1138,7 +1280,9 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 pageNumber
             ).create()
 
-        return document.startPage(pageInfo)
+        return document.startPage(
+            pageInfo
+        )
     }
 
     private fun savePdfToDownloads(
@@ -1188,10 +1332,14 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
 
             try {
 
-                resolver.openOutputStream(uri).use {
+                resolver.openOutputStream(
+                    uri
+                ).use {
                         outputStream ->
 
-                    if (outputStream == null) {
+                    if (
+                        outputStream == null
+                    ) {
 
                         throw Exception(
                             "OutputStream tidak tersedia"
@@ -1245,6 +1393,7 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
             )
 
         if (!folder.exists()) {
+
             folder.mkdirs()
         }
 
@@ -1254,7 +1403,9 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 namaFile
             )
 
-        FileOutputStream(file).use {
+        FileOutputStream(
+            file
+        ).use {
                 outputStream ->
 
             pdfDocument.writeTo(
@@ -1262,7 +1413,9 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
             )
         }
 
-        return Uri.fromFile(file)
+        return Uri.fromFile(
+            file
+        )
     }
 
     private fun createNotificationChannel() {
@@ -1398,7 +1551,9 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 .setContentIntent(
                     pendingIntent
                 )
-                .setAutoCancel(true)
+                .setAutoCancel(
+                    true
+                )
                 .setPriority(
                     NotificationCompat.PRIORITY_DEFAULT
                 )
@@ -1427,13 +1582,7 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
 
     override fun onDestroy() {
 
-        if (
-            ::progressLoading.isInitialized
-        ) {
-
-            progressLoading.visibility =
-                View.GONE
-        }
+        stopLoading()
 
         super.onDestroy()
     }

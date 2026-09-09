@@ -161,17 +161,7 @@
             </LinearLayout>
 
 
-            <!--
-                CONTAINER CARD
 
-                Card dari API akan dimasukkan
-                secara dinamis oleh InfografikFragment.
-
-                Layout:
-                [ CARD ][ CARD ]
-                [ CARD ][ CARD ]
-                [ CARD ][ CARD ]
-            -->
 
             <LinearLayout
                 android:id="@+id/infografikContainer"
@@ -179,6 +169,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:orientation="vertical" />
+
 
         </LinearLayout>
 

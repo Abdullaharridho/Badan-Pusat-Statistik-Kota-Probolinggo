@@ -29,6 +29,7 @@ import com.airbnb.lottie.LottieAnimationView
 import com.airbnb.lottie.LottieDrawable
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
@@ -702,6 +703,7 @@ class PublikasiFragment : Fragment() {
             .placeholder(
                 R.drawable.ic_bpslogo
             )
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
             .error(
                 R.drawable.ic_bpslogo
             )

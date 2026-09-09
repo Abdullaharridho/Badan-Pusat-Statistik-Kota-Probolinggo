@@ -173,7 +173,7 @@
     <!-- ========================================================= -->
 
     <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/loadingAnimation"
+        android:id="@+id/lottieLoading"
 
         android:layout_width="100dp"
         android:layout_height="100dp"
