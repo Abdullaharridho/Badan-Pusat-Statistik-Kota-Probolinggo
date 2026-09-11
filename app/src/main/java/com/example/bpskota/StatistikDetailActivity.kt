@@ -16,6 +16,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.text.Html
+import android.text.Spanned
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -33,6 +35,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.text.HtmlCompat
 import com.example.bpskota.bps.model.SimdasiDetailData
 import com.example.bpskota.bps.model.SimdasiDetailResponse
 import com.example.bpskota.bps.repository.BpsRepository
@@ -246,7 +249,7 @@ class StatistikDetailActivity : AppCompatActivity() {
             findViewById<TextView>(
                 R.id.tvDetailTahun
             ).visibility =
-                View.VISIBLE
+                View.GONE
 
             return
         }
@@ -258,11 +261,6 @@ class StatistikDetailActivity : AppCompatActivity() {
             R.id.tvDetailTahun
         ).visibility =
             View.GONE
-
-        // ============================================================
-        // ADAPTER SPINNER
-        // Background putih + text hitam
-        // ============================================================
 
         val adapter =
             object : ArrayAdapter<Int>(
@@ -289,12 +287,10 @@ class StatistikDetailActivity : AppCompatActivity() {
                             android.R.id.text1
                         )
 
-                    // Background putih
                     view.setBackgroundColor(
                         Color.WHITE
                     )
 
-                    // Text hitam
                     textView.text =
                         daftarTahun[position].toString()
 
@@ -302,7 +298,8 @@ class StatistikDetailActivity : AppCompatActivity() {
                         Color.BLACK
                     )
 
-                    textView.textSize = 15f
+                    textView.textSize =
+                        15f
 
                     textView.setTypeface(
                         null,
@@ -333,12 +330,10 @@ class StatistikDetailActivity : AppCompatActivity() {
                             android.R.id.text1
                         )
 
-                    // Background dropdown putih
                     view.setBackgroundColor(
                         Color.WHITE
                     )
 
-                    // Text dropdown hitam
                     textView.text =
                         daftarTahun[position].toString()
 
@@ -346,7 +341,8 @@ class StatistikDetailActivity : AppCompatActivity() {
                         Color.BLACK
                     )
 
-                    textView.textSize = 15f
+                    textView.textSize =
+                        15f
 
                     textView.setPadding(
                         32,
@@ -366,7 +362,6 @@ class StatistikDetailActivity : AppCompatActivity() {
         spinnerTahun.adapter =
             adapter
 
-        // Background spinner utama putih
         spinnerTahun.setBackgroundColor(
             Color.WHITE
         )
@@ -432,13 +427,13 @@ class StatistikDetailActivity : AppCompatActivity() {
                     Log.d(
                         TAG,
                         """
-                    ==============================
-                    GANTI TAHUN
-                    ==============================
-                    ID TABEL : $idTabel
-                    TAHUN    : $tahunDipilih
-                    ==============================
-                    """.trimIndent()
+                        ==============================
+                        GANTI TAHUN
+                        ==============================
+                        ID TABEL : $idTabel
+                        TAHUN    : $tahunDipilih
+                        ==============================
+                        """.trimIndent()
                     )
 
                     loadDetail(
@@ -751,28 +746,40 @@ class StatistikDetailActivity : AppCompatActivity() {
             )
 
         tvKode.text =
-            "ID Subject: ${
-                detail.idSubject ?: "-"
-            }"
+            renderHtml(
+                "ID Subject: ${detail.idSubject ?: "-"}"
+            )
 
         tvJudul.text =
-            detail.judulTabel
-                ?: "Judul tabel tidak tersedia"
+            renderHtml(
+                detail.judulTabel
+                    ?: "Judul tabel tidak tersedia"
+            )
 
         tvTahun.text =
-            "${detail.tahunData ?: tahunTerpilih}"
+            renderHtml(
+                "${detail.tahunData ?: tahunTerpilih}"
+            )
 
         tvBab.text =
-            "Bab: ${detail.bab ?: "-"}"
+            renderHtml(
+                "Bab: ${detail.bab ?: "-"}"
+            )
 
         tvSubject.text =
-            "Subject: ${detail.subject ?: "-"}"
+            renderHtml(
+                "Subject: ${detail.subject ?: "-"}"
+            )
 
         tvWilayah.text =
-            "Wilayah: ${detail.wilayah ?: "-"}"
+            renderHtml(
+                "Wilayah: ${detail.wilayah ?: "-"}"
+            )
 
         tvSumber.text =
-            "Sumber: ${detail.sumber ?: "-"}"
+            renderHtml(
+                "Sumber: ${detail.sumber ?: "-"}"
+            )
 
         tampilkanCardStatistik(
             detail
@@ -825,7 +832,9 @@ class StatistikDetailActivity : AppCompatActivity() {
                 )
 
             tvNamaWilayah.text =
-                namaWilayah
+                renderHtml(
+                    namaWilayah
+                )
 
             containerVariable.removeAllViews()
 
@@ -888,7 +897,9 @@ class StatistikDetailActivity : AppCompatActivity() {
                         TextView(this)
 
                     tvVariable.text =
-                        namaVariabel
+                        renderHtml(
+                            namaVariabel
+                        )
 
                     tvVariable.textSize =
                         14f
@@ -912,7 +923,9 @@ class StatistikDetailActivity : AppCompatActivity() {
                         TextView(this)
 
                     tvNilai.text =
-                        nilai.toString()
+                        renderHtml(
+                            nilai.toString()
+                        )
 
                     tvNilai.textSize =
                         15f
@@ -963,6 +976,39 @@ class StatistikDetailActivity : AppCompatActivity() {
         ) {
 
             tampilkanPesanKosong()
+        }
+    }
+
+    private fun renderHtml(
+        text: String
+    ): Spanned {
+
+        return HtmlCompat.fromHtml(
+            text,
+            HtmlCompat.FROM_HTML_MODE_LEGACY
+        )
+    }
+
+    private fun getPlainText(
+        text: String
+    ): String {
+
+        return if (
+            Build.VERSION.SDK_INT >=
+            Build.VERSION_CODES.N
+        ) {
+
+            Html.fromHtml(
+                text,
+                Html.FROM_HTML_MODE_LEGACY
+            ).toString()
+
+        } else {
+
+            @Suppress("DEPRECATION")
+            Html.fromHtml(
+                text
+            ).toString()
         }
     }
 
@@ -1035,17 +1081,22 @@ class StatistikDetailActivity : AppCompatActivity() {
         try {
 
             val judul =
-                detail.judulTabel
-                    ?.replace(
+                getPlainText(
+                    detail.judulTabel
+                        ?: "data_bps"
+                )
+                    .replace(
                         Regex("[^a-zA-Z0-9\\s]"),
                         ""
                     )
-                    ?.replace(
+                    .replace(
                         Regex("\\s+"),
                         "_"
                     )
-                    ?.take(60)
-                    ?: "data_bps"
+                    .take(60)
+                    .ifEmpty {
+                        "data_bps"
+                    }
 
             val namaFile =
                 "${judul}_${tahunTerpilih}.pdf"
@@ -1080,7 +1131,8 @@ class StatistikDetailActivity : AppCompatActivity() {
             val titlePaint =
                 android.graphics.Paint().apply {
 
-                    textSize = 18f
+                    textSize =
+                        18f
 
                     typeface =
                         Typeface.create(
@@ -1088,13 +1140,15 @@ class StatistikDetailActivity : AppCompatActivity() {
                             Typeface.BOLD
                         )
 
-                    isAntiAlias = true
+                    isAntiAlias =
+                        true
                 }
 
             val headerPaint =
                 android.graphics.Paint().apply {
 
-                    textSize = 11f
+                    textSize =
+                        11f
 
                     typeface =
                         Typeface.create(
@@ -1102,29 +1156,35 @@ class StatistikDetailActivity : AppCompatActivity() {
                             Typeface.BOLD
                         )
 
-                    isAntiAlias = true
+                    isAntiAlias =
+                        true
                 }
 
             val normalPaint =
                 android.graphics.Paint().apply {
 
-                    textSize = 10f
+                    textSize =
+                        10f
 
-                    isAntiAlias = true
+                    isAntiAlias =
+                        true
                 }
 
             val variablePaint =
                 android.graphics.Paint().apply {
 
-                    textSize = 10f
+                    textSize =
+                        10f
 
-                    isAntiAlias = true
+                    isAntiAlias =
+                        true
                 }
 
             val valuePaint =
                 android.graphics.Paint().apply {
 
-                    textSize = 10f
+                    textSize =
+                        10f
 
                     typeface =
                         Typeface.create(
@@ -1132,7 +1192,8 @@ class StatistikDetailActivity : AppCompatActivity() {
                             Typeface.BOLD
                         )
 
-                    isAntiAlias = true
+                    isAntiAlias =
+                        true
                 }
 
             canvas.drawText(
@@ -1142,73 +1203,93 @@ class StatistikDetailActivity : AppCompatActivity() {
                 titlePaint
             )
 
-            y += 28f
+            y +=
+                28f
 
             canvas.drawText(
-                detail.judulTabel
-                    ?: "Judul tabel tidak tersedia",
+                getPlainText(
+                    detail.judulTabel
+                        ?: "Judul tabel tidak tersedia"
+                ),
                 margin,
                 y,
                 headerPaint
             )
 
-            y += 20f
+            y +=
+                20f
 
             canvas.drawText(
                 "Tahun: ${
-                    detail.tahunData
-                        ?: tahunTerpilih
+                    getPlainText(
+                        detail.tahunData
+                            ?.toString()
+                            ?: tahunTerpilih.toString()
+                    )
                 }",
                 margin,
                 y,
                 normalPaint
             )
 
-            y += 16f
+            y +=
+                16f
 
             canvas.drawText(
                 "Wilayah: ${
-                    detail.wilayah ?: "-"
+                    getPlainText(
+                        detail.wilayah ?: "-"
+                    )
                 }",
                 margin,
                 y,
                 normalPaint
             )
 
-            y += 16f
+            y +=
+                16f
 
             canvas.drawText(
                 "Bab: ${
-                    detail.bab ?: "-"
+                    getPlainText(
+                        detail.bab ?: "-"
+                    )
                 }",
                 margin,
                 y,
                 normalPaint
             )
 
-            y += 16f
+            y +=
+                16f
 
             canvas.drawText(
                 "Subject: ${
-                    detail.subject ?: "-"
+                    getPlainText(
+                        detail.subject ?: "-"
+                    )
                 }",
                 margin,
                 y,
                 normalPaint
             )
 
-            y += 16f
+            y +=
+                16f
 
             canvas.drawText(
                 "Sumber: ${
-                    detail.sumber ?: "-"
+                    getPlainText(
+                        detail.sumber ?: "-"
+                    )
                 }",
                 margin,
                 y,
                 normalPaint
             )
 
-            y += 28f
+            y +=
+                28f
 
             canvas.drawLine(
                 margin,
@@ -1218,7 +1299,8 @@ class StatistikDetailActivity : AppCompatActivity() {
                 normalPaint
             )
 
-            y += 25f
+            y +=
+                25f
 
             detail.data.forEach {
                     wilayah ->
@@ -1231,7 +1313,8 @@ class StatistikDetailActivity : AppCompatActivity() {
                         ?: "Tidak diketahui"
 
                 if (
-                    y > pageHeight - 120
+                    y >
+                    pageHeight - 120
                 ) {
 
                     pdfDocument.finishPage(
@@ -1254,13 +1337,16 @@ class StatistikDetailActivity : AppCompatActivity() {
                 }
 
                 canvas.drawText(
-                    namaWilayah,
+                    getPlainText(
+                        namaWilayah
+                    ),
                     margin,
                     y,
                     headerPaint
                 )
 
-                y += 20f
+                y +=
+                    20f
 
                 if (
                     wilayah.variables.isNullOrEmpty()
@@ -1273,7 +1359,8 @@ class StatistikDetailActivity : AppCompatActivity() {
                         normalPaint
                     )
 
-                    y += 18f
+                    y +=
+                        18f
 
                 } else {
 
@@ -1291,7 +1378,8 @@ class StatistikDetailActivity : AppCompatActivity() {
                                 ?: "-"
 
                         if (
-                            y > pageHeight - 60
+                            y >
+                            pageHeight - 60
                         ) {
 
                             pdfDocument.finishPage(
@@ -1314,24 +1402,30 @@ class StatistikDetailActivity : AppCompatActivity() {
                         }
 
                         canvas.drawText(
-                            namaVariabel,
+                            getPlainText(
+                                namaVariabel
+                            ),
                             margin + 10f,
                             y,
                             variablePaint
                         )
 
                         canvas.drawText(
-                            nilai.toString(),
+                            getPlainText(
+                                nilai.toString()
+                            ),
                             pageWidth - margin - 80f,
                             y,
                             valuePaint
                         )
 
-                        y += 17f
+                        y +=
+                            17f
                     }
                 }
 
-                y += 5f
+                y +=
+                    5f
 
                 canvas.drawLine(
                     margin,
@@ -1341,7 +1435,8 @@ class StatistikDetailActivity : AppCompatActivity() {
                     normalPaint
                 )
 
-                y += 20f
+                y +=
+                    20f
             }
 
             pdfDocument.finishPage(

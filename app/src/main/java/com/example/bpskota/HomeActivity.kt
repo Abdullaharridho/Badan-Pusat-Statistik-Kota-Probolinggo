@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
 import android.view.animation.DecelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -21,1132 +22,410 @@ import androidx.viewpager2.widget.ViewPager2
 class HomeActivity : AppCompatActivity() {
 
     private lateinit var viewPager: ViewPager2
-
     private lateinit var homeHeader: View
     private lateinit var bottomHomeActivity: View
-
     private lateinit var swipeRefreshHome: SwipeRefreshLayout
-
     private lateinit var pagerAdapter: MainPagerAdapter
-
     private lateinit var informasiMenu: LinearLayout
     private lateinit var informasiOverlay: View
-
-    // =====================================================
-    // SEARCH
-    // =====================================================
-
+    private lateinit var bottomNavCurve: BottomNavCurveView
     private lateinit var searchInput: EditText
     private lateinit var searchBack: ImageView
     private lateinit var headerNormalContent: View
 
     private var informasiMenuVisible = false
 
-
-    /*
-     * Halaman ViewPager yang sedang aktif.
-     *
-     * 0 = Home
-     * 1 = Infografik
-     * 2 = Berita
-     * 3 = Publikasi
-     * 4 = Data
-     * 5 = More
-     */
     val currentPage: Int
         get() = viewPager.currentItem
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.activity_home)
 
+        // Inisialisasi View
+        viewPager = findViewById(R.id.viewPager)
+        homeHeader = findViewById(R.id.homeHeader)
+        bottomHomeActivity = findViewById(R.id.bottomHomeActivity)
+        swipeRefreshHome = findViewById(R.id.swipeRefreshHome)
+        informasiMenu = findViewById(R.id.informasiMenu)
+        informasiOverlay = findViewById(R.id.informasiOverlay)
+        searchInput = findViewById(R.id.searchInput)
+        searchBack = findViewById(R.id.searchBack)
+        headerNormalContent = findViewById(R.id.headerNormalContent)
 
-        // =====================================================
-        // INIT VIEW
-        // =====================================================
-
-        viewPager =
-            findViewById(R.id.viewPager)
-
-        homeHeader =
-            findViewById(R.id.homeHeader)
-
-        bottomHomeActivity =
-            findViewById(R.id.bottomHomeActivity)
-
-        swipeRefreshHome =
-            findViewById(R.id.swipeRefreshHome)
-
-        informasiMenu =
-            findViewById(R.id.informasiMenu)
-
-        informasiOverlay =
-            findViewById(R.id.informasiOverlay)
-
-
-        // =====================================================
-        // INIT SEARCH VIEW
-        // =====================================================
-
-        searchInput =
-            findViewById(R.id.searchInput)
-
-        searchBack =
-            findViewById(R.id.searchBack)
-
-        headerNormalContent =
-            findViewById(R.id.headerNormalContent)
-
-
-        // =====================================================
-        // SETUP
-        // =====================================================
-
+        setupBottomNavCurve()
         setupViewPager()
 
+        val startPage = intent.getIntExtra("START_PAGE", 4)
+        viewPager.setCurrentItem(startPage, false)
+
         setupBottomNavigation()
-
         setupInformasiMenu()
-
         setupSwipeRefresh()
-
         setupSearch()
 
-        updateBottomNavigation(0)
-
+        updateBottomNavigation(4)
         startHomeAnimation()
     }
 
+    private fun setupBottomNavCurve() {
+        val bottomContainer = bottomHomeActivity as? android.view.ViewGroup ?: return
+        val frameLayout = bottomContainer.getChildAt(0) as? android.view.ViewGroup ?: return
 
-    // =========================================================
-    // SETUP VIEWPAGER
-    // =========================================================
+        for (index in 0 until frameLayout.childCount) {
+            val child = frameLayout.getChildAt(index)
+            if (child is BottomNavCurveView) {
+                bottomNavCurve = child
+                break
+            }
+        }
+    }
 
     private fun setupViewPager() {
-
         val fragments = listOf(
-            HomeFragment(),          // 0
-            InfografikFragment(),    // 1
-            BeritaFragment(),        // 2
-            PublikasiFragment(),     // 3
-            DataFragment(),          // 4
-            MoreFragment()           // 5
+            BeritaFragment(),
+            InfografikFragment(),
+            PublikasiFragment(),
+            DataFragment(),
+            HomeFragment(),
+            MoreFragment(),
+            LoginFragment()
         )
 
+        pagerAdapter = MainPagerAdapter(this, fragments)
+        viewPager.apply {
+            adapter = pagerAdapter
+            offscreenPageLimit = 1
+            isUserInputEnabled = true
+        }
 
-        pagerAdapter =
-            MainPagerAdapter(
-                this,
-                fragments
-            )
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                hideInformasiMenu()
+                updateBottomNavigation(position)
+                swipeRefreshHome.isRefreshing = false
 
-
-        viewPager.adapter =
-            pagerAdapter
-
-
-        viewPager.offscreenPageLimit =
-            1
-
-
-        viewPager.isUserInputEnabled =
-            true
-
-
-        viewPager.registerOnPageChangeCallback(
-            object : ViewPager2.OnPageChangeCallback() {
-
-                override fun onPageSelected(
-                    position: Int
-                ) {
-
-                    super.onPageSelected(
-                        position
-                    )
-
-
-                    hideInformasiMenu()
-
-
-                    updateBottomNavigation(
-                        position
-                    )
-
-
-                    /*
-                     * Matikan spinner ketika
-                     * berpindah halaman.
-                     */
-                    swipeRefreshHome.isRefreshing =
-                        false
-
-
-                    /*
-                     * Jangan langsung menentukan
-                     * enabled / disabled di sini.
-                     *
-                     * Fragment yang sedang aktif akan
-                     * menentukan berdasarkan posisi
-                     * scroll-nya.
-                     */
-                    viewPager.post {
-
-                        val fragment =
-                            pagerAdapter.getFragment(
-                                position
-                            )
-
-
-                        if (fragment is RefreshableFragment) {
-
-                            // Aktifkan dulu agar gesture pull-to-refresh tersedia.
-                            swipeRefreshHome.isEnabled = true
-
-                            // Setelah fragment siap, fragment menentukan
-                            // apakah posisi scroll memang sudah di paling atas.
-                            fragment.updateRefreshState()
-
-                        } else {
-
-                            swipeRefreshHome.isEnabled = false
-                        }
+                viewPager.post {
+                    val fragment = pagerAdapter.getFragment(position)
+                    if (fragment is RefreshableFragment) {
+                        swipeRefreshHome.isEnabled = true
+                        fragment.updateRefreshState()
+                    } else {
+                        swipeRefreshHome.isEnabled = false
                     }
                 }
             }
-        )
+        })
     }
 
-
-    // =========================================================
-    // SETUP PULL TO REFRESH
-    // =========================================================
-
     private fun setupSwipeRefresh() {
-
-        /*
-         * Default awal aktif.
-         *
-         * HomeFragment nantinya akan menentukan
-         * apakah benar-benar berada di posisi paling atas.
-         */
-        swipeRefreshHome.isEnabled =
-            true
-
-
+        swipeRefreshHome.isEnabled = true
         swipeRefreshHome.setOnRefreshListener {
-
             refreshCurrentFragment()
         }
     }
 
-
-    // =========================================================
-    // REFRESH FRAGMENT AKTIF
-    // =========================================================
-
     private fun refreshCurrentFragment() {
+        val position = viewPager.currentItem
+        val fragment = pagerAdapter.getFragment(position)
 
-        val position =
-            viewPager.currentItem
-
-
-        val fragment =
-            pagerAdapter.getFragment(
-                position
-            )
-
-
-        if (
-            fragment is RefreshableFragment
-        ) {
-
+        if (fragment is RefreshableFragment) {
             fragment.refreshData()
-
         } else {
-
-            /*
-             * Jika fragment tidak mendukung refresh,
-             * hentikan spinner.
-             */
-            swipeRefreshHome.isRefreshing =
-                false
+            swipeRefreshHome.isRefreshing = false
         }
     }
 
-
-    // =========================================================
-    // UPDATE STATUS SWIPE REFRESH
-    // =========================================================
-
-    fun setSwipeRefreshEnabled(
-        enabled: Boolean
-    ) {
-
-        if (
-            !::swipeRefreshHome.isInitialized
-        ) {
-            return
-        }
-
-
-        swipeRefreshHome.isEnabled =
-            enabled
+    fun setSwipeRefreshEnabled(enabled: Boolean) {
+        if (::swipeRefreshHome.isInitialized) swipeRefreshHome.isEnabled = enabled
     }
-
-
-    // =========================================================
-    // SELESAI REFRESH
-    // =========================================================
 
     fun finishSwipeRefresh() {
-
-        if (
-            !::swipeRefreshHome.isInitialized
-        ) {
-            return
-        }
-
-
-        swipeRefreshHome.isRefreshing =
-            false
+        if (::swipeRefreshHome.isInitialized) swipeRefreshHome.isRefreshing = false
     }
-
-
-    // =========================================================
-    // SETUP SEARCH
-    // =========================================================
 
     private fun setupSearch() {
-
-        /*
-         * Tombol search pada header.
-         *
-         * Ketika diklik, header normal disembunyikan
-         * dan search input ditampilkan.
-         */
-        findViewById<View>(
-            R.id.search
-        ).setOnClickListener {
-
-            /*
-             * Jika search input sedang terlihat,
-             * berarti tombol ini digunakan untuk
-             * menjalankan pencarian.
-             */
-            if (searchInput.visibility == View.VISIBLE) {
-
-                executeSearch()
-
-            } else {
-
-                showSearchMode()
-            }
+        findViewById<View>(R.id.search).setOnClickListener {
+            if (searchInput.visibility == View.VISIBLE) executeSearch() else showSearchMode()
         }
 
+        searchBack.setOnClickListener { hideSearchMode() }
 
-        /*
-         * Tombol kembali pada mode pencarian.
-         */
-        searchBack.setOnClickListener {
-
-            hideSearchMode()
-        }
-
-
-        /*
-         * Jalankan pencarian ketika user menekan
-         * tombol Search pada keyboard.
-         */
-        searchInput.setOnEditorActionListener {
-                _,
-                actionId,
-                event ->
-
-            if (
-                actionId == EditorInfo.IME_ACTION_SEARCH ||
-                (
-                        event != null &&
-                                event.keyCode == KeyEvent.KEYCODE_ENTER &&
-                                event.action == KeyEvent.ACTION_DOWN
-                        )
-            ) {
-
+        searchInput.setOnEditorActionListener { _, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || (event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN)) {
                 executeSearch()
-
                 true
-
-            } else {
-
-                false
-            }
+            } else false
         }
     }
-
-
-    // =========================================================
-    // TAMPILKAN MODE SEARCH
-    // =========================================================
 
     private fun showSearchMode() {
-
-        /*
-         * Sembunyikan header normal:
-         *
-         * Logo
-         * Judul
-         * Subtitle
-         */
-        headerNormalContent.visibility =
-            View.GONE
-
-
-        /*
-         * Tampilkan tombol kembali.
-         */
-        searchBack.visibility =
-            View.VISIBLE
-
-
-        /*
-         * Tampilkan EditText search.
-         */
-        searchInput.visibility =
-            View.VISIBLE
-
-
-        /*
-         * Fokus ke EditText.
-         */
+        headerNormalContent.visibility = View.GONE
+        searchBack.visibility = View.VISIBLE
+        searchInput.visibility = View.VISIBLE
         searchInput.requestFocus()
 
-
-        /*
-         * Tampilkan keyboard setelah layout
-         * selesai diproses Android.
-         */
         searchInput.post {
-
-            val inputMethodManager =
-                getSystemService(
-                    Context.INPUT_METHOD_SERVICE
-                ) as InputMethodManager
-
-
-            inputMethodManager.showSoftInput(
-                searchInput,
-                InputMethodManager.SHOW_IMPLICIT
-            )
+            val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            inputMethodManager.showSoftInput(searchInput, InputMethodManager.SHOW_IMPLICIT)
         }
     }
 
-
-    // =========================================================
-    // SEMBUNYIKAN MODE SEARCH
-    // =========================================================
-
     private fun hideSearchMode() {
+        val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.hideSoftInputFromWindow(searchInput.windowToken, 0)
 
-        /*
-         * Sembunyikan keyboard.
-         */
-        val inputMethodManager =
-            getSystemService(
-                Context.INPUT_METHOD_SERVICE
-            ) as InputMethodManager
-
-
-        inputMethodManager.hideSoftInputFromWindow(
-            searchInput.windowToken,
-            0
-        )
-
-
-        /*
-         * Hilangkan fokus.
-         */
         searchInput.clearFocus()
-
-
-        /*
-         * Bersihkan input.
-         */
         searchInput.text.clear()
-
-
-        /*
-         * Sembunyikan search input.
-         */
-        searchInput.visibility =
-            View.GONE
-
-
-        /*
-         * Sembunyikan tombol kembali.
-         */
-        searchBack.visibility =
-            View.GONE
-
-
-        /*
-         * Tampilkan kembali header normal.
-         */
-        headerNormalContent.visibility =
-            View.VISIBLE
+        searchInput.visibility = View.GONE
+        searchBack.visibility = View.GONE
+        headerNormalContent.visibility = View.VISIBLE
     }
 
-
-    // =========================================================
-    // EKSEKUSI SEARCH
-    // =========================================================
-
     private fun executeSearch() {
-
-        val keyword =
-            searchInput.text
-                .toString()
-                .trim()
-
-
-        /*
-         * Jangan lanjut jika keyword kosong.
-         */
+        val keyword = searchInput.text.toString().trim()
         if (keyword.isEmpty()) {
-
-            searchInput.error =
-                "Masukkan kata pencarian"
-
+            searchInput.error = "Masukkan kata pencarian"
             searchInput.requestFocus()
-
             return
         }
 
+        val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.hideSoftInputFromWindow(searchInput.windowToken, 0)
 
-        /*
-         * Sembunyikan keyboard.
-         */
-        val inputMethodManager =
-            getSystemService(
-                Context.INPUT_METHOD_SERVICE
-            ) as InputMethodManager
-
-
-        inputMethodManager.hideSoftInputFromWindow(
-            searchInput.windowToken,
-            0
-        )
-
-
-        /*
-         * Buka halaman SearchActivity.
-         */
-        val intent =
-            Intent(
-                this,
-                SearchActivity::class.java
-            )
-
-
-        /*
-         * Kirim keyword ke SearchActivity.
-         */
-        intent.putExtra(
-            "keyword",
-            keyword
-        )
-
-
+        val intent = Intent(this, SearchActivity::class.java)
+        intent.putExtra("keyword", keyword)
         startActivity(intent)
     }
 
-
-    // =========================================================
-    // SETUP BOTTOM NAVIGATION
-    // =========================================================
-
     private fun setupBottomNavigation() {
-
-        // INFORMASI
-        findViewById<View>(
-            R.id.navInfografik
-        ).setOnClickListener {
-
+        findViewById<View>(R.id.navInfografik).setOnClickListener {
+            val target = findViewById<View>(R.id.navInfografik)
+            animateActiveNavigation(target)
+            positionBottomNavCurve(target, true)
             showInformasiPanel()
         }
+        findViewById<View>(R.id.navData).setOnClickListener { goToPage(3) }
+        findViewById<View>(R.id.navHome).setOnClickListener { goToPage(4) }
+        findViewById<View>(R.id.navMore).setOnClickListener { goToPage(5) }
+        findViewById<View>(R.id.navAkun).setOnClickListener { goToPage(6) }
+    }
 
+    /**
+     * UI/UX Upgrade: Menambahkan Overshoot Interpolator & efek terangkat (-12f)
+     * agar ikon tampak melompat manis ke dalam lengkungan (curve).
+     */
+    private fun animateActiveNavigation(targetView: View) {
+        val navigationItems = listOf(
+            R.id.navInfografik, R.id.navData, R.id.navHome, R.id.navMore, R.id.navAkun
+        )
 
-        // DATA
-        findViewById<View>(
-            R.id.navData
-        ).setOnClickListener {
-
-            goToPage(4)
+        navigationItems.forEach { id ->
+            val item = findViewById<View>(id)
+            item.animate()
+                .scaleX(1f)
+                .scaleY(1f)
+                .translationY(0f)
+                .setDuration(250)
+                .setInterpolator(DecelerateInterpolator())
+                .start()
         }
 
+        targetView.animate()
+            .scaleX(1.15f) // Skala sedikit lebih besar
+            .scaleY(1.15f)
+            .translationY(-12f) // Mengangkat ikon masuk ke curve
+            .setDuration(350)
+            .setInterpolator(OvershootInterpolator(1.5f)) // Efek jelly/membal
+            .start()
+    }
 
-        // BERANDA
-        findViewById<View>(
-            R.id.navHome
-        ).setOnClickListener {
+    private fun positionBottomNavCurve(targetView: View, animate: Boolean) {
+        if (!::bottomNavCurve.isInitialized) return
 
-            goToPage(0)
-        }
+        bottomNavCurve.post {
+            val targetLocation = IntArray(2)
+            val curveLocation = IntArray(2)
 
+            targetView.getLocationOnScreen(targetLocation)
+            bottomNavCurve.getLocationOnScreen(curveLocation)
 
-        // LAINNYA
-        findViewById<View>(
-            R.id.navMore
-        ).setOnClickListener {
+            val targetCenterX = targetLocation[0] + (targetView.width / 2f)
+            val relativeX = targetCenterX - curveLocation[0]
 
-            goToPage(5)
-        }
-
-
-        // AKUN
-        findViewById<View>(
-            R.id.navAkun
-        ).setOnClickListener {
-
-            // Dikosongkan sementara.
+            if (animate) {
+                bottomNavCurve.animateCurveTo(relativeX)
+            } else {
+                bottomNavCurve.setActiveCenterX(relativeX)
+            }
         }
     }
 
-
-    // =========================================================
-    // SETUP MENU INFORMASI
-    // =========================================================
-
     private fun setupInformasiMenu() {
-
-        // BERITA
-        findViewById<View>(
-            R.id.menuBerita
-        ).setOnClickListener {
-
+        findViewById<View>(R.id.menuBerita).setOnClickListener {
             hideInformasiMenu()
-
+            goToPage(0)
+        }
+        findViewById<View>(R.id.menuInfografik).setOnClickListener {
+            hideInformasiMenu()
+            goToPage(1)
+        }
+        findViewById<View>(R.id.menuPublikasi).setOnClickListener {
+            hideInformasiMenu()
             goToPage(2)
         }
 
-
-        // INFOGRAFIK
-        findViewById<View>(
-            R.id.menuInfografik
-        ).setOnClickListener {
-
-            hideInformasiMenu()
-
-            goToPage(1)
-        }
-
-
-        // PUBLIKASI
-        findViewById<View>(
-            R.id.menuPublikasi
-        ).setOnClickListener {
-
-            hideInformasiMenu()
-
-            goToPage(3)
-        }
-
-
-        informasiMenu.visibility =
-            View.GONE
-
-
-        informasiOverlay.setOnClickListener {
-
-            hideInformasiMenu()
-        }
+        informasiMenu.visibility = View.GONE
+        informasiOverlay.setOnClickListener { hideInformasiMenu() }
     }
 
-
-    // =========================================================
-    // TAMPILKAN MENU INFORMASI
-    // =========================================================
-
+    /**
+     * UI/UX Upgrade: Menambahkan efek Scale & Bouncy pada Popup Menu
+     */
     private fun showInformasiPanel() {
-
         if (informasiMenuVisible) {
-
             hideInformasiMenu()
-
             return
         }
-
 
         positionInformasiMenu()
+        informasiMenuVisible = true
 
+        informasiOverlay.apply {
+            visibility = View.VISIBLE
+            alpha = 0f
+            animate().alpha(1f).setDuration(200).start()
+        }
 
-        informasiOverlay.visibility =
-            View.VISIBLE
+        informasiMenu.apply {
+            visibility = View.VISIBLE
+            alpha = 0f
+            translationY = height * 0.2f
+            scaleX = 0.8f // Mulai dari ukuran 80%
+            scaleY = 0.8f
 
-
-        informasiOverlay.alpha =
-            0f
-
-
-        informasiOverlay.animate()
-            .alpha(1f)
-            .setDuration(180)
-            .start()
-
-
-        informasiMenu.visibility =
-            View.VISIBLE
-
-
-        informasiMenu.alpha =
-            0f
-
-
-        informasiMenu.translationY =
-            informasiMenu.height * 0.35f
-
-
-        informasiMenuVisible =
-            true
-
-
-        informasiMenu.animate()
-            .alpha(1f)
-            .translationY(0f)
-            .setDuration(220)
-            .setInterpolator(
-                DecelerateInterpolator(
-                    1.8f
-                )
-            )
-            .start()
+            animate()
+                .alpha(1f)
+                .translationY(0f)
+                .scaleX(1f) // Membesar ke 100%
+                .scaleY(1f)
+                .setDuration(300)
+                .setInterpolator(OvershootInterpolator(1.2f)) // Membal sedikit
+                .start()
+        }
     }
-
-
-    // =========================================================
-    // SEMBUNYIKAN MENU INFORMASI
-    // =========================================================
 
     private fun hideInformasiMenu() {
+        if (!informasiMenuVisible) return
+        informasiMenuVisible = false
 
-        if (!informasiMenuVisible) {
-            return
-        }
-
-
-        informasiMenuVisible =
-            false
-
-
-        informasiOverlay.animate()
-            .alpha(0f)
-            .setDuration(180)
-            .withEndAction {
-
-                informasiOverlay.visibility =
-                    View.GONE
-
-                informasiOverlay.alpha =
-                    1f
-            }
-            .start()
-
+        informasiOverlay.animate().alpha(0f).setDuration(200).withEndAction {
+            informasiOverlay.visibility = View.GONE
+            informasiOverlay.alpha = 1f
+        }.start()
 
         informasiMenu.animate()
             .alpha(0f)
-            .translationY(
-                informasiMenu.height * 0.35f
-            )
-            .setDuration(180)
-            .setInterpolator(
-                DecelerateInterpolator(
-                    1.8f
-                )
-            )
+            .translationY(informasiMenu.height * 0.1f)
+            .scaleX(0.9f)
+            .scaleY(0.9f)
+            .setDuration(200)
+            .setInterpolator(DecelerateInterpolator(1.5f))
             .withEndAction {
-
-                informasiMenu.visibility =
-                    View.GONE
-
-                informasiMenu.alpha =
-                    1f
-
-                informasiMenu.translationY =
-                    0f
-
-                /*
-                 * Reset posisi horizontal.
-                 *
-                 * Ini mencegah menu Informasi bergeser
-                 * setiap kali dibuka kembali.
-                 */
-                informasiMenu.translationX =
-                    0f
-            }
-            .start()
+                informasiMenu.visibility = View.GONE
+                informasiMenu.alpha = 1f
+                informasiMenu.translationY = 0f
+                informasiMenu.translationX = 0f
+                informasiMenu.scaleX = 1f
+                informasiMenu.scaleY = 1f
+            }.start()
     }
-
-
-    // =========================================================
-    // POSISI MENU INFORMASI
-    // =========================================================
 
     private fun positionInformasiMenu() {
-
-        val navInformasi =
-            findViewById<View>(
-                R.id.navInfografik
-            )
-
-
-        val root =
-            informasiMenu.parent as View
-
-
-        /*
-         * Reset posisi translasi sebelumnya.
-         */
-        informasiMenu.translationX =
-            0f
-
+        val navInformasi = findViewById<View>(R.id.navInfografik)
+        val root = informasiMenu.parent as View
+        informasiMenu.translationX = 0f
 
         informasiMenu.post {
+            val navLocation = IntArray(2)
+            val rootLocation = IntArray(2)
 
-            val navLocation =
-                IntArray(2)
+            navInformasi.getLocationOnScreen(navLocation)
+            root.getLocationOnScreen(rootLocation)
 
+            val navCenterX = navLocation[0] - rootLocation[0] + navInformasi.width / 2f
+            val menuLeft = navCenterX - informasiMenu.width / 2f
 
-            val rootLocation =
-                IntArray(2)
-
-
-            navInformasi.getLocationOnScreen(
-                navLocation
-            )
-
-
-            root.getLocationOnScreen(
-                rootLocation
-            )
-
-
-            val navCenterX =
-                navLocation[0] -
-                        rootLocation[0] +
-                        navInformasi.width / 2f
-
-
-            val menuLeft =
-                navCenterX -
-                        informasiMenu.width / 2f
-
-
-            informasiMenu.translationX =
-                menuLeft -
-                        informasiMenu.left
+            informasiMenu.translationX = menuLeft - informasiMenu.left
         }
     }
 
-
-    // =========================================================
-    // PINDAH HALAMAN
-    // =========================================================
-
-    fun goToPage(
-        position: Int
-    ) {
-
+    fun goToPage(position: Int) {
         hideInformasiMenu()
-
-
-        if (
-            ::viewPager.isInitialized
-        ) {
-
-            viewPager.setCurrentItem(
-                position,
-                true
-            )
+        if (::viewPager.isInitialized) {
+            viewPager.setCurrentItem(position, true)
         }
     }
 
+    private fun updateBottomNavigation(position: Int) {
+        val activeColor = Color.parseColor("#F97316") // Warna BPS Tetap Dipertahankan
+        val inactiveColor = Color.parseColor("#9CA3AF")
 
-    // =========================================================
-    // UPDATE BOTTOM NAVIGATION
-    // =========================================================
+        val informasiAktif = position in 0..2
+        val dataAktif = position == 3
+        val homeAktif = position == 4
+        val moreAktif = position == 5
+        val akunAktif = position == 6
 
-    private fun updateBottomNavigation(
-        position: Int
-    ) {
+        setNavigationState(findViewById(R.id.navInfografikIcon), findViewById(R.id.navInfografikText), informasiAktif, activeColor, inactiveColor)
+        setNavigationState(findViewById(R.id.navDataIcon), findViewById(R.id.navDataText), dataAktif, activeColor, inactiveColor)
+        setNavigationState(findViewById(R.id.navHomeIcon), findViewById(R.id.navHomeText), homeAktif, activeColor, inactiveColor)
+        setNavigationState(findViewById(R.id.navMoreIcon), findViewById(R.id.navMoreText), moreAktif, activeColor, inactiveColor)
+        setNavigationState(findViewById(R.id.navAkunIcon), findViewById(R.id.navAkunText), akunAktif, activeColor, inactiveColor)
 
-        val activeColor =
-            Color.parseColor(
-                "#F97316"
-            )
+        val activeView = when {
+            informasiAktif -> findViewById<View>(R.id.navInfografik)
+            dataAktif -> findViewById<View>(R.id.navData)
+            homeAktif -> findViewById<View>(R.id.navHome)
+            moreAktif -> findViewById<View>(R.id.navMore)
+            akunAktif -> findViewById<View>(R.id.navAkun)
+            else -> findViewById<View>(R.id.navHome)
+        }
 
-
-        val inactiveColor =
-            Color.parseColor(
-                "#9CA3AF"
-            )
-
-
-        /*
-         * Informasi aktif ketika berada pada:
-         *
-         * 1 = Infografik
-         * 2 = Berita
-         * 3 = Publikasi
-         */
-        val informasiAktif =
-            position == 1 ||
-                    position == 2 ||
-                    position == 3
-
-
-        val dataAktif =
-            position == 4
-
-
-        val homeAktif =
-            position == 0
-
-
-        val moreAktif =
-            position == 5
-
-
-        // =====================================================
-        // INFORMASI
-        // =====================================================
-
-        setNavigationState(
-
-            findViewById(
-                R.id.navInfografikIcon
-            ),
-
-            findViewById(
-                R.id.navInfografikText
-            ),
-
-            informasiAktif,
-
-            activeColor,
-
-            inactiveColor
-        )
-
-
-        // =====================================================
-        // DATA
-        // =====================================================
-
-        setNavigationState(
-
-            findViewById(
-                R.id.navDataIcon
-            ),
-
-            findViewById(
-                R.id.navDataText
-            ),
-
-            dataAktif,
-
-            activeColor,
-
-            inactiveColor
-        )
-
-
-        // =====================================================
-        // BERANDA
-        // =====================================================
-
-        setNavigationState(
-
-            findViewById(
-                R.id.navHomeIcon
-            ),
-
-            findViewById(
-                R.id.navHomeText
-            ),
-
-            homeAktif,
-
-            activeColor,
-
-            inactiveColor
-        )
-
-
-        // =====================================================
-        // LAINNYA
-        // =====================================================
-
-        setNavigationState(
-
-            findViewById(
-                R.id.navMoreIcon
-            ),
-
-            findViewById(
-                R.id.navMoreText
-            ),
-
-            moreAktif,
-
-            activeColor,
-
-            inactiveColor
-        )
-
-
-        // =====================================================
-        // AKUN
-        // =====================================================
-
-        setNavigationState(
-
-            findViewById(
-                R.id.navAkunIcon
-            ),
-
-            findViewById(
-                R.id.navAkunText
-            ),
-
-            false,
-
-            activeColor,
-
-            inactiveColor
-        )
+        animateActiveNavigation(activeView)
+        positionBottomNavCurve(activeView, true)
     }
 
-
-    // =========================================================
-    // SET NAVIGATION STATE
-    // =========================================================
-
-    private fun setNavigationState(
-        icon: ImageView,
-        text: TextView,
-        active: Boolean,
-        activeColor: Int,
-        inactiveColor: Int
-    ) {
-
-        val color =
-            if (active) {
-                activeColor
-            } else {
-                inactiveColor
-            }
-
-
-        icon.setColorFilter(
-            color
-        )
-
-
-        text.setTextColor(
-            color
-        )
-
-
-        text.setTypeface(
-
-            null,
-
-            if (active) {
-                Typeface.BOLD
-            } else {
-                Typeface.NORMAL
-            }
-        )
+    private fun setNavigationState(icon: ImageView, text: TextView, active: Boolean, activeColor: Int, inactiveColor: Int) {
+        val color = if (active) activeColor else inactiveColor
+        icon.setColorFilter(color)
+        text.setTextColor(color)
+        text.setTypeface(null, if (active) Typeface.BOLD else Typeface.NORMAL)
     }
-
-
-    // =========================================================
-    // ANIMASI AWAL HOME
-    // =========================================================
 
     private fun startHomeAnimation() {
+        homeHeader.alpha = 0f
+        homeHeader.translationY = -180f
+        homeHeader.animate().alpha(1f).translationY(0f)
+            .setDuration(700).setInterpolator(DecelerateInterpolator(1.5f)).start()
 
-        // =====================================================
-        // HEADER
-        // =====================================================
+        viewPager.alpha = 0f
+        viewPager.translationY = 60f
+        viewPager.animate().alpha(1f).translationY(0f)
+            .setDuration(700).setStartDelay(100).setInterpolator(DecelerateInterpolator(1.5f)).start()
 
-        homeHeader.alpha =
-            0f
-
-
-        homeHeader.translationY =
-            -180f
-
-
-        homeHeader.animate()
-            .alpha(1f)
-            .translationY(0f)
-            .setDuration(850)
-            .setInterpolator(
-                DecelerateInterpolator(
-                    1.8f
-                )
-            )
-            .start()
-
-
-        // =====================================================
-        // CONTENT / VIEWPAGER
-        // =====================================================
-
-        viewPager.alpha =
-            0f
-
-
-        viewPager.translationY =
-            60f
-
-
-        viewPager.animate()
-            .alpha(1f)
-            .translationY(0f)
-            .setDuration(800)
-            .setStartDelay(150)
-            .setInterpolator(
-                DecelerateInterpolator(
-                    1.8f
-                )
-            )
-            .start()
-
-
-        // =====================================================
-        // BOTTOM NAVIGATION
-        // =====================================================
-
-        bottomHomeActivity.alpha =
-            0f
-
-
-        bottomHomeActivity.translationY =
-            220f
-
-
-        bottomHomeActivity.animate()
-            .alpha(1f)
-            .translationY(0f)
-            .setDuration(900)
-            .setStartDelay(250)
-            .setInterpolator(
-                DecelerateInterpolator(
-                    1.8f
-                )
-            )
-            .start()
+        bottomHomeActivity.alpha = 0f
+        bottomHomeActivity.translationY = 220f
+        bottomHomeActivity.animate().alpha(1f).translationY(0f)
+            .setDuration(800).setStartDelay(200)
+            .setInterpolator(OvershootInterpolator(1.1f)) // Bottom bar mantul sedikit saat masuk layar
+            .withEndAction {
+                if (::bottomNavCurve.isInitialized) {
+                    val home = findViewById<View>(R.id.navHome)
+                    positionBottomNavCurve(home, false)
+                    animateActiveNavigation(home)
+                }
+            }.start()
     }
 }

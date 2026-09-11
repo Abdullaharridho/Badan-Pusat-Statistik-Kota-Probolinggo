@@ -233,6 +233,8 @@ class MainActivity : AppCompatActivity() {
             HomeActivity::class.java
         )
 
+        intent.putExtra("START_PAGE", 4)
+
         startActivity(intent)
 
         // Hilangkan MainActivity dari back stack

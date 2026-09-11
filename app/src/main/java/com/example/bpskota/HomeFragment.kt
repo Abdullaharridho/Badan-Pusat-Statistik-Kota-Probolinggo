@@ -452,21 +452,21 @@ class HomeFragment : Fragment(), RefreshableFragment {
             R.id.beritaLihatSemua
         )?.setOnClickListener {
 
-            homeActivity?.goToPage(2)
+            homeActivity?.goToPage(0)
         }
 
         view.findViewById<TextView>(
             R.id.publikasiLihatSemua
         )?.setOnClickListener {
 
-            homeActivity?.goToPage(3)
+            homeActivity?.goToPage(2)
         }
 
         view.findViewById<LinearLayout>(
             R.id.other
         )?.setOnClickListener {
 
-            homeActivity?.goToPage(4)
+            homeActivity?.goToPage(3)
         }
     }
 
