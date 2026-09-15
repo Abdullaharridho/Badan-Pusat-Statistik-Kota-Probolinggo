@@ -2,7 +2,6 @@ package com.example.bpskota
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
@@ -15,6 +14,8 @@ import com.airbnb.lottie.LottieAnimationView
 import com.example.bpskota.bps.model.EkonomiListResponse
 import com.example.bpskota.bps.model.EkonomiTable
 import com.example.bpskota.bps.repository.BpsRepository
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
@@ -34,8 +35,9 @@ class EkonomiActivity : AppCompatActivity() {
     private val semuaTabel =
         mutableListOf<EkonomiTable>()
 
-    // Default ketika Activity pertama dibuka
     private var tahunTerpilih: Int? = 2026
+
+    private lateinit var activityTracker: ActivityTracker
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -44,6 +46,19 @@ class EkonomiActivity : AppCompatActivity() {
 
         setContentView(
             R.layout.activity_ekonomi
+        )
+
+        activityTracker = ActivityTracker(
+            this,
+            BpskpRetrofitClient.api
+        )
+
+        activityTracker.trackScreen(
+            screen = "Ekonomi",
+            metadata = mapOf(
+                "subject" to subject,
+                "domain" to domain
+            )
         )
 
         val btnBack =
@@ -65,10 +80,6 @@ class EkonomiActivity : AppCompatActivity() {
             findViewById<LottieAnimationView>(
                 R.id.lottieLoading
             )
-
-        // ============================================================
-        // LOAD ANIMASI LOTTIE
-        // ============================================================
 
         lottieLoading.setAnimation(
             "Loading_Animation.json"
@@ -93,10 +104,6 @@ class EkonomiActivity : AppCompatActivity() {
         )
     }
 
-    // ============================================================
-    // LOAD LIST EKONOMI
-    // ============================================================
-
     private fun loadEkonomiTables(
         cardContainer: LinearLayout,
         lottieLoading: LottieAnimationView
@@ -104,24 +111,10 @@ class EkonomiActivity : AppCompatActivity() {
 
         cardContainer.removeAllViews()
 
-        // ============================================================
-        // MULAI LOADING
-        // ============================================================
-
         lottieLoading.visibility =
             View.VISIBLE
 
         lottieLoading.playAnimation()
-
-        Log.d(
-            "EKONOMI",
-            "Mulai mengambil list Neraca Ekonomi"
-        )
-
-        Log.d(
-            "EKONOMI",
-            "DEFAULT TAHUN = $tahunTerpilih"
-        )
 
         repository.getEkonomiTables(
             domain = domain,
@@ -138,21 +131,12 @@ class EkonomiActivity : AppCompatActivity() {
                     response: Response<EkonomiListResponse>
                 ) {
 
-                    // ====================================================
-                    // REQUEST SELESAI
-                    // ====================================================
-
                     lottieLoading.cancelAnimation()
 
                     lottieLoading.visibility =
                         View.GONE
 
                     if (!response.isSuccessful) {
-
-                        Log.e(
-                            "EKONOMI",
-                            "HTTP ERROR = ${response.code()}"
-                        )
 
                         Toast.makeText(
                             this@EkonomiActivity,
@@ -168,11 +152,6 @@ class EkonomiActivity : AppCompatActivity() {
 
                     if (body == null) {
 
-                        Log.e(
-                            "EKONOMI",
-                            "Response body kosong"
-                        )
-
                         Toast.makeText(
                             this@EkonomiActivity,
                             "Response kosong",
@@ -182,19 +161,9 @@ class EkonomiActivity : AppCompatActivity() {
                         return
                     }
 
-                    Log.d(
-                        "EKONOMI",
-                        "STATUS = ${body.status}"
-                    )
-
                     if (
                         body.status != "OK"
                     ) {
-
-                        Log.e(
-                            "EKONOMI",
-                            "Status API bukan OK"
-                        )
 
                         Toast.makeText(
                             this@EkonomiActivity,
@@ -210,11 +179,6 @@ class EkonomiActivity : AppCompatActivity() {
 
                     if (data == null) {
 
-                        Log.e(
-                            "EKONOMI",
-                            "Data response null"
-                        )
-
                         Toast.makeText(
                             this@EkonomiActivity,
                             "Data tidak ditemukan",
@@ -228,11 +192,6 @@ class EkonomiActivity : AppCompatActivity() {
                         data.size() < 2
                     ) {
 
-                        Log.e(
-                            "EKONOMI",
-                            "Struktur data BPS tidak sesuai"
-                        )
-
                         Toast.makeText(
                             this@EkonomiActivity,
                             "Struktur data tidak sesuai",
@@ -244,11 +203,6 @@ class EkonomiActivity : AppCompatActivity() {
 
                     val tableArray =
                         data[1].asJsonArray
-
-                    Log.d(
-                        "EKONOMI",
-                        "JUMLAH TABEL = ${tableArray.size()}"
-                    )
 
                     if (
                         tableArray.size() == 0
@@ -268,13 +222,7 @@ class EkonomiActivity : AppCompatActivity() {
 
                     semuaTabel.clear()
 
-                    // ========================================================
-                    // BACA SEMUA TABEL
-                    // ========================================================
-
-                    for (
-                    element in tableArray
-                    ) {
+                    for (element in tableArray) {
 
                         try {
 
@@ -287,30 +235,6 @@ class EkonomiActivity : AppCompatActivity() {
                             semuaTabel.add(
                                 table
                             )
-
-                            Log.d(
-                                "EKONOMI",
-                                "ID = ${table.id}"
-                            )
-
-                            Log.d(
-                                "EKONOMI",
-                                "TITLE = ${table.title}"
-                            )
-
-                            Log.d(
-                                "EKONOMI",
-                                "OLDEST = ${table.oldestPeriod}"
-                            )
-
-                            Log.d(
-                                "EKONOMI",
-                                "LATEST = ${table.latestPeriod}"
-                            )
-
-                            // ====================================================
-                            // TAMPILKAN HANYA YANG TERSEDIA DI TAHUN 2026
-                            // ====================================================
 
                             val tahunAwal =
                                 table.oldestPeriod
@@ -334,36 +258,11 @@ class EkonomiActivity : AppCompatActivity() {
                                     table,
                                     tahunTerpilih
                                 )
-
-                                Log.d(
-                                    "EKONOMI",
-                                    "TAMPIL 2026 = ${table.title}"
-                                )
                             }
 
-                        } catch (e: Exception) {
-
-                            Log.e(
-                                "EKONOMI",
-                                "Gagal membaca tabel",
-                                e
-                            )
+                        } catch (_: Exception) {
                         }
                     }
-
-                    Log.d(
-                        "EKONOMI",
-                        "Total semua tabel = ${semuaTabel.size}"
-                    )
-
-                    Log.d(
-                        "EKONOMI",
-                        "Tabel yang ditampilkan tahun 2026 = ${cardContainer.childCount}"
-                    )
-
-                    // ====================================================
-                    // JIKA TIDAK ADA DATA 2026
-                    // ====================================================
 
                     if (
                         cardContainer.childCount == 0
@@ -382,20 +281,10 @@ class EkonomiActivity : AppCompatActivity() {
                     t: Throwable
                 ) {
 
-                    // ====================================================
-                    // REQUEST GAGAL
-                    // ====================================================
-
                     lottieLoading.cancelAnimation()
 
                     lottieLoading.visibility =
                         View.GONE
-
-                    Log.e(
-                        "EKONOMI",
-                        "REQUEST ERROR",
-                        t
-                    )
 
                     Toast.makeText(
                         this@EkonomiActivity,
@@ -406,10 +295,6 @@ class EkonomiActivity : AppCompatActivity() {
             }
         )
     }
-
-    // ============================================================
-    // FILTER TAHUN
-    // ============================================================
 
     private fun tampilkanFilterTahun(
         cardContainer: LinearLayout
@@ -431,13 +316,7 @@ class EkonomiActivity : AppCompatActivity() {
         val daftarTahun =
             mutableSetOf<Int>()
 
-        // ========================================================
-        // AMBIL SEMUA TAHUN YANG TERSEDIA
-        // ========================================================
-
-        for (
-        table in semuaTabel
-        ) {
+        for (table in semuaTabel) {
 
             val tahunAwal =
                 table.oldestPeriod
@@ -489,15 +368,10 @@ class EkonomiActivity : AppCompatActivity() {
         )
 
         tahunList.forEach { tahun ->
-
             pilihan.add(
                 tahun.toString()
             )
         }
-
-        // ========================================================
-        // TENTUKAN PILIHAN SAAT INI
-        // ========================================================
 
         var pilihanSekarang =
             0
@@ -529,10 +403,6 @@ class EkonomiActivity : AppCompatActivity() {
                 pilihanSekarang
             ) { dialog, which ->
 
-                // ====================================================
-                // SEMUA TAHUN
-                // ====================================================
-
                 if (
                     which == 0
                 ) {
@@ -544,26 +414,12 @@ class EkonomiActivity : AppCompatActivity() {
                         cardContainer
                     )
 
-                    Log.d(
-                        "EKONOMI",
-                        "Filter = Semua Tahun"
-                    )
-
                 } else {
-
-                    // ====================================================
-                    // TAHUN TERTENTU
-                    // ====================================================
 
                     tahunTerpilih =
                         tahunList[
                                 which - 1
                         ]
-
-                    Log.d(
-                        "EKONOMI",
-                        "Filter tahun = $tahunTerpilih"
-                    )
 
                     tampilkanTabelBerdasarkanTahun(
                         cardContainer,
@@ -576,35 +432,20 @@ class EkonomiActivity : AppCompatActivity() {
             .show()
     }
 
-    // ============================================================
-    // TAMPILKAN SEMUA
-    // ============================================================
-
     private fun tampilkanSemuaTabel(
         cardContainer: LinearLayout
     ) {
 
         cardContainer.removeAllViews()
 
-        for (
-        table in semuaTabel
-        ) {
+        for (table in semuaTabel) {
 
             addTableCard(
                 cardContainer,
                 table
             )
         }
-
-        Log.d(
-            "EKONOMI",
-            "Menampilkan semua tabel = ${semuaTabel.size}"
-        )
     }
-
-    // ============================================================
-    // TAMPILKAN BERDASARKAN TAHUN
-    // ============================================================
 
     private fun tampilkanTabelBerdasarkanTahun(
         cardContainer: LinearLayout,
@@ -616,9 +457,7 @@ class EkonomiActivity : AppCompatActivity() {
         var jumlah =
             0
 
-        for (
-        table in semuaTabel
-        ) {
+        for (table in semuaTabel) {
 
             val tahunAwal =
                 table.oldestPeriod
@@ -646,16 +485,6 @@ class EkonomiActivity : AppCompatActivity() {
             }
         }
 
-        Log.d(
-            "EKONOMI",
-            "Tahun filter = $tahun"
-        )
-
-        Log.d(
-            "EKONOMI",
-            "Jumlah tabel = $jumlah"
-        )
-
         if (
             jumlah == 0
         ) {
@@ -667,10 +496,6 @@ class EkonomiActivity : AppCompatActivity() {
             ).show()
         }
     }
-
-    // ============================================================
-    // CARD
-    // ============================================================
 
     private fun addTableCard(
         container: LinearLayout,
@@ -686,10 +511,6 @@ class EkonomiActivity : AppCompatActivity() {
                     false
                 )
 
-        // ========================================================
-        // JUDUL
-        // ========================================================
-
         val tvJudul =
             card.findViewById<TextView>(
                 R.id.tvJudul
@@ -699,10 +520,6 @@ class EkonomiActivity : AppCompatActivity() {
             table.title
                 ?: "Tanpa judul"
 
-        // ========================================================
-        // KATEGORI
-        // ========================================================
-
         val tvKategori =
             card.findViewById<TextView>(
                 R.id.tvKategori
@@ -710,10 +527,6 @@ class EkonomiActivity : AppCompatActivity() {
 
         tvKategori.text =
             "Neraca Ekonomi"
-
-        // ========================================================
-        // TAHUN
-        // ========================================================
 
         val tahunCard =
             tahunTampilan
@@ -731,46 +544,19 @@ class EkonomiActivity : AppCompatActivity() {
                 ?.toString()
                 ?: "-"
 
-        // ========================================================
-        // KLIK CARD
-        // ========================================================
-
         card.setOnClickListener {
 
-            // Tahun yang ditampilkan pada card
-            // HARUS menjadi tahun detail
             val tahunDetail =
                 tahunCard
                     ?: 2025
 
-            Log.d(
-                "EKONOMI",
-                "================================"
-            )
-
-            Log.d(
-                "EKONOMI",
-                "TABEL DIKLIK"
-            )
-
-            Log.d(
-                "EKONOMI",
-                "ID = ${table.id}"
-            )
-
-            Log.d(
-                "EKONOMI",
-                "JUDUL = ${table.title}"
-            )
-
-            Log.d(
-                "EKONOMI",
-                "TAHUN CARD = $tahunDetail"
-            )
-
-            Log.d(
-                "EKONOMI",
-                "================================"
+            activityTracker.trackScreen(
+                screen = "EkonomiDetail",
+                metadata = mapOf(
+                    "table_id" to (table.id ?: ""),
+                    "tahun" to tahunDetail,
+                    "kategori" to "Neraca Ekonomi"
+                )
             )
 
             val intent =
@@ -788,10 +574,6 @@ class EkonomiActivity : AppCompatActivity() {
                 EkonomiDetailActivity.EXTRA_JUDUL,
                 table.title
             )
-
-            // ====================================================
-            // INI YANG PENTING
-            // ====================================================
 
             intent.putExtra(
                 EkonomiDetailActivity.EXTRA_TAHUN,

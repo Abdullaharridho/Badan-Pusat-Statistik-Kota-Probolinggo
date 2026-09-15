@@ -10,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.bpskota.bps.api.BpsRetrofitClient
 import com.example.bpskota.bps.model.Wilayah
 import com.example.bpskota.bps.model.WilayahResponse
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
@@ -27,33 +29,32 @@ class MasterwilayahActivity : AppCompatActivity() {
     private lateinit var tvTotalKecamatan: TextView
     private lateinit var listKecamatan: LinearLayout
 
+    private lateinit var activityTracker: ActivityTracker
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_masterwilayah)
 
-        // =========================
-        // BACK
-        // =========================
+        activityTracker = ActivityTracker(
+            this,
+            BpskpRetrofitClient.api
+        )
+
+        activityTracker.trackScreen(
+            screen = "Masterwilayah"
+        )
 
         findViewById<ImageView>(R.id.btnBack)
             .setOnClickListener {
                 finish()
             }
 
-        // =========================
-        // VIEW
-        // =========================
-
         tvTotalKecamatan =
             findViewById(R.id.tvTotalKecamatan)
 
         listKecamatan =
             findViewById(R.id.listKecamatan)
-
-        // =========================
-        // LOAD DATA
-        // =========================
 
         loadWilayah()
     }
@@ -103,16 +104,8 @@ class MasterwilayahActivity : AppCompatActivity() {
                         return
                     }
 
-                    // =========================
-                    // PARSE WILAYAH
-                    // =========================
-
                     val wilayahList =
                         parseWilayah(body)
-
-                    // =========================
-                    // FILTER KECAMATAN
-                    // =========================
 
                     val kecamatanList =
                         wilayahList.filter { wilayah ->
@@ -140,10 +133,6 @@ class MasterwilayahActivity : AppCompatActivity() {
             })
     }
 
-    // =====================================================
-    // PARSE RESPONSE BPS
-    // =====================================================
-
     private fun parseWilayah(
         response: WilayahResponse
     ): List<Wilayah> {
@@ -158,9 +147,6 @@ class MasterwilayahActivity : AppCompatActivity() {
             Gson()
 
         for (element in data) {
-
-            // Metadata berbentuk object
-            // Wilayah berbentuk array
 
             if (element.isJsonArray) {
 
@@ -179,9 +165,7 @@ class MasterwilayahActivity : AppCompatActivity() {
 
                         result.add(wilayah)
 
-                    } catch (e: Exception) {
-
-                        e.printStackTrace()
+                    } catch (_: Exception) {
                     }
                 }
             }
@@ -190,27 +174,14 @@ class MasterwilayahActivity : AppCompatActivity() {
         return result
     }
 
-    // =====================================================
-    // TAMPILKAN KECAMATAN
-    // =====================================================
-
     private fun tampilkanKecamatan(
         kecamatanList: List<Wilayah>
     ) {
 
-        // Bersihkan card sebelumnya
         listKecamatan.removeAllViews()
-
-        // =========================
-        // TOTAL
-        // =========================
 
         tvTotalKecamatan.text =
             "${kecamatanList.size} Kecamatan"
-
-        // =========================
-        // CARD KECAMATAN
-        // =========================
 
         for (kecamatan in kecamatanList) {
 
@@ -238,10 +209,6 @@ class MasterwilayahActivity : AppCompatActivity() {
             tvKode.text =
                 kecamatan.kodeVerId.toString()
 
-            // =========================
-            // CLICK
-            // =========================
-
             card.setOnClickListener {
 
                 Toast.makeText(
@@ -254,10 +221,6 @@ class MasterwilayahActivity : AppCompatActivity() {
             listKecamatan.addView(card)
         }
     }
-
-    // =====================================================
-    // ERROR
-    // =====================================================
 
     private fun showError(
         message: String

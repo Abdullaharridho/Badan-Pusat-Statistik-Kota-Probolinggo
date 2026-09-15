@@ -5,7 +5,6 @@ import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.EditText
@@ -18,15 +17,13 @@ import com.example.bpskota.bps.model.AllSimdasiResponse
 import com.example.bpskota.bps.model.AllStaticTableResponse
 import com.example.bpskota.bps.model.AllVariableResponse
 import com.example.bpskota.bps.repository.BpsAllDataRepository
-import com.google.gson.JsonElement
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import com.google.gson.JsonObject
 
 class KategoriListActivity : AppCompatActivity() {
 
     companion object {
-
-        private const val TAG =
-            "KategoriListActivity"
 
         private const val WILAYAH =
             "3574000"
@@ -38,75 +35,33 @@ class KategoriListActivity : AppCompatActivity() {
             "008edaaae5d450b1913b31a2cef618c3"
     }
 
-
-    // =====================================================
-    // VIEW
-    // =====================================================
-
     private lateinit var kategoriContainer: LinearLayout
 
     private lateinit var etSearchKategori: EditText
 
     private lateinit var lottieLoading: LottieAnimationView
 
-
-    // =====================================================
-    // REPOSITORY
-    // =====================================================
+    private lateinit var activityTracker: ActivityTracker
 
     private val repository =
         BpsAllDataRepository()
 
-
-    // =====================================================
-    // DATA KATEGORI
-    // =====================================================
-
     private val daftarKategori =
         mutableListOf<KategoriItem>()
 
-
-    /**
-     * Menyimpan kombinasi:
-     *
-     * SIMDASI|pemerintahan
-     * STATIC|hotel dan akomodasi
-     * VARIABLE|masyarakat informasi
-     *
-     * Digunakan untuk mencegah duplikat.
-     */
     private val kategoriSudahAda =
         mutableSetOf<String>()
 
-
-    // =====================================================
-    // STATUS LOAD
-    // =====================================================
-
-    /**
-     * Karena 3 API dijalankan bersamaan,
-     * kita perlu mengetahui kapan ketiganya selesai.
-     */
     private var simdasiSelesai = false
 
     private var staticSelesai = false
 
     private var variableSelesai = false
 
-
-    // =====================================================
-    // MODEL
-    // =====================================================
-
     data class KategoriItem(
         val nama: String,
         val sumber: String
     )
-
-
-    // =====================================================
-    // CREATE
-    // =====================================================
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -119,11 +74,6 @@ class KategoriListActivity : AppCompatActivity() {
         setContentView(
             R.layout.activity_kategori_list
         )
-
-
-        // =================================================
-        // FIND VIEW
-        // =================================================
 
         kategoriContainer =
             findViewById(
@@ -140,48 +90,31 @@ class KategoriListActivity : AppCompatActivity() {
                 R.id.lottieLoading
             )
 
-
         val btnBack =
             findViewById<View>(
                 R.id.btnBack
             )
 
+        activityTracker = ActivityTracker(
+            this,
+            BpskpRetrofitClient.api
+        )
 
-        // =================================================
-        // BACK
-        // =================================================
+        activityTracker.trackScreen(
+            screen = "KategoriList"
+        )
 
         btnBack.setOnClickListener {
 
             finish()
         }
 
-
-        // =================================================
-        // LOTTIE
-        // =================================================
-
         mulaiLoading()
-
-
-        // =================================================
-        // SEARCH
-        // =================================================
 
         setupSearch()
 
-
-        // =================================================
-        // LOAD DATA
-        // =================================================
-
         loadSemuaKategori()
     }
-
-
-    // =====================================================
-    // LOTTIE LOADING
-    // =====================================================
 
     private fun mulaiLoading() {
 
@@ -198,7 +131,6 @@ class KategoriListActivity : AppCompatActivity() {
         lottieLoading.playAnimation()
     }
 
-
     private fun selesaiLoading() {
 
         lottieLoading.cancelAnimation()
@@ -206,11 +138,6 @@ class KategoriListActivity : AppCompatActivity() {
         lottieLoading.visibility =
             View.GONE
     }
-
-
-    // =====================================================
-    // SEARCH
-    // =====================================================
 
     private fun setupSearch() {
 
@@ -226,7 +153,6 @@ class KategoriListActivity : AppCompatActivity() {
                 ) {
                 }
 
-
                 override fun onTextChanged(
                     s: CharSequence?,
                     start: Int,
@@ -240,7 +166,6 @@ class KategoriListActivity : AppCompatActivity() {
                     )
                 }
 
-
                 override fun afterTextChanged(
                     s: Editable?
                 ) {
@@ -249,19 +174,11 @@ class KategoriListActivity : AppCompatActivity() {
         )
     }
 
-
-    // =====================================================
-    // LOAD SEMUA KATEGORI
-    //
-    // 3 API DIJALANKAN BERSAMAAN
-    // =====================================================
-
     private fun loadSemuaKategori() {
 
         daftarKategori.clear()
 
         kategoriSudahAda.clear()
-
 
         simdasiSelesai =
             false
@@ -272,42 +189,7 @@ class KategoriListActivity : AppCompatActivity() {
         variableSelesai =
             false
 
-
         kategoriContainer.removeAllViews()
-
-
-        Log.d(
-            TAG,
-            "================================"
-        )
-
-        Log.d(
-            TAG,
-            "MULAI LOAD SEMUA KATEGORI"
-        )
-
-        Log.d(
-            TAG,
-            "SIMDASI + STATIC + VARIABLE"
-        )
-
-        Log.d(
-            TAG,
-            "DIJALANKAN PARALEL"
-        )
-
-        Log.d(
-            TAG,
-            "================================"
-        )
-
-
-        /**
-         * PENTING:
-         *
-         * Ketiga request pertama langsung
-         * dijalankan tanpa menunggu yang lain.
-         */
 
         loadSimdasiPage(1)
 
@@ -316,20 +198,9 @@ class KategoriListActivity : AppCompatActivity() {
         loadVariablePage(1)
     }
 
-
-    // =====================================================
-    // SIMDASI
-    // =====================================================
-
     private fun loadSimdasiPage(
         page: Int
     ) {
-
-        Log.d(
-            TAG,
-            "SIMDASI request page=$page"
-        )
-
 
         repository.getAllSimdasi(
             wilayah = WILAYAH,
@@ -341,63 +212,32 @@ class KategoriListActivity : AppCompatActivity() {
 
                 if (error != null) {
 
-                    Log.e(
-                        TAG,
-                        "SIMDASI error page=$page",
-                        error
-                    )
-
-                    /**
-                     * Jangan menghentikan sumber lain.
-                     * Tandai SIMDASI selesai.
-                     */
-                    simdasiSelesai = true
+                    simdasiSelesai =
+                        true
 
                     cekSemuaSelesai()
 
                     return@runOnUiThread
                 }
-
 
                 if (response == null) {
 
-                    Log.e(
-                        TAG,
-                        "SIMDASI response null"
-                    )
-
-                    simdasiSelesai = true
+                    simdasiSelesai =
+                        true
 
                     cekSemuaSelesai()
 
                     return@runOnUiThread
                 }
-
-
-                // -----------------------------------------
-                // PROSES DATA
-                // -----------------------------------------
 
                 prosesSimdasi(
                     response
                 )
 
-
-                // -----------------------------------------
-                // CEK PAGE
-                // -----------------------------------------
-
                 val totalPages =
                     getSimdasiTotalPages(
                         response
                     )
-
-
-                Log.d(
-                    TAG,
-                    "SIMDASI page=$page/$totalPages"
-                )
-
 
                 if (
                     page < totalPages
@@ -409,11 +249,6 @@ class KategoriListActivity : AppCompatActivity() {
 
                 } else {
 
-                    Log.d(
-                        TAG,
-                        "SIMDASI SELESAI"
-                    )
-
                     simdasiSelesai =
                         true
 
@@ -422,11 +257,6 @@ class KategoriListActivity : AppCompatActivity() {
             }
         }
     }
-
-
-    // =====================================================
-    // PROSES SIMDASI
-    // =====================================================
 
     private fun prosesSimdasi(
         response: AllSimdasiResponse
@@ -442,13 +272,11 @@ class KategoriListActivity : AppCompatActivity() {
                     ?.asJsonArray
                     ?: return
 
-
             if (
                 rootData.size() < 2
             ) {
                 return
             }
-
 
             val wrapper =
                 rootData[1]
@@ -458,7 +286,6 @@ class KategoriListActivity : AppCompatActivity() {
                     ?.asJsonObject
                     ?: return
 
-
             val data =
                 wrapper
                     .get("data")
@@ -467,7 +294,6 @@ class KategoriListActivity : AppCompatActivity() {
                     }
                     ?.asJsonArray
                     ?: return
-
 
             for (
             element in data
@@ -479,10 +305,8 @@ class KategoriListActivity : AppCompatActivity() {
                     continue
                 }
 
-
                 val obj =
                     element.asJsonObject
-
 
                 val mmsSubject =
                     getString(
@@ -490,13 +314,11 @@ class KategoriListActivity : AppCompatActivity() {
                         "mms_subject"
                     )
 
-
                 if (
                     mmsSubject.isBlank()
                 ) {
                     continue
                 }
-
 
                 tambahKategori(
                     nama = mmsSubject,
@@ -507,19 +329,8 @@ class KategoriListActivity : AppCompatActivity() {
         } catch (
             e: Exception
         ) {
-
-            Log.e(
-                TAG,
-                "Gagal proses SIMDASI",
-                e
-            )
         }
     }
-
-
-    // =====================================================
-    // TOTAL PAGE SIMDASI
-    // =====================================================
 
     private fun getSimdasiTotalPages(
         response: AllSimdasiResponse
@@ -535,13 +346,11 @@ class KategoriListActivity : AppCompatActivity() {
                     ?.asJsonArray
                     ?: return 1
 
-
             if (
                 data.isEmpty()
             ) {
                 return 1
             }
-
 
             data[0]
                 .takeIf {
@@ -560,20 +369,9 @@ class KategoriListActivity : AppCompatActivity() {
         }
     }
 
-
-    // =====================================================
-    // STATIC TABLE
-    // =====================================================
-
     private fun loadStaticTablePage(
         page: Int
     ) {
-
-        Log.d(
-            TAG,
-            "STATIC request page=$page"
-        )
-
 
         repository.getAllStaticTables(
             domain = DOMAIN,
@@ -585,12 +383,6 @@ class KategoriListActivity : AppCompatActivity() {
 
                 if (error != null) {
 
-                    Log.e(
-                        TAG,
-                        "STATIC error page=$page",
-                        error
-                    )
-
                     staticSelesai =
                         true
 
@@ -598,7 +390,6 @@ class KategoriListActivity : AppCompatActivity() {
 
                     return@runOnUiThread
                 }
-
 
                 if (response == null) {
 
@@ -610,31 +401,14 @@ class KategoriListActivity : AppCompatActivity() {
                     return@runOnUiThread
                 }
 
-
-                // -----------------------------------------
-                // PROSES DATA
-                // -----------------------------------------
-
                 prosesStaticTable(
                     response
                 )
-
-
-                // -----------------------------------------
-                // PAGE
-                // -----------------------------------------
 
                 val totalPages =
                     getStaticTotalPages(
                         response
                     )
-
-
-                Log.d(
-                    TAG,
-                    "STATIC page=$page/$totalPages"
-                )
-
 
                 if (
                     page < totalPages
@@ -646,11 +420,6 @@ class KategoriListActivity : AppCompatActivity() {
 
                 } else {
 
-                    Log.d(
-                        TAG,
-                        "STATIC SELESAI"
-                    )
-
                     staticSelesai =
                         true
 
@@ -659,11 +428,6 @@ class KategoriListActivity : AppCompatActivity() {
             }
         }
     }
-
-
-    // =====================================================
-    // PROSES STATIC TABLE
-    // =====================================================
 
     private fun prosesStaticTable(
         response: AllStaticTableResponse
@@ -679,13 +443,11 @@ class KategoriListActivity : AppCompatActivity() {
                     ?.asJsonArray
                     ?: return
 
-
             if (
                 rootData.size() < 2
             ) {
                 return
             }
-
 
             val data =
                 rootData[1]
@@ -694,7 +456,6 @@ class KategoriListActivity : AppCompatActivity() {
                     }
                     ?.asJsonArray
                     ?: return
-
 
             for (
             element in data
@@ -706,10 +467,8 @@ class KategoriListActivity : AppCompatActivity() {
                     continue
                 }
 
-
                 val obj =
                     element.asJsonObject
-
 
                 val subj =
                     getString(
@@ -717,13 +476,11 @@ class KategoriListActivity : AppCompatActivity() {
                         "subj"
                     )
 
-
                 if (
                     subj.isBlank()
                 ) {
                     continue
                 }
-
 
                 tambahKategori(
                     nama = subj,
@@ -734,19 +491,8 @@ class KategoriListActivity : AppCompatActivity() {
         } catch (
             e: Exception
         ) {
-
-            Log.e(
-                TAG,
-                "Gagal proses Static Table",
-                e
-            )
         }
     }
-
-
-    // =====================================================
-    // TOTAL PAGE STATIC
-    // =====================================================
 
     private fun getStaticTotalPages(
         response: AllStaticTableResponse
@@ -762,13 +508,11 @@ class KategoriListActivity : AppCompatActivity() {
                     ?.asJsonArray
                     ?: return 1
 
-
             if (
                 data.isEmpty()
             ) {
                 return 1
             }
-
 
             data[0]
                 .takeIf {
@@ -787,20 +531,9 @@ class KategoriListActivity : AppCompatActivity() {
         }
     }
 
-
-    // =====================================================
-    // VARIABLE
-    // =====================================================
-
     private fun loadVariablePage(
         page: Int
     ) {
-
-        Log.d(
-            TAG,
-            "VARIABLE request page=$page"
-        )
-
 
         repository.getAllVariables(
             domain = DOMAIN,
@@ -812,12 +545,6 @@ class KategoriListActivity : AppCompatActivity() {
 
                 if (error != null) {
 
-                    Log.e(
-                        TAG,
-                        "VARIABLE error page=$page",
-                        error
-                    )
-
                     variableSelesai =
                         true
 
@@ -825,7 +552,6 @@ class KategoriListActivity : AppCompatActivity() {
 
                     return@runOnUiThread
                 }
-
 
                 if (response == null) {
 
@@ -837,31 +563,14 @@ class KategoriListActivity : AppCompatActivity() {
                     return@runOnUiThread
                 }
 
-
-                // -----------------------------------------
-                // PROSES DATA
-                // -----------------------------------------
-
                 prosesVariable(
                     response
                 )
-
-
-                // -----------------------------------------
-                // PAGE
-                // -----------------------------------------
 
                 val totalPages =
                     getVariableTotalPages(
                         response
                     )
-
-
-                Log.d(
-                    TAG,
-                    "VARIABLE page=$page/$totalPages"
-                )
-
 
                 if (
                     page < totalPages
@@ -873,11 +582,6 @@ class KategoriListActivity : AppCompatActivity() {
 
                 } else {
 
-                    Log.d(
-                        TAG,
-                        "VARIABLE SELESAI"
-                    )
-
                     variableSelesai =
                         true
 
@@ -886,11 +590,6 @@ class KategoriListActivity : AppCompatActivity() {
             }
         }
     }
-
-
-    // =====================================================
-    // PROSES VARIABLE
-    // =====================================================
 
     private fun prosesVariable(
         response: AllVariableResponse
@@ -906,13 +605,11 @@ class KategoriListActivity : AppCompatActivity() {
                     ?.asJsonArray
                     ?: return
 
-
             if (
                 rootData.size() < 2
             ) {
                 return
             }
-
 
             val data =
                 rootData[1]
@@ -921,7 +618,6 @@ class KategoriListActivity : AppCompatActivity() {
                     }
                     ?.asJsonArray
                     ?: return
-
 
             for (
             element in data
@@ -933,29 +629,20 @@ class KategoriListActivity : AppCompatActivity() {
                     continue
                 }
 
-
                 val obj =
                     element.asJsonObject
 
-
-                /**
-                 * VARIABLE:
-                 *
-                 * HANYA subcsa_name
-                 */
                 val subcsaName =
                     getString(
                         obj,
                         "subcsa_name"
                     )
 
-
                 if (
                     subcsaName.isBlank()
                 ) {
                     continue
                 }
-
 
                 tambahKategori(
                     nama = subcsaName,
@@ -966,19 +653,8 @@ class KategoriListActivity : AppCompatActivity() {
         } catch (
             e: Exception
         ) {
-
-            Log.e(
-                TAG,
-                "Gagal proses Variable",
-                e
-            )
         }
     }
-
-
-    // =====================================================
-    // TOTAL PAGE VARIABLE
-    // =====================================================
 
     private fun getVariableTotalPages(
         response: AllVariableResponse
@@ -994,13 +670,11 @@ class KategoriListActivity : AppCompatActivity() {
                     ?.asJsonArray
                     ?: return 1
 
-
             if (
                 data.isEmpty()
             ) {
                 return 1
             }
-
 
             data[0]
                 .takeIf {
@@ -1019,11 +693,6 @@ class KategoriListActivity : AppCompatActivity() {
         }
     }
 
-
-    // =====================================================
-    // TAMBAH KATEGORI
-    // =====================================================
-
     private fun tambahKategori(
         nama: String,
         sumber: String
@@ -1037,40 +706,20 @@ class KategoriListActivity : AppCompatActivity() {
                     " "
                 )
 
-
         if (
             namaBersih.isBlank()
         ) {
             return
         }
 
-
-        /**
-         * Duplikat dihitung dalam sumber yang sama.
-         *
-         * Contoh:
-         *
-         * SIMDASI|Pemerintahan
-         * SIMDASI|Pemerintahan
-         *
-         * Yang kedua tidak masuk.
-         */
         val key =
             "$sumber|${namaBersih.lowercase()}"
-
 
         if (
             !kategoriSudahAda.add(key)
         ) {
-
-            Log.d(
-                TAG,
-                "Duplikat dilewati: $key"
-            )
-
             return
         }
-
 
         daftarKategori.add(
             KategoriItem(
@@ -1078,41 +727,9 @@ class KategoriListActivity : AppCompatActivity() {
                 sumber = sumber
             )
         )
-
-
-        Log.d(
-            TAG,
-            "Kategori baru: $sumber → $namaBersih"
-        )
     }
 
-
-    // =====================================================
-    // CEK SEMUA API SELESAI
-    // =====================================================
-
     private fun cekSemuaSelesai() {
-
-        Log.d(
-            TAG,
-            "Status:"
-        )
-
-        Log.d(
-            TAG,
-            "SIMDASI = $simdasiSelesai"
-        )
-
-        Log.d(
-            TAG,
-            "STATIC = $staticSelesai"
-        )
-
-        Log.d(
-            TAG,
-            "VARIABLE = $variableSelesai"
-        )
-
 
         if (
             !simdasiSelesai ||
@@ -1122,42 +739,21 @@ class KategoriListActivity : AppCompatActivity() {
             return
         }
 
-
-        Log.d(
-            TAG,
-            "================================"
-        )
-
-        Log.d(
-            TAG,
-            "SEMUA API SELESAI"
-        )
-
-        Log.d(
-            TAG,
-            "Total kategori = ${daftarKategori.size}"
-        )
-
-        Log.d(
-            TAG,
-            "================================"
-        )
-
-
         selesaiLoading()
+
+        activityTracker.trackScreen(
+            screen = "KategoriList",
+            metadata = mapOf(
+                "total_kategori" to daftarKategori.size
+            )
+        )
 
         tampilkanKategori()
     }
 
-
-    // =====================================================
-    // TAMPILKAN SEMUA KATEGORI
-    // =====================================================
-
     private fun tampilkanKategori() {
 
         kategoriContainer.removeAllViews()
-
 
         if (
             daftarKategori.isEmpty()
@@ -1170,7 +766,6 @@ class KategoriListActivity : AppCompatActivity() {
             return
         }
 
-
         for (
         kategori in daftarKategori
         ) {
@@ -1181,28 +776,42 @@ class KategoriListActivity : AppCompatActivity() {
         }
     }
 
+    private fun tambahCardKategori(
+        item: KategoriItem
+    ) {
 
-    // =====================================================
-    // CARD KATEGORI
-    // =====================================================
+        val view =
+            LayoutInflater
+                .from(this)
+                .inflate(
+                    R.layout.item_statistik,
+                    kategoriContainer,
+                    false
+                )
 
-    private fun tambahCardKategori(item: KategoriItem) {
+        val tvNama =
+            view.findViewById<TextView>(
+                R.id.tvJudul
+            )
 
-        val view = LayoutInflater.from(this)
-            .inflate(R.layout.item_statistik, kategoriContainer, false)
+        val tvSumber =
+            view.findViewById<TextView>(
+                R.id.tvKategori
+            )
 
-        val tvNama = view.findViewById<TextView>(R.id.tvJudul)
-        val tvSumber = view.findViewById<TextView>(R.id.tvKategori)
+        tvNama.text =
+            item.nama
 
-        tvNama.text = item.nama
-        tvSumber.text = item.sumber
+        tvSumber.text =
+            item.sumber
 
         view.setOnClickListener {
 
-            val intent = Intent(
-                this,
-                DataKategoriActivity::class.java
-            )
+            val intent =
+                Intent(
+                    this,
+                    DataKategoriActivity::class.java
+                )
 
             intent.putExtra(
                 "NAMA_KATEGORI",
@@ -1212,20 +821,15 @@ class KategoriListActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        kategoriContainer.addView(view)
+        kategoriContainer.addView(
+            view
+        )
     }
-    // =====================================================
-    // SEARCH KATEGORI
-    // =====================================================
 
     private fun filterKategori(
         keyword: String
     ) {
 
-        /**
-         * Kalau data masih loading,
-         * jangan tampilkan hasil search.
-         */
         if (
             !simdasiSelesai ||
             !staticSelesai ||
@@ -1234,19 +838,12 @@ class KategoriListActivity : AppCompatActivity() {
             return
         }
 
-
         val query =
             keyword
                 .trim()
                 .lowercase()
 
-
         kategoriContainer.removeAllViews()
-
-
-        // =================================================
-        // SEARCH KOSONG
-        // =================================================
 
         if (
             query.isBlank()
@@ -1257,10 +854,8 @@ class KategoriListActivity : AppCompatActivity() {
             return
         }
 
-
         var jumlahHasil =
             0
-
 
         for (
         kategori in daftarKategori
@@ -1270,7 +865,6 @@ class KategoriListActivity : AppCompatActivity() {
                 kategori.nama
                     .lowercase()
                     .contains(query)
-
 
             if (
                 cocok
@@ -1284,11 +878,6 @@ class KategoriListActivity : AppCompatActivity() {
             }
         }
 
-
-        // =================================================
-        // TIDAK ADA HASIL
-        // =================================================
-
         if (
             jumlahHasil == 0
         ) {
@@ -1297,18 +886,7 @@ class KategoriListActivity : AppCompatActivity() {
                 "Kategori tidak ditemukan."
             )
         }
-
-
-        Log.d(
-            TAG,
-            "Search '$query' = $jumlahHasil hasil"
-        )
     }
-
-
-    // =====================================================
-    // GET STRING
-    // =====================================================
 
     private fun getString(
         obj: JsonObject,
@@ -1333,11 +911,6 @@ class KategoriListActivity : AppCompatActivity() {
         }
     }
 
-
-    // =====================================================
-    // PESAN
-    // =====================================================
-
     private fun tampilkanPesan(
         pesan: String
     ) {
@@ -1345,19 +918,15 @@ class KategoriListActivity : AppCompatActivity() {
         val tv =
             TextView(this)
 
-
         tv.text =
             pesan
-
 
         tv.textSize =
             14f
 
-
         tv.setTextColor(
             Color.GRAY
         )
-
 
         tv.setPadding(
             8,
@@ -1366,16 +935,10 @@ class KategoriListActivity : AppCompatActivity() {
             24
         )
 
-
         kategoriContainer.addView(
             tv
         )
     }
-
-
-    // =====================================================
-    // CLEANUP
-    // =====================================================
 
     override fun onDestroy() {
 

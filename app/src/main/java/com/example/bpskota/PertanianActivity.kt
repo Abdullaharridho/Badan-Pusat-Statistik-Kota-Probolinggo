@@ -15,6 +15,8 @@ import com.airbnb.lottie.LottieDrawable
 import com.example.bpskota.bps.model.SimdasiResponse
 import com.example.bpskota.bps.model.SimdasiTable
 import com.example.bpskota.bps.repository.BpsRepository
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -27,6 +29,7 @@ class PertanianActivity : AppCompatActivity() {
     private lateinit var btnFilter: ImageView
 
     private lateinit var adapter: PertanianTableAdapter
+    private lateinit var activityTracker: ActivityTracker
 
     private val repository =
         BpsRepository()
@@ -70,6 +73,19 @@ class PertanianActivity : AppCompatActivity() {
         setupLoading()
 
         setupAdapter()
+
+        activityTracker =
+            ActivityTracker(
+                this,
+                BpskpRetrofitClient.api
+            )
+
+        activityTracker.trackScreen(
+            screen = "Pertanian",
+            metadata = mapOf(
+                "tahun" to tahunTerpilih
+            )
+        )
 
         setupButton()
 
@@ -138,7 +154,8 @@ class PertanianActivity : AppCompatActivity() {
             PertanianTableAdapter(
 
                 container = cardContainer,
-                kategori = "Pertanian, Kehutanan, Peternakan, dan Perikanan",
+                kategori =
+                "Pertanian, Kehutanan, Peternakan, dan Perikanan",
 
                 onItemClick = { table, tahun ->
 

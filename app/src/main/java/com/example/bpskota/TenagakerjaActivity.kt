@@ -1,7 +1,6 @@
 package com.example.bpskota
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ArrayAdapter
@@ -16,6 +15,8 @@ import com.airbnb.lottie.LottieAnimationView
 import com.airbnb.lottie.LottieDrawable
 import com.example.bpskota.bps.model.TenagaKerjaResponse
 import com.example.bpskota.bps.repository.BpsRepository
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -24,8 +25,6 @@ import java.util.Locale
 class TenagakerjaActivity : AppCompatActivity() {
 
     companion object {
-
-        private const val TAG = "TenagaKerjaAPI"
 
         private const val DOMAIN = "3574"
 
@@ -45,6 +44,8 @@ class TenagakerjaActivity : AppCompatActivity() {
 
     private val repository =
         BpsRepository()
+
+    private lateinit var activityTracker: ActivityTracker
 
     private lateinit var cardContainer: LinearLayout
     private lateinit var progressLoading: LottieAnimationView
@@ -70,6 +71,19 @@ class TenagakerjaActivity : AppCompatActivity() {
         setupLoading()
 
         setupButton()
+
+        activityTracker =
+            ActivityTracker(
+                this,
+                BpskpRetrofitClient.api
+            )
+
+        activityTracker.trackScreen(
+            screen = "Tenagakerja",
+            metadata = mapOf(
+                "tahun" to tahunTerpilih
+            )
+        )
 
         ambilDataTahun(
             tahun = tahunTerpilih,
@@ -301,41 +315,6 @@ class TenagakerjaActivity : AppCompatActivity() {
 
         cardContainer.removeAllViews()
 
-        Log.d(
-            TAG,
-            "========================================"
-        )
-
-        Log.d(
-            TAG,
-            "AMBIL DATA TENAGA KERJA"
-        )
-
-        Log.d(
-            TAG,
-            "TAHUN = $tahun"
-        )
-
-        Log.d(
-            TAG,
-            "KODE TAHUN = $kodeTahun"
-        )
-
-        Log.d(
-            TAG,
-            "DOMAIN = $DOMAIN"
-        )
-
-        Log.d(
-            TAG,
-            "VARIABLE = $VARIABLE"
-        )
-
-        Log.d(
-            TAG,
-            "========================================"
-        )
-
         repository.getTenagaKerja(
             domain = DOMAIN,
             variable = VARIABLE,
@@ -349,16 +328,6 @@ class TenagakerjaActivity : AppCompatActivity() {
                     call: Call<TenagaKerjaResponse>,
                     response: Response<TenagaKerjaResponse>
                 ) {
-
-                    Log.d(
-                        TAG,
-                        "URL = ${call.request().url}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "HTTP CODE = ${response.code()}"
-                    )
 
                     if (
                         !response.isSuccessful
@@ -392,31 +361,6 @@ class TenagakerjaActivity : AppCompatActivity() {
 
                         return
                     }
-
-                    Log.d(
-                        TAG,
-                        "STATUS = ${body.status}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "DATA AVAILABILITY = ${body.dataAvailability}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "TAHUN = ${body.tahun}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "VARIABLE = ${body.variable}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "DATA CONTENT = ${body.dataContent}"
-                    )
 
                     if (
                         body.status
@@ -468,12 +412,6 @@ class TenagakerjaActivity : AppCompatActivity() {
 
                     selesaiLoading()
 
-                    Log.e(
-                        TAG,
-                        "GAGAL API TAHUN $tahun",
-                        t
-                    )
-
                     Toast.makeText(
                         this@TenagakerjaActivity,
                         "Gagal mengambil data tahun $tahun: ${t.message}",
@@ -494,16 +432,8 @@ class TenagakerjaActivity : AppCompatActivity() {
             body.dataContent
                 ?: emptyMap()
 
-        Log.d(
-            TAG,
-            "DATA CONTENT = $dataContent"
-        )
-
         val prefix =
             "$DOMAIN$VARIABLE"
-
-        var keyDitemukan: String? =
-            null
 
         var nilai: Double? =
             null
@@ -523,9 +453,6 @@ class TenagakerjaActivity : AppCompatActivity() {
         if (
             entryUtama != null
         ) {
-
-            keyDitemukan =
-                entryUtama.key
 
             nilai =
                 entryUtama.value
@@ -548,9 +475,6 @@ class TenagakerjaActivity : AppCompatActivity() {
                 entryFallback != null
             ) {
 
-                keyDitemukan =
-                    entryFallback.key
-
                 nilai =
                     entryFallback.value
             }
@@ -563,9 +487,6 @@ class TenagakerjaActivity : AppCompatActivity() {
 
             val entry =
                 dataContent.entries.first()
-
-            keyDitemukan =
-                entry.key
 
             nilai =
                 entry.value
@@ -608,51 +529,6 @@ class TenagakerjaActivity : AppCompatActivity() {
                 "%.${decimal}f",
                 nilai
             )
-
-        Log.d(
-            TAG,
-            "========================================"
-        )
-
-        Log.d(
-            TAG,
-            "HASIL"
-        )
-
-        Log.d(
-            TAG,
-            "TAHUN = $tahun"
-        )
-
-        Log.d(
-            TAG,
-            "KODE TAHUN = $kodeTahun"
-        )
-
-        Log.d(
-            TAG,
-            "KEY = $keyDitemukan"
-        )
-
-        Log.d(
-            TAG,
-            "JUDUL = $judul"
-        )
-
-        Log.d(
-            TAG,
-            "NILAI = $nilaiFormat"
-        )
-
-        Log.d(
-            TAG,
-            "SATUAN = $satuan"
-        )
-
-        Log.d(
-            TAG,
-            "========================================"
-        )
 
         val card =
             LayoutInflater

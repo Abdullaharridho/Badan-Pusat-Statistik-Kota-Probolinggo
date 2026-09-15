@@ -18,7 +18,6 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.text.Html
 import android.text.Spanned
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -39,7 +38,8 @@ import androidx.core.text.HtmlCompat
 import com.example.bpskota.bps.model.SimdasiDetailData
 import com.example.bpskota.bps.model.SimdasiDetailResponse
 import com.example.bpskota.bps.repository.BpsRepository
-import com.google.gson.GsonBuilder
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -49,8 +49,6 @@ import java.io.FileOutputStream
 class StatistikDetailActivity : AppCompatActivity() {
 
     companion object {
-
-        private const val TAG = "StatistikDetail"
 
         const val EXTRA_ID_TABEL = "id_tabel"
         const val EXTRA_TAHUN = "tahun"
@@ -76,6 +74,9 @@ class StatistikDetailActivity : AppCompatActivity() {
 
     private val WILAYAH =
         "3574000"
+
+    private lateinit var activityTracker:
+            ActivityTracker
 
     private var detailData:
             SimdasiDetailData? = null
@@ -106,12 +107,6 @@ class StatistikDetailActivity : AppCompatActivity() {
         )
 
         initView()
-
-        setupButton()
-
-        createNotificationChannel()
-
-        requestNotificationPermission()
 
         val idTabel =
             intent.getStringExtra(
@@ -155,6 +150,28 @@ class StatistikDetailActivity : AppCompatActivity() {
             return
         }
 
+        activityTracker =
+            ActivityTracker(
+                this,
+                BpskpRetrofitClient.api
+            )
+
+        activityTracker.trackScreen(
+            screen = "StatistikDetail",
+            metadata = mapOf(
+                "table_id" to idTabel,
+                "tahun" to tahun,
+                "judul" to (judul ?: ""),
+                "kode" to (kode ?: "")
+            )
+        )
+
+        setupButton()
+
+        createNotificationChannel()
+
+        requestNotificationPermission()
+
         findViewById<TextView>(
             R.id.tvDetailKode
         ).text =
@@ -174,20 +191,6 @@ class StatistikDetailActivity : AppCompatActivity() {
         setupSpinnerTahun(
             idTabel = idTabel,
             tahunAwal = tahun
-        )
-
-        Log.d(
-            TAG,
-            """
-            ==============================
-            DETAIL REQUEST
-            ==============================
-            ID TABEL : $idTabel
-            TAHUN    : $tahun
-            WILAYAH  : $WILAYAH
-            TAHUN TERSEDIA : $tahunTersedia
-            ==============================
-            """.trimIndent()
         )
 
         loadDetail(
@@ -424,18 +427,6 @@ class StatistikDetailActivity : AppCompatActivity() {
                     detailData =
                         null
 
-                    Log.d(
-                        TAG,
-                        """
-                        ==============================
-                        GANTI TAHUN
-                        ==============================
-                        ID TABEL : $idTabel
-                        TAHUN    : $tahunDipilih
-                        ==============================
-                        """.trimIndent()
-                    )
-
                     loadDetail(
                         tahun = tahunDipilih,
                         idTabel = idTabel
@@ -513,11 +504,6 @@ class StatistikDetailActivity : AppCompatActivity() {
 
                         sembunyikanLoading()
 
-                        Log.d(
-                            TAG,
-                            "HTTP CODE = ${response.code()}"
-                        )
-
                         if (
                             !response.isSuccessful
                         ) {
@@ -544,31 +530,6 @@ class StatistikDetailActivity : AppCompatActivity() {
 
                             return
                         }
-
-                        Log.d(
-                            TAG,
-                            "STATUS = ${body.status}"
-                        )
-
-                        Log.d(
-                            TAG,
-                            "DATA AVAILABILITY = ${body.dataAvailability}"
-                        )
-
-                        Log.d(
-                            TAG,
-                            "JUMLAH OBJECT = ${body.data?.size}"
-                        )
-
-                        val gson =
-                            GsonBuilder()
-                                .setPrettyPrinting()
-                                .create()
-
-                        Log.d(
-                            TAG,
-                            "RAW JSON = ${gson.toJson(body)}"
-                        )
 
                         if (
                             body.status
@@ -597,34 +558,6 @@ class StatistikDetailActivity : AppCompatActivity() {
                             return
                         }
 
-                        body.data.forEachIndexed {
-                                index,
-                                item ->
-
-                            Log.d(
-                                TAG,
-                                """
-                                ------------------------------
-                                DATA OBJECT [$index]
-                                ------------------------------
-                                page       = ${item.page}
-                                pages      = ${item.pages}
-                                per_page   = ${item.perPage}
-                                count      = ${item.count}
-                                total      = ${item.total}
-                                judulTabel = ${item.judulTabel}
-                                wilayah    = ${item.wilayah}
-                                tahunData  = ${item.tahunData}
-                                condition  = ${item.condition}
-                                created    = ${item.created}
-                                status     = ${item.status}
-                                message    = ${item.message}
-                                jumlahData = ${item.data?.size}
-                                ------------------------------
-                                """.trimIndent()
-                            )
-                        }
-
                         val detail =
                             body.data.firstOrNull {
 
@@ -645,11 +578,6 @@ class StatistikDetailActivity : AppCompatActivity() {
                                 Toast.LENGTH_LONG
                             ).show()
 
-                            Log.e(
-                                TAG,
-                                "Detail tidak ditemukan"
-                            )
-
                             return
                         }
 
@@ -658,23 +586,6 @@ class StatistikDetailActivity : AppCompatActivity() {
 
                         tahunTerpilih =
                             tahun
-
-                        Log.d(
-                            TAG,
-                            """
-                            ==============================
-                            OBJECT DETAIL
-                            ==============================
-                            Condition : ${detail.condition}
-                            Created   : ${detail.created}
-                            Status    : ${detail.status}
-                            Wilayah   : ${detail.wilayah}
-                            Message   : ${detail.message}
-                            Data      : ${detail.data?.size}
-                            Tahun     : $tahun
-                            ==============================
-                            """.trimIndent()
-                        )
 
                         tampilkanDetail(
                             detail
@@ -689,12 +600,6 @@ class StatistikDetailActivity : AppCompatActivity() {
                     ) {
 
                         sembunyikanLoading()
-
-                        Log.e(
-                            TAG,
-                            "ERROR DETAIL",
-                            t
-                        )
 
                         Toast.makeText(
                             this@StatistikDetailActivity,
@@ -1473,18 +1378,7 @@ class StatistikDetailActivity : AppCompatActivity() {
                 Toast.LENGTH_LONG
             ).show()
 
-            Log.d(
-                TAG,
-                "PDF berhasil disimpan: $uri"
-            )
-
         } catch (e: Exception) {
-
-            Log.e(
-                TAG,
-                "Gagal membuat PDF",
-                e
-            )
 
             Toast.makeText(
                 this,
@@ -1712,11 +1606,6 @@ class StatistikDetailActivity : AppCompatActivity() {
                 ) !=
                 PackageManager.PERMISSION_GRANTED
             ) {
-
-                Log.w(
-                    TAG,
-                    "Permission notifikasi belum diberikan"
-                )
 
                 return
             }

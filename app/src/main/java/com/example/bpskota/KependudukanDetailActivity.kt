@@ -18,7 +18,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -35,6 +34,8 @@ import com.example.bpskota.bps.model.KependudukanDataResponse
 import com.example.bpskota.bps.model.KependudukanStaticDetailData
 import com.example.bpskota.bps.model.KependudukanStaticDetailResponse
 import com.example.bpskota.bps.repository.BpsRepository
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import org.jsoup.Jsoup
 import java.io.File
 import java.io.FileOutputStream
@@ -42,8 +43,6 @@ import java.io.FileOutputStream
 class KependudukanDetailActivity : AppCompatActivity() {
 
     companion object {
-        private const val TAG = "KependudukanDetail"
-
         private const val DOMAIN = "3574"
         private const val API_KEY = "008edaaae5d450b1913b31a2cef618c3"
 
@@ -62,6 +61,8 @@ class KependudukanDetailActivity : AppCompatActivity() {
 
     private val repository = BpsRepository()
 
+    private lateinit var activityTracker: ActivityTracker
+
     private lateinit var cardContainer: LinearLayout
     private lateinit var progressLoading: LottieAnimationView
     private lateinit var btnBack: ImageView
@@ -79,16 +80,11 @@ class KependudukanDetailActivity : AppCompatActivity() {
 
     private val daftarTahun = linkedMapOf<Int, Int>()
 
-    /**
-     * Data dynamic variable yang terakhir berhasil dimuat.
-     * Digunakan sebagai sumber PDF tanpa request API ulang.
-     */
-    private var variablePdfData: MutableList<PdfWilayahData> = mutableListOf()
+    private var variablePdfData: MutableList<PdfWilayahData> =
+        mutableListOf()
 
-    /**
-     * Data static table yang terakhir berhasil dimuat.
-     */
-    private var staticPdfRows: MutableList<PdfStaticRow> = mutableListOf()
+    private var staticPdfRows: MutableList<PdfStaticRow> =
+        mutableListOf()
 
     private var staticPdfTitle = ""
 
@@ -99,6 +95,27 @@ class KependudukanDetailActivity : AppCompatActivity() {
         initView()
         ambilIntent()
         setupButton()
+
+        activityTracker = ActivityTracker(
+            this,
+            BpskpRetrofitClient.api
+        )
+
+        val tipeData = when {
+            isSimdasi -> "SIMDASI"
+            isVariable -> "VARIABLE"
+            else -> "STATIC"
+        }
+
+        activityTracker.trackScreen(
+            screen = "KependudukanDetail",
+            metadata = mapOf(
+                "data_id" to variableId,
+                "tahun" to tahun,
+                "judul" to judul,
+                "type" to tipeData
+            )
+        )
 
         createNotificationChannel()
         requestNotificationPermission()
@@ -141,7 +158,9 @@ class KependudukanDetailActivity : AppCompatActivity() {
         )
 
         val tahunTersedia =
-            intent.getIntegerArrayListExtra(EXTRA_TAHUN_TERSEDIA)
+            intent.getIntegerArrayListExtra(
+                EXTRA_TAHUN_TERSEDIA
+            )
 
         if (tahunTersedia != null) {
             tahunTersedia
@@ -164,7 +183,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
     }
 
     private fun setupButton() {
-
         btnBack.setOnClickListener {
             finish()
         }
@@ -179,10 +197,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
             tampilkanDialogDownload()
         }
     }
-
-    // =====================================================================
-    // DOWNLOAD PDF
-    // =====================================================================
 
     private fun tampilkanDialogDownload() {
         AlertDialog.Builder(this)
@@ -200,9 +214,7 @@ class KependudukanDetailActivity : AppCompatActivity() {
     }
 
     private fun downloadPdf() {
-
         if (isVariable) {
-
             if (variablePdfData.isEmpty()) {
                 Toast.makeText(
                     this,
@@ -228,14 +240,8 @@ class KependudukanDetailActivity : AppCompatActivity() {
         downloadPdfStatic()
     }
 
-    // =====================================================================
-    // PDF UNTUK DYNAMIC VARIABLE
-    // =====================================================================
-
     private fun downloadPdfVariable() {
-
         try {
-
             val judulFile = sanitasiNamaFile(
                 tvJudul.text.toString()
             )
@@ -290,10 +296,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                 )
                 isAntiAlias = true
             }
-
-            // =============================================================
-            // HEADER
-            // =============================================================
 
             canvas.drawText(
                 "DATA STATISTIK BPS KOTA PROBOLINGGO",
@@ -350,14 +352,8 @@ class KependudukanDetailActivity : AppCompatActivity() {
 
             y += 25f
 
-            // =============================================================
-            // DATA
-            // =============================================================
-
             variablePdfData.forEach { item ->
-
                 if (y > pageHeight - 100) {
-
                     pdfDocument.finishPage(page)
 
                     pageNumber++
@@ -437,19 +433,7 @@ class KependudukanDetailActivity : AppCompatActivity() {
                 Toast.LENGTH_LONG
             ).show()
 
-            Log.d(
-                TAG,
-                "PDF variable berhasil disimpan: $uri"
-            )
-
         } catch (e: Exception) {
-
-            Log.e(
-                TAG,
-                "Gagal membuat PDF variable",
-                e
-            )
-
             Toast.makeText(
                 this,
                 "Gagal membuat PDF: ${e.message}",
@@ -458,14 +442,8 @@ class KependudukanDetailActivity : AppCompatActivity() {
         }
     }
 
-    // =====================================================================
-    // PDF UNTUK STATIC TABLE
-    // =====================================================================
-
     private fun downloadPdfStatic() {
-
         try {
-
             val judulPdf = staticPdfTitle.ifBlank {
                 tvJudul.text.toString()
             }
@@ -531,10 +509,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                 isAntiAlias = true
             }
 
-            // =============================================================
-            // HEADER
-            // =============================================================
-
             canvas.drawText(
                 "DATA STATISTIK BPS KOTA PROBOLINGGO",
                 margin,
@@ -554,7 +528,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
             y += 20f
 
             if (tahun > 0) {
-
                 canvas.drawText(
                     "Tahun: $tahun",
                     margin,
@@ -593,14 +566,8 @@ class KependudukanDetailActivity : AppCompatActivity() {
 
             y += 25f
 
-            // =============================================================
-            // DATA STATIC
-            // =============================================================
-
             staticPdfRows.forEach { row ->
-
                 if (y > pageHeight - 120) {
-
                     pdfDocument.finishPage(page)
 
                     pageNumber++
@@ -625,9 +592,7 @@ class KependudukanDetailActivity : AppCompatActivity() {
                 y += 20f
 
                 row.data.forEach { dataItem ->
-
                     if (y > pageHeight - 60) {
-
                         pdfDocument.finishPage(page)
 
                         pageNumber++
@@ -682,7 +647,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
             pdfDocument.close()
 
             if (uri == null) {
-
                 Toast.makeText(
                     this,
                     "Gagal menyimpan PDF",
@@ -703,19 +667,7 @@ class KependudukanDetailActivity : AppCompatActivity() {
                 Toast.LENGTH_LONG
             ).show()
 
-            Log.d(
-                TAG,
-                "PDF static berhasil disimpan: $uri"
-            )
-
         } catch (e: Exception) {
-
-            Log.e(
-                TAG,
-                "Gagal membuat PDF static",
-                e
-            )
-
             Toast.makeText(
                 this,
                 "Gagal membuat PDF: ${e.message}",
@@ -724,15 +676,10 @@ class KependudukanDetailActivity : AppCompatActivity() {
         }
     }
 
-    // =====================================================================
-    // PDF HELPER
-    // =====================================================================
-
     private fun createPdfPage(
         document: PdfDocument,
         pageNumber: Int
     ): PdfDocument.Page {
-
         val pageInfo = PdfDocument.PageInfo.Builder(
             595,
             842,
@@ -742,8 +689,9 @@ class KependudukanDetailActivity : AppCompatActivity() {
         return document.startPage(pageInfo)
     }
 
-    private fun sanitasiNamaFile(nama: String): String {
-
+    private fun sanitasiNamaFile(
+        nama: String
+    ): String {
         val hasil = nama
             .replace(
                 Regex("[^a-zA-Z0-9\\s]"),
@@ -761,21 +709,15 @@ class KependudukanDetailActivity : AppCompatActivity() {
         }
     }
 
-    // =====================================================================
-    // SAVE PDF
-    // =====================================================================
-
     private fun savePdfToDownloads(
         pdfDocument: PdfDocument,
         namaFile: String
     ): Uri? {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-
             val resolver = contentResolver
 
             val values = ContentValues().apply {
-
                 put(
                     MediaStore.Downloads.DISPLAY_NAME,
                     namaFile
@@ -804,9 +746,7 @@ class KependudukanDetailActivity : AppCompatActivity() {
             ) ?: return null
 
             try {
-
                 resolver.openOutputStream(uri).use { outputStream ->
-
                     if (outputStream == null) {
                         throw Exception(
                             "OutputStream tidak tersedia"
@@ -835,7 +775,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                 return uri
 
             } catch (e: Exception) {
-
                 resolver.delete(
                     uri,
                     null,
@@ -872,14 +811,8 @@ class KependudukanDetailActivity : AppCompatActivity() {
         return Uri.fromFile(file)
     }
 
-    // =====================================================================
-    // NOTIFICATION
-    // =====================================================================
-
     private fun createNotificationChannel() {
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "Download BPS",
@@ -901,16 +834,13 @@ class KependudukanDetailActivity : AppCompatActivity() {
     }
 
     private fun requestNotificationPermission() {
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-
             if (
                 ContextCompat.checkSelfPermission(
                     this,
                     Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(
@@ -926,21 +856,13 @@ class KependudukanDetailActivity : AppCompatActivity() {
         uri: Uri,
         namaFile: String
     ) {
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-
             if (
                 ContextCompat.checkSelfPermission(
                     this,
                     Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-
-                Log.w(
-                    TAG,
-                    "Permission notifikasi belum diberikan"
-                )
-
                 return
             }
         }
@@ -948,7 +870,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
         val intent = Intent(
             Intent.ACTION_VIEW
         ).apply {
-
             setDataAndType(
                 uri,
                 "application/pdf"
@@ -1012,12 +933,7 @@ class KependudukanDetailActivity : AppCompatActivity() {
         )
     }
 
-    // =====================================================================
-    // LOGIKA LOADING
-    // =====================================================================
-
     private fun tampilkanLoading() {
-
         progressLoading.visibility =
             View.VISIBLE
 
@@ -1027,21 +943,14 @@ class KependudukanDetailActivity : AppCompatActivity() {
     }
 
     private fun sembunyikanLoading() {
-
         progressLoading.cancelAnimation()
 
         progressLoading.visibility =
             View.GONE
     }
 
-    // =====================================================================
-    // LOAD DETAIL
-    // =====================================================================
-
     private fun loadDetail() {
-
         if (variableId <= 0) {
-
             tampilkanPesan(
                 "ID tabel tidak tersedia"
             )
@@ -1053,13 +962,11 @@ class KependudukanDetailActivity : AppCompatActivity() {
 
         cardContainer.removeAllViews()
 
-        // Reset data PDF setiap kali tahun/data dimuat ulang.
         variablePdfData.clear()
         staticPdfRows.clear()
         staticPdfTitle = ""
 
         if (isVariable) {
-
             if (
                 tahun <= 0 &&
                 daftarTahun.isNotEmpty()
@@ -1075,7 +982,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
         }
 
         if (!staticButuhTahun) {
-
             loadStaticTable()
 
             return
@@ -1091,7 +997,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
         }
 
         if (tahun <= 0) {
-
             sembunyikanLoading()
 
             tampilkanPesan(
@@ -1104,30 +1009,9 @@ class KependudukanDetailActivity : AppCompatActivity() {
         loadStaticTable()
     }
 
-    // =====================================================================
-    // LOGIKA DYNAMIC VARIABLE
-    // =====================================================================
-
     private fun loadVariableData() {
-
-        Log.d(
-            TAG,
-            "=== MEMULAI PROSES LOAD VARIABLE ==="
-        )
-
-        Log.d(
-            TAG,
-            "Tahun kalender yang dipilih user: $tahun"
-        )
-
         val tahunIdBps =
             tahun - 1900
-
-        Log.d(
-            TAG,
-            "Menerjemahkan Tahun Kalender: " +
-                    "$tahun -> Menjadi ID BPS: $tahunIdBps"
-        )
 
         fetchDataVariabelDenganIdTahun(
             tahunIdBps
@@ -1137,7 +1021,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
     private fun fetchDataVariabelDenganIdTahun(
         tahunIdBps: Int
     ) {
-
         repository
             .getKependudukanDetail(
                 domain = DOMAIN,
@@ -1153,49 +1036,9 @@ class KependudukanDetailActivity : AppCompatActivity() {
                         call: retrofit2.Call<KependudukanDataResponse>,
                         response: retrofit2.Response<KependudukanDataResponse>
                     ) {
-
                         sembunyikanLoading()
 
-                        Log.d(
-                            TAG,
-                            "=== DETAIL API DATA VARIABLE ==="
-                        )
-
-                        Log.d(
-                            TAG,
-                            "URL API: ${call.request().url}"
-                        )
-
-                        if (response.isSuccessful) {
-
-                            val rawJson =
-                                com.google.gson.GsonBuilder()
-                                    .setPrettyPrinting()
-                                    .create()
-                                    .toJson(
-                                        response.body()
-                                    )
-
-                            Log.d(
-                                TAG,
-                                "HASIL JSON:\n$rawJson"
-                            )
-
-                        } else {
-
-                            Log.e(
-                                TAG,
-                                "GAGAL: HTTP ${response.code()}"
-                            )
-                        }
-
-                        Log.d(
-                            TAG,
-                            "==================================="
-                        )
-
                         if (!response.isSuccessful) {
-
                             tampilkanPesan(
                                 "Gagal mengambil data Variabel (${response.code()})"
                             )
@@ -1210,7 +1053,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                             body == null ||
                             body.status?.uppercase() != "OK"
                         ) {
-
                             tampilkanPesan(
                                 "Data Variabel tidak tersedia"
                             )
@@ -1227,7 +1069,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                         if (
                             dataContent.isNullOrEmpty()
                         ) {
-
                             tampilkanPesanKosong(
                                 "Data dari BPS belum tersedia untuk tahun $tahun.\n" +
                                         "Silakan pilih tahun lain."
@@ -1239,7 +1080,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                         if (
                             vervarList.isNullOrEmpty()
                         ) {
-
                             tampilkanPesan(
                                 "Format wilayah tidak dikenali"
                             )
@@ -1256,7 +1096,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                         variablePdfData.clear()
 
                         vervarList.forEach { wilayah ->
-
                             val namaWilayah =
                                 wilayah.label
                                     ?: "Wilayah Tidak Diketahui"
@@ -1285,7 +1124,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                                     "$nilai $unit"
                             }
 
-                            // Simpan untuk PDF.
                             variablePdfData.add(
                                 PdfWilayahData(
                                     wilayah = namaWilayah,
@@ -1312,14 +1150,7 @@ class KependudukanDetailActivity : AppCompatActivity() {
                         call: retrofit2.Call<KependudukanDataResponse>,
                         t: Throwable
                     ) {
-
                         sembunyikanLoading()
-
-                        Log.e(
-                            TAG,
-                            "LOAD VARIABLE DATA GAGAL",
-                            t
-                        )
 
                         tampilkanPesan(
                             "Terjadi kesalahan koneksi"
@@ -1329,12 +1160,7 @@ class KependudukanDetailActivity : AppCompatActivity() {
             )
     }
 
-    // =====================================================================
-    // LOGIKA STATIC TABLE
-    // =====================================================================
-
     private fun loadStaticTable() {
-
         repository
             .getKependudukanStaticTableDetail(
                 domain = DOMAIN,
@@ -1349,26 +1175,9 @@ class KependudukanDetailActivity : AppCompatActivity() {
                         call: retrofit2.Call<KependudukanStaticDetailResponse>,
                         response: retrofit2.Response<KependudukanStaticDetailResponse>
                     ) {
-
                         sembunyikanLoading()
 
-                        Log.d(
-                            TAG,
-                            "=== DETAIL API STATIC TABLE ==="
-                        )
-
-                        Log.d(
-                            TAG,
-                            "URL API: ${call.request().url}"
-                        )
-
-                        Log.d(
-                            TAG,
-                            "==============================="
-                        )
-
                         if (!response.isSuccessful) {
-
                             tampilkanPesan(
                                 "Gagal mengambil data (${response.code()})"
                             )
@@ -1380,7 +1189,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                             response.body()
 
                         if (body == null) {
-
                             tampilkanPesan(
                                 "Data tidak tersedia"
                             )
@@ -1391,7 +1199,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                         if (
                             body.status?.uppercase() != "OK"
                         ) {
-
                             tampilkanPesan(
                                 "Response API tidak valid"
                             )
@@ -1403,7 +1210,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                             body.dataAvailability
                                 ?.lowercase() != "available"
                         ) {
-
                             tampilkanPesan(
                                 "Data statistik tidak tersedia"
                             )
@@ -1418,7 +1224,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                             dataElement == null ||
                             !dataElement.isJsonObject
                         ) {
-
                             tampilkanPesan(
                                 "Format isi tabel tidak sesuai atau kosong"
                             )
@@ -1436,7 +1241,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                             data == null ||
                             data.table.isNullOrBlank()
                         ) {
-
                             tampilkanPesan(
                                 "Isi tabel tidak tersedia"
                             )
@@ -1448,7 +1252,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                             !data.title.isNullOrBlank() &&
                             judul.isBlank()
                         ) {
-
                             tvJudul.text =
                                 data.title
                         }
@@ -1466,14 +1269,7 @@ class KependudukanDetailActivity : AppCompatActivity() {
                         call: retrofit2.Call<KependudukanStaticDetailResponse>,
                         t: Throwable
                     ) {
-
                         sembunyikanLoading()
-
-                        Log.e(
-                            TAG,
-                            "LOAD STATIC TABLE GAGAL",
-                            t
-                        )
 
                         tampilkanPesan(
                             "Gagal mengambil data: " +
@@ -1484,14 +1280,9 @@ class KependudukanDetailActivity : AppCompatActivity() {
             )
     }
 
-    // =====================================================================
-    // PARSING HTML TABLE
-    // =====================================================================
-
     private fun tampilkanTableHtml(
         html: String
     ) {
-
         cardContainer.removeAllViews()
 
         staticPdfRows.clear()
@@ -1533,7 +1324,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                 .firstOrNull()
 
         if (table == null) {
-
             tampilkanPesan(
                 "Tabel tidak ditemukan"
             )
@@ -1545,7 +1335,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
             table.select("tr")
 
         if (rows.isEmpty()) {
-
             tampilkanPesan(
                 "Baris tabel tidak ditemukan"
             )
@@ -1556,11 +1345,9 @@ class KependudukanDetailActivity : AppCompatActivity() {
         var maxCols = 0
 
         for (row in rows) {
-
             var jumlahKolom = 0
 
             for (cell in row.select("th, td")) {
-
                 val colspan =
                     cell.attr(
                         "colspan"
@@ -1585,7 +1372,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
             }
 
         for (r in rows.indices) {
-
             val cells =
                 rows[r].select(
                     "th, td"
@@ -1594,7 +1380,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
             var c = 0
 
             for (cell in cells) {
-
                 while (
                     c < maxCols &&
                     grid[r][c].isNotBlank()
@@ -1630,16 +1415,13 @@ class KependudukanDetailActivity : AppCompatActivity() {
                 for (
                 rr in 0 until rowspan
                 ) {
-
                     for (
                     cc in 0 until colspan
                     ) {
-
                         if (
                             r + rr < rows.size &&
                             c + cc < maxCols
                         ) {
-
                             grid[r + rr][c + cc] =
                                 text
                         }
@@ -1654,17 +1436,14 @@ class KependudukanDetailActivity : AppCompatActivity() {
         var kolomWilayah = 0
 
         for (r in grid.indices) {
-
             var numericCount = 0
             var firstTextCol = -1
 
             for (c in 0 until maxCols) {
-
                 val cell =
                     grid[r][c].trim()
 
                 if (cell.isNotBlank()) {
-
                     val isYear =
                         cell.matches(
                             Regex(
@@ -1687,14 +1466,11 @@ class KependudukanDetailActivity : AppCompatActivity() {
                         isNumber ||
                         cell == "-"
                     ) {
-
                         numericCount++
-
                     } else if (
                         firstTextCol == -1 &&
                         !isYear
                     ) {
-
                         firstTextCol = c
                     }
                 }
@@ -1704,7 +1480,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                 numericCount > 0 &&
                 firstTextCol != -1
             ) {
-
                 dataStartRow = r
                 kolomWilayah = firstTextCol
 
@@ -1713,7 +1488,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
         }
 
         if (dataStartRow == -1) {
-
             dataStartRow = 1
             kolomWilayah = 0
         }
@@ -1724,20 +1498,16 @@ class KependudukanDetailActivity : AppCompatActivity() {
             grid.isNotEmpty() &&
             maxCols > 1
         ) {
-
             val firstCell =
                 grid[0][0]
 
             var isBigTitle = true
 
             for (c in 1 until maxCols) {
-
                 if (
                     grid[0][c] != firstCell
                 ) {
-
                     isBigTitle = false
-
                     break
                 }
             }
@@ -1753,14 +1523,12 @@ class KependudukanDetailActivity : AppCompatActivity() {
             }
 
         for (c in 0 until maxCols) {
-
             val parts =
                 mutableListOf<String>()
 
             for (
             r in headerStartRow until dataStartRow
             ) {
-
                 val cell =
                     grid[r][c].trim()
 
@@ -1768,7 +1536,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                     cell.isNotBlank() &&
                     !parts.contains(cell)
                 ) {
-
                     if (
                         !cell.equals(
                             "Kecamatan",
@@ -1779,7 +1546,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                             ignoreCase = true
                         )
                     ) {
-
                         parts.add(cell)
                     }
                 }
@@ -1791,7 +1557,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
             if (
                 headers[c].isBlank()
             ) {
-
                 headers[c] =
                     "Data ${c + 1}"
             }
@@ -1800,7 +1565,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
         for (
         r in dataStartRow until grid.size
         ) {
-
             val wilayah =
                 grid[r][kolomWilayah]
                     .trim()
@@ -1812,7 +1576,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
                 wilayah.lowercase()
                     .startsWith("sumber")
             ) {
-
                 continue
             }
 
@@ -1822,7 +1585,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
             for (
             c in 0 until maxCols
             ) {
-
                 if (
                     c == kolomWilayah
                 ) {
@@ -1850,9 +1612,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
             if (
                 rowData.isNotEmpty()
             ) {
-
-                // Simpan data yang tampil
-                // untuk kebutuhan PDF.
                 staticPdfRows.add(
                     PdfStaticRow(
                         wilayah = wilayah,
@@ -1868,15 +1627,10 @@ class KependudukanDetailActivity : AppCompatActivity() {
         }
     }
 
-    // =====================================================================
-    // TAMPILKAN CARD
-    // =====================================================================
-
     private fun tampilkanCardDataBaris(
         wilayah: String,
         dataBaris: List<Pair<String, String>>
     ) {
-
         val card =
             LayoutInflater
                 .from(this)
@@ -1902,7 +1656,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
         for (
         (label, nilai) in dataBaris
         ) {
-
             tambahBarisData(
                 containerVariable,
                 label,
@@ -1920,10 +1673,8 @@ class KependudukanDetailActivity : AppCompatActivity() {
         label: String,
         nilai: String
     ) {
-
         val row =
             LinearLayout(this).apply {
-
                 orientation =
                     LinearLayout.HORIZONTAL
 
@@ -1943,7 +1694,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
 
         val tvLabel =
             TextView(this).apply {
-
                 layoutParams =
                     LinearLayout.LayoutParams(
                         0,
@@ -1968,13 +1718,11 @@ class KependudukanDetailActivity : AppCompatActivity() {
 
         val tvData =
             TextView(this).apply {
-
                 layoutParams =
                     LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
                     ).apply {
-
                         setMargins(
                             16,
                             0,
@@ -2025,19 +1773,13 @@ class KependudukanDetailActivity : AppCompatActivity() {
         )
     }
 
-    // =====================================================================
-    // PESAN
-    // =====================================================================
-
     private fun tampilkanPesanKosong(
         pesan: String
     ) {
-
         val tvKosong =
             TextView(
                 this@KependudukanDetailActivity
             ).apply {
-
                 text = pesan
 
                 textSize = 15f
@@ -2063,7 +1805,6 @@ class KependudukanDetailActivity : AppCompatActivity() {
     }
 
     private fun tampilkanFilterTahun() {
-
         val tahunList =
             daftarTahun.keys
                 .sortedDescending()
@@ -2094,14 +1835,12 @@ class KependudukanDetailActivity : AppCompatActivity() {
                 labels,
                 posisiTerpilih
             ) { dialog, which ->
-
                 val tahunDipilih =
                     tahunList[which]
 
                 if (
                     tahunDipilih == tahun
                 ) {
-
                     dialog.dismiss()
 
                     return@setSingleChoiceItems
@@ -2123,17 +1862,12 @@ class KependudukanDetailActivity : AppCompatActivity() {
     private fun tampilkanPesan(
         pesan: String
     ) {
-
         Toast.makeText(
             this,
             pesan,
             Toast.LENGTH_LONG
         ).show()
     }
-
-    // =====================================================================
-    // DATA CLASS INTERNAL UNTUK PDF
-    // =====================================================================
 
     private data class PdfWilayahData(
         val wilayah: String,
@@ -2145,16 +1879,10 @@ class KependudukanDetailActivity : AppCompatActivity() {
         val data: List<Pair<String, String>>
     )
 
-    // =====================================================================
-    // DESTROY
-    // =====================================================================
-
     override fun onDestroy() {
-
         if (
             ::progressLoading.isInitialized
         ) {
-
             progressLoading.cancelAnimation()
         }
 

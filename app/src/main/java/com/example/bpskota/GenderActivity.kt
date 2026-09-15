@@ -2,17 +2,18 @@ package com.example.bpskota
 
 import android.app.AlertDialog
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
-import com.airbnb.lottie.LottieAnimationView
-import android.widget.TextView
 import android.widget.Toast
+import android.widget.TextView
+import com.airbnb.lottie.LottieAnimationView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.bpskota.bps.model.TenagaKerjaResponse
 import com.example.bpskota.bps.repository.BpsRepository
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -21,8 +22,6 @@ import java.util.Locale
 class GenderActivity : AppCompatActivity() {
 
     companion object {
-
-        private const val TAG = "GenderAPI"
 
         private const val DOMAIN = "3574"
 
@@ -42,13 +41,14 @@ class GenderActivity : AppCompatActivity() {
     private val repository =
         BpsRepository()
 
+    private lateinit var activityTracker: ActivityTracker
+
     private lateinit var cardContainer: LinearLayout
     private lateinit var progressLoading: LottieAnimationView
     private lateinit var btnBack: ImageView
     private lateinit var btnFilter: ImageView
 
     private var tahunDipilih = 2025
-
 
     private var jumlahRequestSelesai = 0
 
@@ -71,16 +71,24 @@ class GenderActivity : AppCompatActivity() {
             R.layout.activity_gender
         )
 
+        activityTracker = ActivityTracker(
+            this,
+            BpskpRetrofitClient.api
+        )
+
+        activityTracker.trackScreen(
+            screen = "Gender",
+            metadata = mapOf(
+                "tahun" to tahunDipilih
+            )
+        )
+
         initView()
 
         setupButton()
 
         loadSemuaGender()
     }
-
-    // =========================================================
-    // INIT VIEW
-    // =========================================================
 
     private fun initView() {
 
@@ -111,10 +119,6 @@ class GenderActivity : AppCompatActivity() {
             )
     }
 
-    // =========================================================
-    // BUTTON
-    // =========================================================
-
     private fun setupButton() {
 
         btnBack.setOnClickListener {
@@ -126,10 +130,6 @@ class GenderActivity : AppCompatActivity() {
             tampilkanFilterTahun()
         }
     }
-
-    // =========================================================
-    // FILTER TAHUN
-    // =========================================================
 
     private fun tampilkanFilterTahun() {
 
@@ -169,6 +169,13 @@ class GenderActivity : AppCompatActivity() {
                     tahunDipilih =
                         tahunBaru
 
+                    activityTracker.trackScreen(
+                        screen = "Gender",
+                        metadata = mapOf(
+                            "tahun" to tahunDipilih
+                        )
+                    )
+
                     loadSemuaGender()
                 }
             }
@@ -179,20 +186,12 @@ class GenderActivity : AppCompatActivity() {
             .show()
     }
 
-    // =========================================================
-    // KONVERSI TAHUN KE KODE BPS
-    // =========================================================
-
     private fun getKodeTahun(
         tahun: Int
     ): Int {
 
         return tahun - 1900
     }
-
-    // =========================================================
-    // LOAD SEMUA GENDER
-    // =========================================================
 
     private fun loadSemuaGender() {
 
@@ -212,36 +211,6 @@ class GenderActivity : AppCompatActivity() {
                 tahunDipilih
             )
 
-        Log.d(
-            TAG,
-            "========================================"
-        )
-
-        Log.d(
-            TAG,
-            "AMBIL DATA GENDER"
-        )
-
-        Log.d(
-            TAG,
-            "TAHUN DIPILIH = $tahunDipilih"
-        )
-
-        Log.d(
-            TAG,
-            "KODE TAHUN = $kodeTahun"
-        )
-
-        Log.d(
-            TAG,
-            "VARIABLE = $VARIABLE_LIST"
-        )
-
-        Log.d(
-            TAG,
-            "========================================"
-        )
-
         VARIABLE_LIST.forEach { variableId ->
 
             loadGenderVariable(
@@ -251,29 +220,10 @@ class GenderActivity : AppCompatActivity() {
         }
     }
 
-    // =========================================================
-    // REQUEST SATU VARIABLE
-    // =========================================================
-
     private fun loadGenderVariable(
         variableId: Int,
         kodeTahun: Int
     ) {
-
-        Log.d(
-            TAG,
-            "REQUEST VARIABLE = $variableId"
-        )
-
-        Log.d(
-            TAG,
-            "TAHUN = $tahunDipilih"
-        )
-
-        Log.d(
-            TAG,
-            "KODE TAHUN = $kodeTahun"
-        )
 
         repository.getTenagaKerja(
             domain = DOMAIN,
@@ -289,32 +239,7 @@ class GenderActivity : AppCompatActivity() {
                     response: Response<TenagaKerjaResponse>
                 ) {
 
-                    Log.d(
-                        TAG,
-                        "----------------------------------------"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "VARIABLE = $variableId"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "URL = ${call.request().url}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "HTTP = ${response.code()}"
-                    )
-
                     if (!response.isSuccessful) {
-
-                        Log.e(
-                            TAG,
-                            "HTTP ERROR VARIABLE $variableId"
-                        )
 
                         requestSelesai()
 
@@ -326,40 +251,10 @@ class GenderActivity : AppCompatActivity() {
 
                     if (body == null) {
 
-                        Log.e(
-                            TAG,
-                            "BODY KOSONG VARIABLE $variableId"
-                        )
-
                         requestSelesai()
 
                         return
                     }
-
-                    Log.d(
-                        TAG,
-                        "STATUS = ${body.status}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "AVAILABILITY = ${body.dataAvailability}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "TAHUN = ${body.tahun}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "VARIABLE RESPONSE = ${body.variable}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "DATA CONTENT = ${body.dataContent}"
-                    )
 
                     if (
                         body.status
@@ -377,11 +272,6 @@ class GenderActivity : AppCompatActivity() {
                             ?.lowercase(Locale.ROOT) !=
                         "available"
                     ) {
-
-                        Log.d(
-                            TAG,
-                            "DATA TIDAK TERSEDIA VARIABLE $variableId"
-                        )
 
                         requestSelesai()
 
@@ -401,21 +291,11 @@ class GenderActivity : AppCompatActivity() {
                     t: Throwable
                 ) {
 
-                    Log.e(
-                        TAG,
-                        "GAGAL VARIABLE $variableId",
-                        t
-                    )
-
                     requestSelesai()
                 }
             }
         )
     }
-
-    // =========================================================
-    // PROSES DATA GENDER
-    // =========================================================
 
     private fun prosesDataGender(
         variableId: Int,
@@ -427,12 +307,6 @@ class GenderActivity : AppCompatActivity() {
                 ?: emptyMap()
 
         if (dataContent.isEmpty()) {
-
-            Log.e(
-                TAG,
-                "DATA CONTENT KOSONG VARIABLE $variableId"
-            )
-
             return
         }
 
@@ -460,25 +334,10 @@ class GenderActivity : AppCompatActivity() {
             variable?.decimal
                 ?: 2
 
-        /*
-         * Karena endpoint yang dipanggil sudah
-         * menggunakan kode tahun yang dipilih,
-         * dataContent biasanya hanya berisi
-         * data untuk tahun tersebut.
-         *
-         * Jadi kita ambil data yang tersedia.
-         */
-
         val nilai =
             dataContent.values.firstOrNull()
 
         if (nilai == null) {
-
-            Log.e(
-                TAG,
-                "NILAI NULL VARIABLE $variableId"
-            )
-
             return
         }
 
@@ -488,46 +347,6 @@ class GenderActivity : AppCompatActivity() {
                 "%.${decimal}f",
                 nilai
             )
-
-        Log.d(
-            TAG,
-            "========================================"
-        )
-
-        Log.d(
-            TAG,
-            "HASIL GENDER"
-        )
-
-        Log.d(
-            TAG,
-            "VARIABLE = $variableId"
-        )
-
-        Log.d(
-            TAG,
-            "TAHUN = $tahunLabel"
-        )
-
-        Log.d(
-            TAG,
-            "JUDUL = $judul"
-        )
-
-        Log.d(
-            TAG,
-            "NILAI = $nilaiFormat"
-        )
-
-        Log.d(
-            TAG,
-            "SATUAN = $satuan"
-        )
-
-        Log.d(
-            TAG,
-            "========================================"
-        )
 
         dataGender.add(
             GenderData(
@@ -540,10 +359,6 @@ class GenderActivity : AppCompatActivity() {
             )
         )
     }
-
-    // =========================================================
-    // JUDUL VARIABLE
-    // =========================================================
 
     private fun getJudulVariable(
         variableId: Int
@@ -568,18 +383,9 @@ class GenderActivity : AppCompatActivity() {
         }
     }
 
-    // =========================================================
-    // REQUEST SELESAI
-    // =========================================================
-
     private fun requestSelesai() {
 
         jumlahRequestSelesai++
-
-        Log.d(
-            TAG,
-            "REQUEST SELESAI = $jumlahRequestSelesai/${VARIABLE_LIST.size}"
-        )
 
         if (
             jumlahRequestSelesai >=
@@ -593,22 +399,9 @@ class GenderActivity : AppCompatActivity() {
         }
     }
 
-    // =========================================================
-    // TAMPILKAN SEMUA DATA
-    // =========================================================
-
     private fun tampilkanSemuaData() {
 
         cardContainer.removeAllViews()
-
-        /*
-         * Urutan:
-         *
-         * 1. IKG
-         * 2. IPG
-         * 3. IDG
-         * 4. IPG UHH SP2020 LF
-         */
 
         val dataUrut =
             VARIABLE_LIST.mapNotNull { id ->
@@ -654,8 +447,6 @@ class GenderActivity : AppCompatActivity() {
                     R.id.tvNilai
                 )
 
-
-
             tvTahun.text =
                 data.tahun
 
@@ -700,16 +491,7 @@ class GenderActivity : AppCompatActivity() {
                 Toast.LENGTH_LONG
             ).show()
         }
-
-        Log.d(
-            TAG,
-            "TOTAL CARD = ${dataUrut.size}"
-        )
     }
-
-    // =========================================================
-    // DESTROY
-    // =========================================================
 
     override fun onDestroy() {
 

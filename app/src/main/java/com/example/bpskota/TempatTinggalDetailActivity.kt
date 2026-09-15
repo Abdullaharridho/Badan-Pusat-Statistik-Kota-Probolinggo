@@ -17,7 +17,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -33,6 +32,8 @@ import androidx.core.content.ContextCompat
 import com.airbnb.lottie.LottieAnimationView
 import com.example.bpskota.bps.model.TempatTinggalDataResponse
 import com.example.bpskota.bps.repository.BpsRepository
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -44,9 +45,6 @@ import java.util.Locale
 class TempatTinggalDetailActivity : AppCompatActivity() {
 
     companion object {
-
-        private const val TAG =
-            "TEMPAT_TINGGAL_DETAIL"
 
         private const val DOMAIN =
             "3574"
@@ -84,6 +82,8 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
 
     private lateinit var progressLoading: LottieAnimationView
 
+    private lateinit var activityTracker: ActivityTracker
+
     private val repository =
         BpsRepository()
 
@@ -110,10 +110,30 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
         )
 
         initView()
+        ambilIntent()
+
+        activityTracker =
+            ActivityTracker(
+                this,
+                BpskpRetrofitClient.api
+            )
+
+        activityTracker.trackScreen(
+            screen = "TempatTinggalDetail",
+            metadata = mapOf(
+                "data_id" to varId,
+                "tahun" to tahunTerpilih,
+                "judul" to (
+                        intent.getStringExtra(
+                            EXTRA_JUDUL
+                        ) ?: ""
+                        )
+            )
+        )
+
         setupButton()
         createNotificationChannel()
         requestNotificationPermission()
-        ambilIntent()
 
         if (varId <= 0) {
 
@@ -206,30 +226,6 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
 
         tvDetailTahun.text =
             tahunTerpilih.toString()
-
-        Log.d(
-            TAG,
-            "VAR ID = $varId"
-        )
-
-        Log.d(
-            TAG,
-            "JUDUL = $judul"
-        )
-
-        Log.d(
-            TAG,
-            "TAHUN = $tahunTerpilih"
-        )
-
-        Log.d(
-            TAG,
-            "KODE TAHUN BPS = ${
-                kodeTahunBps(
-                    tahunTerpilih
-                )
-            }"
-        )
     }
 
     private fun kodeTahunBps(
@@ -310,11 +306,6 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
 
                     stopLoading()
 
-                    Log.d(
-                        TAG,
-                        "HTTP CODE = ${response.code()}"
-                    )
-
                     if (!response.isSuccessful) {
 
                         tampilkanPesan(
@@ -335,46 +326,6 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
 
                         return
                     }
-
-                    Log.d(
-                        TAG,
-                        "STATUS = ${body.status}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "DATA AVAILABILITY = ${body.dataAvailability}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "SUBJECT = ${body.subject}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "VARIABLE = ${body.variable}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "VERVAR = ${body.vervar}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "TAHUN = ${body.tahun}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "TURTAHUN = ${body.turtahun}"
-                    )
-
-                    Log.d(
-                        TAG,
-                        "DATACONTENT = ${body.dataContent}"
-                    )
 
                     if (
                         body.status
@@ -429,12 +380,6 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 ) {
 
                     stopLoading()
-
-                    Log.e(
-                        TAG,
-                        "REQUEST ERROR",
-                        t
-                    )
 
                     tampilkanPesan(
                         "Gagal terhubung ke server BPS"
@@ -574,11 +519,6 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
 
             val nilai =
                 dataContent[key]
-
-            Log.d(
-                TAG,
-                "KEY = $key | LABEL = $label | NILAI = $nilai"
-            )
 
             if (nilai != null) {
 
@@ -1144,11 +1084,6 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 val nilai =
                     dataContent[key]
 
-                Log.d(
-                    TAG,
-                    "PDF KEY = $key | LABEL = $label | NILAI = $nilai"
-                )
-
                 if (nilai == null) {
                     continue
                 }
@@ -1247,18 +1182,7 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 Toast.LENGTH_LONG
             ).show()
 
-            Log.d(
-                TAG,
-                "PDF berhasil disimpan: $uri"
-            )
-
         } catch (e: Exception) {
-
-            Log.e(
-                TAG,
-                "Gagal membuat PDF",
-                e
-            )
 
             Toast.makeText(
                 this,
@@ -1489,11 +1413,6 @@ class TempatTinggalDetailActivity : AppCompatActivity() {
                 ) !=
                 PackageManager.PERMISSION_GRANTED
             ) {
-
-                Log.w(
-                    TAG,
-                    "Permission notifikasi belum diberikan"
-                )
 
                 return
             }

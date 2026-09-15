@@ -2,7 +2,6 @@ package com.example.bpskota
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
@@ -14,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.airbnb.lottie.LottieAnimationView
 import com.example.bpskota.bps.model.*
 import com.example.bpskota.bps.repository.BpsRepository
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
@@ -22,7 +23,6 @@ import retrofit2.Response
 class KependudukanActivity : AppCompatActivity() {
 
     companion object {
-        private const val TAG = "KependudukanAPI"
         private const val DOMAIN = "3574"
         private const val WILAYAH = "3574000"
         private const val API_KEY = "008edaaae5d450b1913b31a2cef618c3"
@@ -36,6 +36,8 @@ class KependudukanActivity : AppCompatActivity() {
     }
 
     private val repository = BpsRepository()
+
+    private lateinit var activityTracker: ActivityTracker
 
     private lateinit var cardContainer: LinearLayout
     private lateinit var progressLoading: LottieAnimationView
@@ -71,6 +73,15 @@ class KependudukanActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_kependudukan)
+
+        activityTracker = ActivityTracker(
+            this,
+            BpskpRetrofitClient.api
+        )
+
+        activityTracker.trackScreen(
+            screen = "Kependudukan"
+        )
 
         initView()
         setupButton()
@@ -163,10 +174,6 @@ class KependudukanActivity : AppCompatActivity() {
         loadSimdasi()
     }
 
-    // =========================================================
-    // STATIC TABLE
-    // =========================================================
-
     private fun requestPagePertama() {
 
         repository.getKependudukanTables(
@@ -184,11 +191,6 @@ class KependudukanActivity : AppCompatActivity() {
 
                     if (!response.isSuccessful) {
 
-                        Log.e(
-                            TAG,
-                            "GAGAL PAGE 1 HTTP ${response.code()}"
-                        )
-
                         listSelesai = true
                         cekSemuaSumberSelesai()
 
@@ -200,11 +202,6 @@ class KependudukanActivity : AppCompatActivity() {
 
                     if (body == null) {
 
-                        Log.e(
-                            TAG,
-                            "BODY PAGE 1 KOSONG"
-                        )
-
                         listSelesai = true
                         cekSemuaSumberSelesai()
 
@@ -215,11 +212,6 @@ class KependudukanActivity : AppCompatActivity() {
                         body.status
                             ?.uppercase() != "OK"
                     ) {
-
-                        Log.e(
-                            TAG,
-                            "STATUS PAGE 1 ${body.status}"
-                        )
 
                         listSelesai = true
                         cekSemuaSumberSelesai()
@@ -240,11 +232,6 @@ class KependudukanActivity : AppCompatActivity() {
 
                     halamanSelesai = 1
 
-                    Log.d(
-                        TAG,
-                        "TOTAL HALAMAN STATIC = $totalHalaman"
-                    )
-
                     if (totalHalaman <= 1) {
 
                         listSelesai = true
@@ -262,12 +249,6 @@ class KependudukanActivity : AppCompatActivity() {
                     call: Call<KependudukanDataResponse>,
                     t: Throwable
                 ) {
-
-                    Log.e(
-                        TAG,
-                        "GAGAL LIST PAGE 1",
-                        t
-                    )
 
                     listSelesai = true
                     cekSemuaSumberSelesai()
@@ -306,12 +287,6 @@ class KependudukanActivity : AppCompatActivity() {
                         try {
 
                             if (!response.isSuccessful) {
-
-                                Log.e(
-                                    TAG,
-                                    "PAGE $page HTTP ${response.code()}"
-                                )
-
                                 return
                             }
 
@@ -323,12 +298,6 @@ class KependudukanActivity : AppCompatActivity() {
                                 body.status
                                     ?.uppercase() != "OK"
                             ) {
-
-                                Log.e(
-                                    TAG,
-                                    "PAGE $page STATUS ${body.status}"
-                                )
-
                                 return
                             }
 
@@ -358,12 +327,6 @@ class KependudukanActivity : AppCompatActivity() {
                         call: Call<KependudukanDataResponse>,
                         t: Throwable
                     ) {
-
-                        Log.e(
-                            TAG,
-                            "GAGAL PAGE $page",
-                            t
-                        )
 
                         halamanSelesai++
 
@@ -463,12 +426,6 @@ class KependudukanActivity : AppCompatActivity() {
 
         } catch (e: Exception) {
 
-            Log.e(
-                TAG,
-                "GAGAL PARSE PAGING",
-                e
-            )
-
             PagingInfo(
                 1,
                 1,
@@ -491,12 +448,6 @@ class KependudukanActivity : AppCompatActivity() {
             dataApi == null ||
             !dataApi.isJsonArray
         ) {
-
-            Log.d(
-                TAG,
-                "PAGE $page DATA BUKAN ARRAY"
-            )
-
             return
         }
 
@@ -504,12 +455,6 @@ class KependudukanActivity : AppCompatActivity() {
             dataApi.asJsonArray
 
         if (array.size() < 2) {
-
-            Log.d(
-                TAG,
-                "PAGE $page DATA KURANG DARI 2"
-            )
-
             return
         }
 
@@ -517,12 +462,6 @@ class KependudukanActivity : AppCompatActivity() {
             array[1]
 
         if (!dataTabel.isJsonArray) {
-
-            Log.d(
-                TAG,
-                "PAGE $page DATA TABEL BUKAN ARRAY"
-            )
-
             return
         }
 
@@ -547,35 +486,15 @@ class KependudukanActivity : AppCompatActivity() {
                 ) {
 
                     tabelPage.add(tabel)
-
-                    Log.d(
-                        TAG,
-                        "STATIC LOLOS FILTER = " +
-                                "${tabel.tableId} | " +
-                                "${tabel.title}"
-                    )
                 }
 
             } catch (e: Exception) {
-
-                Log.e(
-                    TAG,
-                    "GAGAL PARSE PAGE $page",
-                    e
-                )
             }
         }
 
         synchronized(semuaTabel) {
             semuaTabel.addAll(tabelPage)
         }
-
-        Log.d(
-            TAG,
-            "PAGE $page -> " +
-                    "${tabelPage.size} " +
-                    "tabel Kependudukan"
-        )
     }
 
     private fun adalahTabelKependudukan(
@@ -612,10 +531,6 @@ class KependudukanActivity : AppCompatActivity() {
         return false
     }
 
-    // =========================================================
-    // VARIABLE
-    // =========================================================
-
     private fun loadSemuaVariable() {
 
         loadVariablePage(1)
@@ -640,11 +555,6 @@ class KependudukanActivity : AppCompatActivity() {
 
                     if (!response.isSuccessful) {
 
-                        Log.e(
-                            TAG,
-                            "VARIABLE PAGE $page HTTP ${response.code()}"
-                        )
-
                         variableLoadSelesai = true
 
                         runOnUiThread {
@@ -659,11 +569,6 @@ class KependudukanActivity : AppCompatActivity() {
 
                     if (body == null) {
 
-                        Log.e(
-                            TAG,
-                            "VARIABLE PAGE $page BODY KOSONG"
-                        )
-
                         variableLoadSelesai = true
 
                         runOnUiThread {
@@ -677,11 +582,6 @@ class KependudukanActivity : AppCompatActivity() {
                         body.status
                             ?.uppercase() != "OK"
                     ) {
-
-                        Log.e(
-                            TAG,
-                            "VARIABLE PAGE $page STATUS ${body.status}"
-                        )
 
                         variableLoadSelesai = true
 
@@ -700,12 +600,6 @@ class KependudukanActivity : AppCompatActivity() {
                     val paging =
                         ambilInformasiPaging(body)
 
-                    Log.d(
-                        TAG,
-                        "VARIABLE PAGE = " +
-                                "$page / ${paging.pages}"
-                    )
-
                     if (page < paging.pages) {
 
                         loadVariablePage(
@@ -715,27 +609,6 @@ class KependudukanActivity : AppCompatActivity() {
                     } else {
 
                         variableLoadSelesai = true
-
-                        Log.d(
-                            TAG,
-                            "================================"
-                        )
-
-                        Log.d(
-                            TAG,
-                            "SEMUA VARIABLE SELESAI"
-                        )
-
-                        Log.d(
-                            TAG,
-                            "TOTAL VARIABLE KEPEENDUDUKAN = " +
-                                    semuaVariabel.size
-                        )
-
-                        Log.d(
-                            TAG,
-                            "================================"
-                        )
 
                         runOnUiThread {
                             cekSemuaSumberSelesai()
@@ -747,12 +620,6 @@ class KependudukanActivity : AppCompatActivity() {
                     call: Call<KependudukanDataResponse>,
                     t: Throwable
                 ) {
-
-                    Log.e(
-                        TAG,
-                        "GAGAL VARIABLE PAGE $page",
-                        t
-                    )
 
                     variableLoadSelesai = true
 
@@ -776,12 +643,6 @@ class KependudukanActivity : AppCompatActivity() {
             dataApi == null ||
             !dataApi.isJsonArray
         ) {
-
-            Log.d(
-                TAG,
-                "VARIABLE PAGE $page DATA BUKAN ARRAY"
-            )
-
             return
         }
 
@@ -789,12 +650,6 @@ class KependudukanActivity : AppCompatActivity() {
             dataApi.asJsonArray
 
         if (array.size() < 2) {
-
-            Log.d(
-                TAG,
-                "VARIABLE PAGE $page DATA KURANG DARI 2"
-            )
-
             return
         }
 
@@ -802,31 +657,8 @@ class KependudukanActivity : AppCompatActivity() {
             array[1]
 
         if (!dataVariable.isJsonArray) {
-
-            Log.d(
-                TAG,
-                "VARIABLE PAGE $page DATA VARIABLE BUKAN ARRAY"
-            )
-
             return
         }
-
-        Log.d(
-            TAG,
-            "VARIABLE PAGE $page JUMLAH DATA = " +
-                    "${dataVariable.asJsonArray.size()}"
-        )
-
-        dataVariable
-            .asJsonArray
-            .take(3)
-            .forEachIndexed { index, element ->
-
-                Log.d(
-                    TAG,
-                    "VARIABLE PAGE $page SAMPLE $index = $element"
-                )
-            }
 
         val gson =
             Gson()
@@ -844,36 +676,14 @@ class KependudukanActivity : AppCompatActivity() {
                         DataVariabel::class.java
                     )
 
-                Log.d(
-                    TAG,
-                    "VARIABLE RAW = " +
-                            "var_id=${variable.varId} | " +
-                            "title=${variable.title} | " +
-                            "subcsa_name='${variable.subcsaName}' | " +
-                            "subcsa_id=${variable.subcsaId}"
-                )
-
                 if (variable.subcsaId == 519) {
 
                     variablePage.add(
                         variable
                     )
-
-                    Log.d(
-                        TAG,
-                        "VARIABLE KE PENDUDUKAN = " +
-                                "var_id=${variable.varId} | " +
-                                "title=${variable.title}"
-                    )
                 }
 
             } catch (e: Exception) {
-
-                Log.e(
-                    TAG,
-                    "GAGAL PARSE VARIABLE PAGE $page",
-                    e
-                )
             }
         }
 
@@ -882,18 +692,7 @@ class KependudukanActivity : AppCompatActivity() {
                 variablePage
             )
         }
-
-        Log.d(
-            TAG,
-            "VARIABLE PAGE $page -> " +
-                    "${variablePage.size} " +
-                    "variable Kependudukan"
-        )
     }
-
-    // =========================================================
-    // SIMDASI
-    // =========================================================
 
     private fun loadSimdasi() {
 
@@ -920,12 +719,6 @@ class KependudukanActivity : AppCompatActivity() {
                     try {
 
                         if (!response.isSuccessful) {
-
-                            Log.e(
-                                TAG,
-                                "SIMDASI HTTP ${response.code()}"
-                            )
-
                             return
                         }
 
@@ -937,12 +730,6 @@ class KependudukanActivity : AppCompatActivity() {
                             body.status
                                 ?.uppercase() != "OK"
                         ) {
-
-                            Log.e(
-                                TAG,
-                                "SIMDASI STATUS = ${body.status}"
-                            )
-
                             return
                         }
 
@@ -970,12 +757,6 @@ class KependudukanActivity : AppCompatActivity() {
                     t: Throwable
                 ) {
 
-                    Log.e(
-                        TAG,
-                        "SIMDASI GAGAL",
-                        t
-                    )
-
                     requestSimdasiAktif.remove(
                         tahunRequest
                     )
@@ -994,11 +775,6 @@ class KependudukanActivity : AppCompatActivity() {
     private fun prosesSimdasiResponse(
         body: SimdasiResponse
     ) {
-        Log.d(
-            TAG,
-            "SIMDASI BODY = ${Gson().toJson(body)}"
-        )
-
 
         val dataSimdasi =
             body.data
@@ -1053,17 +829,7 @@ class KependudukanActivity : AppCompatActivity() {
                 }
             }
         }
-
-        Log.d(
-            TAG,
-            "SIMDASI DITEMUKAN = " +
-                    semuaTabelSimdasi.size
-        )
     }
-
-    // =========================================================
-    // SELESAI LOAD
-    // =========================================================
 
     private fun cekSemuaSumberSelesai() {
 
@@ -1133,53 +899,15 @@ class KependudukanActivity : AppCompatActivity() {
             variableUnik
         )
 
-        Log.d(
-            TAG,
-            "================================"
-        )
-
-        Log.d(
-            TAG,
-            "SEMUA DATA SELESAI"
-        )
-
-        Log.d(
-            TAG,
-            "STATIC = ${semuaTabel.size}"
-        )
-
-        Log.d(
-            TAG,
-            "VARIABLE = ${semuaVariabel.size}"
-        )
-
-        Log.d(
-            TAG,
-            "SIMDASI = ${semuaTabelSimdasi.size}"
-        )
-
-        Log.d(
-            TAG,
-            "================================"
-        )
-
         bangunDaftarTahun()
 
         tampilkanSemuaData()
     }
 
-    // =========================================================
-    // TAHUN
-    // =========================================================
-
     private fun bangunDaftarTahun() {
 
         val tahun =
             mutableSetOf<Int>()
-
-        // -----------------------------------------------------
-        // STATIC
-        // -----------------------------------------------------
 
         semuaTabel.forEach { tabel ->
 
@@ -1199,25 +927,12 @@ class KependudukanActivity : AppCompatActivity() {
             }
         }
 
-        // -----------------------------------------------------
-        // VARIABLE
-        // -----------------------------------------------------
-        //
-        // Variable Kependudukan yang sudah ditemukan
-        // tetap menggunakan rentang tahun proyeksi.
-        //
-        // -----------------------------------------------------
-
         if (semuaVariabel.isNotEmpty()) {
 
             tahun.addAll(
                 buatDaftarTahunProyeksi()
             )
         }
-
-        // -----------------------------------------------------
-        // SIMDASI
-        // -----------------------------------------------------
 
         semuaTabelSimdasi.forEach { tabel ->
 
@@ -1238,26 +953,6 @@ class KependudukanActivity : AppCompatActivity() {
 
         tahunTerpilih =
             semuaTahunTersedia.firstOrNull()
-
-        Log.d(
-            TAG,
-            "================================"
-        )
-
-        Log.d(
-            TAG,
-            "TAHUN TERSEDIA = $semuaTahunTersedia"
-        )
-
-        Log.d(
-            TAG,
-            "TAHUN TERPILIH = $tahunTerpilih"
-        )
-
-        Log.d(
-            TAG,
-            "================================"
-        )
     }
 
     private fun tampilkanDialogFilterTahun() {
@@ -1301,11 +996,6 @@ class KependudukanActivity : AppCompatActivity() {
                 tahunTerpilih =
                     tahun
 
-                Log.d(
-                    TAG,
-                    "FILTER TAHUN DIPILIH = $tahun"
-                )
-
                 dialog.dismiss()
 
                 tampilkanSemuaData()
@@ -1316,10 +1006,6 @@ class KependudukanActivity : AppCompatActivity() {
             )
             .show()
     }
-
-    // =========================================================
-    // TAMPIL DATA
-    // =========================================================
 
     private fun tampilkanSemuaData() {
 
@@ -1350,7 +1036,6 @@ class KependudukanActivity : AppCompatActivity() {
 
         } else {
 
-            // STATIC
             semuaTabel.forEach { tabel ->
 
                 if (
@@ -1366,7 +1051,6 @@ class KependudukanActivity : AppCompatActivity() {
                 }
             }
 
-            // VARIABLE
             semuaVariabel.forEach { variabel ->
 
                 if (
@@ -1380,7 +1064,6 @@ class KependudukanActivity : AppCompatActivity() {
                 }
             }
 
-            // SIMDASI
             semuaTabelSimdasi.forEach { tabel ->
 
                 val tahunTersedia =
@@ -1434,10 +1117,6 @@ class KependudukanActivity : AppCompatActivity() {
         }
     }
 
-    // =========================================================
-    // STATIC CARD
-    // =========================================================
-
     private fun tampilkanCardList(
         tabel: KependudukanTable
     ) {
@@ -1450,8 +1129,6 @@ class KependudukanActivity : AppCompatActivity() {
                     cardContainer,
                     false
                 )
-
-
 
         val tvTahun =
             card.findViewById<TextView>(
@@ -1467,8 +1144,6 @@ class KependudukanActivity : AppCompatActivity() {
             card.findViewById<TextView>(
                 R.id.tvJudul
             )
-
-
 
         val proyeksi =
             adalahProyeksi(tabel)
@@ -1519,10 +1194,6 @@ class KependudukanActivity : AppCompatActivity() {
         )
     }
 
-    // =========================================================
-    // VARIABLE CARD
-    // =========================================================
-
     private fun tampilkanCardVariabel(
         variabel: DataVariabel
     ) {
@@ -1556,7 +1227,8 @@ class KependudukanActivity : AppCompatActivity() {
                 R.id.tvJudul
             )
 
-        tvKode.visibility = View.GONE
+        tvKode.visibility =
+            View.GONE
 
         tvTahun.text =
             tahunTerpilih?.toString()
@@ -1581,10 +1253,6 @@ class KependudukanActivity : AppCompatActivity() {
             card
         )
     }
-
-    // =========================================================
-    // SIMDASI CARD
-    // =========================================================
 
     private fun tampilkanCardSimdasi(
         tabel: SimdasiTable
@@ -1669,10 +1337,6 @@ class KependudukanActivity : AppCompatActivity() {
         )
     }
 
-    // =========================================================
-    // CEK TAHUN STATIC
-    // =========================================================
-
     private fun tabelMemilikiTahun(
         tabel: KependudukanTable,
         tahun: Int
@@ -1693,10 +1357,6 @@ class KependudukanActivity : AppCompatActivity() {
             tahun
         )
     }
-
-    // =========================================================
-    // CLICK VARIABLE
-    // =========================================================
 
     private fun onVariabelClicked(
         variabel: DataVariabel
@@ -1741,7 +1401,11 @@ class KependudukanActivity : AppCompatActivity() {
             KependudukanDetailActivity.EXTRA_STATIC_BUTUH_TAHUN,
             true
         )
-        intent.putExtra(KependudukanDetailActivity.EXTRA_IS_VARIABLE, true)
+
+        intent.putExtra(
+            KependudukanDetailActivity.EXTRA_IS_VARIABLE,
+            true
+        )
 
         val daftarTahun =
             buatDaftarTahunProyeksi()
@@ -1765,47 +1429,8 @@ class KependudukanActivity : AppCompatActivity() {
             )
         }
 
-        Log.d(
-            TAG,
-            "================================"
-        )
-
-        Log.d(
-            TAG,
-            "CLICK VARIABLE"
-        )
-
-        Log.d(
-            TAG,
-            "VARIABLE ID = $variableId"
-        )
-
-        Log.d(
-            TAG,
-            "TITLE = ${variabel.title}"
-        )
-
-        Log.d(
-            TAG,
-            "SUB_NAME = ${variabel.subName}"
-        )
-
-        Log.d(
-            TAG,
-            "TAHUN DEFAULT = $tahun"
-        )
-
-        Log.d(
-            TAG,
-            "================================"
-        )
-
         startActivity(intent)
     }
-
-    // =========================================================
-    // CLICK STATIC
-    // =========================================================
 
     private fun onListTableClicked(
         tabel: KependudukanTable,
@@ -1884,38 +1509,6 @@ class KependudukanActivity : AppCompatActivity() {
                 )
             )
 
-            Log.d(
-                TAG,
-                "================================"
-            )
-
-            Log.d(
-                TAG,
-                "CLICK STATIC PROYEKSI"
-            )
-
-            Log.d(
-                TAG,
-                "ID = $tableId"
-            )
-
-            Log.d(
-                TAG,
-                "TAHUN TERPILIH = $tahun"
-            )
-
-            Log.d(
-                TAG,
-                "RENTANG = " +
-                        "$TAHUN_PROYEKSI_MULAI - " +
-                        "$TAHUN_PROYEKSI_AKHIR"
-            )
-
-            Log.d(
-                TAG,
-                "================================"
-            )
-
         } else {
 
             val daftarTahun =
@@ -1943,52 +1536,11 @@ class KependudukanActivity : AppCompatActivity() {
                         daftarTahun.sortedDescending()
                     )
                 )
-
-                Log.d(
-                    TAG,
-                    "================================"
-                )
-
-                Log.d(
-                    TAG,
-                    "CLICK STATIC BIASA"
-                )
-
-                Log.d(
-                    TAG,
-                    "ID = $tableId"
-                )
-
-                Log.d(
-                    TAG,
-                    "TAHUN TERPILIH = $tahun"
-                )
-
-                Log.d(
-                    TAG,
-                    "TAHUN TERSEDIA = $daftarTahun"
-                )
-
-                Log.d(
-                    TAG,
-                    "================================"
-                )
-
-            } else {
-
-                Log.d(
-                    TAG,
-                    "STATIC TANPA TAHUN"
-                )
             }
         }
 
         startActivity(intent)
     }
-
-    // =========================================================
-    // CLICK SIMDASI
-    // =========================================================
 
     private fun onSimdasiTableClicked(
         tabel: SimdasiTable
@@ -2057,57 +1609,8 @@ class KependudukanActivity : AppCompatActivity() {
             )
         )
 
-        Log.d(
-            TAG,
-            "================================"
-        )
-
-        Log.d(
-            TAG,
-            "CLICK SIMDASI"
-        )
-
-        Log.d(
-            TAG,
-            "ID TABEL = $tableId"
-        )
-
-        Log.d(
-            TAG,
-            "KODE TABEL = ${tabel.kodeTabel}"
-        )
-
-        Log.d(
-            TAG,
-            "JUDUL = ${tabel.judul}"
-        )
-
-        Log.d(
-            TAG,
-            "TAHUN TERPILIH GLOBAL = $tahunTerpilih"
-        )
-
-        Log.d(
-            TAG,
-            "TAHUN YANG DIKIRIM = $tahun"
-        )
-
-        Log.d(
-            TAG,
-            "TAHUN TERSEDIA = $daftarTahun"
-        )
-
-        Log.d(
-            TAG,
-            "================================"
-        )
-
         startActivity(intent)
     }
-
-    // =========================================================
-    // PROYEKSI
-    // =========================================================
 
     private fun adalahProyeksi(
         tabel: KependudukanTable
@@ -2141,10 +1644,6 @@ class KependudukanActivity : AppCompatActivity() {
             .sortedDescending()
     }
 
-    // =========================================================
-    // AMBIL TAHUN DARI JUDUL
-    // =========================================================
-
     private fun ambilTahunDariJudul(
         judul: String?
     ): List<Int> {
@@ -2167,10 +1666,6 @@ class KependudukanActivity : AppCompatActivity() {
             .sorted()
             .toList()
     }
-
-    // =========================================================
-    // DESTROY
-    // =========================================================
 
     override fun onDestroy() {
 

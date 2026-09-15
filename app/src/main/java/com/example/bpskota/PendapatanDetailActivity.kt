@@ -33,6 +33,8 @@ import com.airbnb.lottie.LottieAnimationView
 import com.example.bpskota.bps.model.KonsumsiDetailResponse
 import com.example.bpskota.bps.model.KonsumsiVervar
 import com.example.bpskota.bps.repository.BpsRepository
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import com.google.gson.JsonElement
 import retrofit2.Call
 import retrofit2.Callback
@@ -43,9 +45,6 @@ import java.io.FileOutputStream
 class PendapatanDetailActivity : AppCompatActivity() {
 
     companion object {
-
-        private const val TAG =
-            "PENDAPATAN_DETAIL"
 
         private const val DOMAIN =
             "3574"
@@ -62,10 +61,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         private const val EXTRA_JUDUL =
             "JUDUL"
 
-        // ========================================================
-        // NOTIFICATION
-        // ========================================================
-
         private const val CHANNEL_ID =
             "bps_download_channel"
 
@@ -76,16 +71,10 @@ class PendapatanDetailActivity : AppCompatActivity() {
             3003
     }
 
-    // ============================================================
-    // REPOSITORY
-    // ============================================================
-
     private val repository =
         BpsRepository()
 
-    // ============================================================
-    // DATA
-    // ============================================================
+    private lateinit var activityTracker: ActivityTracker
 
     private var variableId =
         -1
@@ -96,19 +85,9 @@ class PendapatanDetailActivity : AppCompatActivity() {
     private var judul =
         ""
 
-    /**
-     * Menyimpan response terakhir yang berhasil dimuat.
-     *
-     * PDF menggunakan data ini sehingga tidak perlu
-     * request ulang ke API saat tombol download ditekan.
-     */
     private var detailData:
             KonsumsiDetailResponse? =
         null
-
-    // ============================================================
-    // VIEW
-    // ============================================================
 
     private lateinit var btnBack: ImageView
 
@@ -126,10 +105,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
     private lateinit var cardContainer:
             LinearLayout
 
-    // ============================================================
-    // ON CREATE
-    // ============================================================
-
     override fun onCreate(
         savedInstanceState: Bundle?
     ) {
@@ -143,16 +118,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         )
 
         initView()
-
-        setupButton()
-
-        createNotificationChannel()
-
-        requestNotificationPermission()
-
-        // ========================================================
-        // INTENT
-        // ========================================================
 
         variableId =
             intent.getIntExtra(
@@ -171,9 +136,25 @@ class PendapatanDetailActivity : AppCompatActivity() {
                 EXTRA_JUDUL
             ) ?: "Data Pendapatan"
 
-        // ========================================================
-        // VALIDASI
-        // ========================================================
+        activityTracker = ActivityTracker(
+            this,
+            BpskpRetrofitClient.api
+        )
+
+        activityTracker.trackScreen(
+            screen = "PendapatanDetail",
+            metadata = mapOf(
+                "data_id" to variableId,
+                "tahun" to tahun,
+                "judul" to judul
+            )
+        )
+
+        setupButton()
+
+        createNotificationChannel()
+
+        requestNotificationPermission()
 
         if (
             variableId == -1
@@ -205,26 +186,14 @@ class PendapatanDetailActivity : AppCompatActivity() {
             return
         }
 
-        // ========================================================
-        // HEADER
-        // ========================================================
-
         tvJudul.text =
             judul
 
         tvTahun.text =
             tahun.toString()
 
-        // ========================================================
-        // LOAD
-        // ========================================================
-
         loadDetail()
     }
-
-    // ============================================================
-    // INIT VIEW
-    // ============================================================
 
     private fun initView() {
 
@@ -263,10 +232,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
             )
     }
 
-    // ============================================================
-    // BUTTON
-    // ============================================================
-
     private fun setupButton() {
 
         btnBack.setOnClickListener {
@@ -279,10 +244,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
             tampilkanDialogDownload()
         }
     }
-
-    // ============================================================
-    // DIALOG DOWNLOAD
-    // ============================================================
 
     private fun tampilkanDialogDownload() {
 
@@ -321,18 +282,7 @@ class PendapatanDetailActivity : AppCompatActivity() {
             .show()
     }
 
-    // ============================================================
-    // LOAD DETAIL
-    // ============================================================
-
     private fun loadDetail() {
-
-        /*
-         * Contoh:
-         *
-         * Tahun aplikasi = 2026
-         * Tahun API      = 126
-         */
 
         val th =
             tahun - 1900
@@ -367,10 +317,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                         false
                     )
 
-                    // ====================================================
-                    // HTTP
-                    // ====================================================
-
                     if (
                         !response.isSuccessful
                     ) {
@@ -383,10 +329,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
 
                         return
                     }
-
-                    // ====================================================
-                    // BODY
-                    // ====================================================
 
                     val body =
                         response.body()
@@ -404,10 +346,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                         return
                     }
 
-                    // ====================================================
-                    // STATUS
-                    // ====================================================
-
                     if (
                         !body.status.equals(
                             "OK",
@@ -424,16 +362,8 @@ class PendapatanDetailActivity : AppCompatActivity() {
                         return
                     }
 
-                    // ====================================================
-                    // SIMPAN RESPONSE
-                    // ====================================================
-
                     detailData =
                         body
-
-                    // ====================================================
-                    // TAMPILKAN
-                    // ====================================================
 
                     tampilkanDetail(
                         body
@@ -461,10 +391,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         )
     }
 
-    // ============================================================
-    // TAMPILKAN DETAIL
-    // ============================================================
-
     private fun tampilkanDetail(
         response:
         KonsumsiDetailResponse
@@ -481,10 +407,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         val dataContent =
             response.dataContent
 
-        // ========================================================
-        // VALIDASI VARIABLE
-        // ========================================================
-
         if (
             variables.isNullOrEmpty()
         ) {
@@ -495,10 +417,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
 
             return
         }
-
-        // ========================================================
-        // VALIDASI WILAYAH
-        // ========================================================
 
         if (
             vervar.isNullOrEmpty()
@@ -511,10 +429,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
             return
         }
 
-        // ========================================================
-        // VALIDASI DATA
-        // ========================================================
-
         if (
             dataContent == null ||
             dataContent.isJsonNull
@@ -526,10 +440,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
 
             return
         }
-
-        // ========================================================
-        // VARIABLE
-        // ========================================================
 
         val variable =
             variables.firstOrNull()
@@ -544,10 +454,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
 
             return
         }
-
-        // ========================================================
-        // CEK KHUSUS KELOMPOK
-        // ========================================================
 
         val adaKelompok =
             vervar.any {
@@ -577,10 +483,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                         )
             }
 
-        // ========================================================
-        // KHUSUS DATA KELOMPOK
-        // ========================================================
-
         if (
             adaKelompok
         ) {
@@ -595,10 +497,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
 
             return
         }
-
-        // ========================================================
-        // DATA BIASA
-        // ========================================================
 
         for (
         wilayah in vervar
@@ -624,10 +522,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // CARD KELOMPOK
-    // ============================================================
-
     private fun tampilkanCardKelompok(
         vervar:
         List<KonsumsiVervar>,
@@ -635,10 +529,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         dataContent:
         JsonElement
     ) {
-
-        // ========================================================
-        // OBJECT DATA
-        // ========================================================
 
         if (
             !dataContent.isJsonObject
@@ -671,10 +561,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                 bersihkanHtml(
                     wilayah.label ?: "-"
                 )
-
-            // ====================================================
-            // KELOMPOK
-            // ====================================================
 
             if (
                 label.equals(
@@ -717,10 +603,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                 continue
             }
 
-            // ====================================================
-            // ITEM DALAM KELOMPOK
-            // ====================================================
-
             if (
                 cardSedangBerjalan != null
             ) {
@@ -762,10 +644,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
             }
         }
     }
-
-    // ============================================================
-    // CARD WILAYAH
-    // ============================================================
 
     private fun tampilkanCardWilayah(
         wilayah: String,
@@ -812,20 +690,12 @@ class PendapatanDetailActivity : AppCompatActivity() {
         )
     }
 
-    // ============================================================
-    // TAMPILKAN NILAI DATA
-    // ============================================================
-
     private fun tampilkanNilaiData(
         cardContent: LinearLayout,
         wilayah: String,
         wilayahVal: String,
         dataContent: JsonElement
     ) {
-
-        // ========================================================
-        // OBJECT
-        // ========================================================
 
         if (
             dataContent.isJsonObject
@@ -864,10 +734,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                 }
             }
 
-            // ====================================================
-            // FALLBACK
-            // ====================================================
-
             val firstEntry =
                 jsonObject.entrySet()
                     .firstOrNull()
@@ -894,10 +760,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
 
             return
         }
-
-        // ========================================================
-        // ARRAY
-        // ========================================================
 
         if (
             dataContent.isJsonArray
@@ -929,10 +791,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
             return
         }
 
-        // ========================================================
-        // VALUE BIASA
-        // ========================================================
-
         val row =
             buatBarisData(
                 key =
@@ -948,10 +806,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
             row
         )
     }
-
-    // ============================================================
-    // BARIS DATA
-    // ============================================================
 
     private fun buatBarisData(
         key: String,
@@ -980,10 +834,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
             dpToPx(7)
         )
 
-        // ========================================================
-        // KEY
-        // ========================================================
-
         val tvKey =
             TextView(this)
 
@@ -1009,10 +859,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 1f
             )
-
-        // ========================================================
-        // VALUE
-        // ========================================================
 
         val tvValue =
             TextView(this)
@@ -1045,10 +891,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         tvValue.gravity =
             Gravity.END
 
-        // ========================================================
-        // ADD
-        // ========================================================
-
         row.addView(
             tvKey
         )
@@ -1059,10 +901,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
 
         return row
     }
-
-    // ============================================================
-    // FORMAT JSON
-    // ============================================================
 
     private fun formatJsonValue(
         element: JsonElement
@@ -1101,10 +939,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // BERSIHKAN HTML
-    // ============================================================
-
     private fun bersihkanHtml(
         text: String
     ): String {
@@ -1132,10 +966,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
             )
             .trim()
     }
-
-    // ============================================================
-    // CARD DASAR
-    // ============================================================
 
     private fun buatCardDasar(): CardView {
 
@@ -1165,10 +995,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         return card
     }
 
-    // ============================================================
-    // DIVIDER
-    // ============================================================
-
     private fun buatDivider(): View {
 
         val divider =
@@ -1197,10 +1023,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
 
         return divider
     }
-
-    // ============================================================
-    // PESAN
-    // ============================================================
 
     private fun tampilkanPesan(
         pesan: String
@@ -1234,10 +1056,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         )
     }
 
-    // ============================================================
-    // LOADING
-    // ============================================================
-
     private fun tampilkanLoading(
         tampil: Boolean
     ) {
@@ -1259,10 +1077,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                 View.GONE
         }
     }
-
-    // ============================================================
-    // DOWNLOAD PDF
-    // ============================================================
 
     private fun downloadPdf() {
 
@@ -1333,10 +1147,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                         true
                 }
 
-            // ====================================================
-            // HEADER
-            // ====================================================
-
             paint.textSize =
                 18f
 
@@ -1395,10 +1205,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                 paint
             )
 
-            // ====================================================
-            // GARIS
-            // ====================================================
-
             paint.strokeWidth =
                 1f
 
@@ -1412,10 +1218,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
 
             var y =
                 180f
-
-            // ====================================================
-            // DATA
-            // ====================================================
 
             val vervar =
                 body.vervar
@@ -1458,20 +1260,12 @@ class PendapatanDetailActivity : AppCompatActivity() {
                                     ignoreCase = true
                                 )
 
-                    // =================================================
-                    // HEADER KELOMPOK
-                    // =================================================
-
                     if (
                         isKelompok
                     ) {
 
                         cardKelompok =
                             label
-
-                        // ---------------------------------------------
-                        // CHECK PAGE
-                        // ---------------------------------------------
 
                         if (
                             y > 780f
@@ -1517,10 +1311,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
 
                         continue
                     }
-
-                    // =================================================
-                    // DATA ITEM
-                    // =================================================
 
                     var nilai =
                         "-"
@@ -1599,10 +1389,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
 
             } else {
 
-                // ====================================================
-                // DATA BUKAN OBJECT
-                // ====================================================
-
                 paint.typeface =
                     Typeface.DEFAULT
 
@@ -1642,10 +1428,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                 )
             }
 
-            // ====================================================
-            // FOOTER
-            // ====================================================
-
             paint.typeface =
                 Typeface.DEFAULT
 
@@ -1661,10 +1443,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                 815f,
                 paint
             )
-
-            // ====================================================
-            // FINISH
-            // ====================================================
 
             pdfDocument.finishPage(
                 page
@@ -1721,10 +1499,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // CREATE PDF PAGE
-    // ============================================================
-
     private fun createPdfPage(
         document: PdfDocument,
         pageNumber: Int
@@ -1742,10 +1516,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         )
     }
 
-    // ============================================================
-    // SANITASI NAMA FILE
-    // ============================================================
-
     private fun sanitasiNamaFile(
         nama: String
     ): String {
@@ -1760,10 +1530,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                 "_"
             )
     }
-
-    // ============================================================
-    // SAVE PDF
-    // ============================================================
 
     private fun savePdfToDownloads(
         pdfDocument: PdfDocument,
@@ -1900,10 +1666,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // NOTIFICATION CHANNEL
-    // ============================================================
-
     private fun createNotificationChannel() {
 
         if (
@@ -1933,10 +1695,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // REQUEST NOTIFICATION PERMISSION
-    // ============================================================
-
     private fun requestNotificationPermission() {
 
         if (
@@ -1963,10 +1721,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // SHOW DOWNLOAD NOTIFICATION
-    // ============================================================
-
     private fun showDownloadNotification(
         uri: Uri,
         namaFile: String
@@ -1988,10 +1742,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                 return
             }
         }
-
-        // ========================================================
-        // INTENT BUKA PDF
-        // ========================================================
 
         val intent =
             Intent(
@@ -2023,10 +1773,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                     PendingIntent.FLAG_UPDATE_CURRENT
                 }
             )
-
-        // ========================================================
-        // NOTIFICATION
-        // ========================================================
 
         val notification =
             NotificationCompat.Builder(
@@ -2067,10 +1813,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
         )
     }
 
-    // ============================================================
-    // DP TO PX
-    // ============================================================
-
     private fun dpToPx(
         dp: Int
     ): Int {
@@ -2080,10 +1822,6 @@ class PendapatanDetailActivity : AppCompatActivity() {
                         resources.displayMetrics.density
                 ).toInt()
     }
-
-    // ============================================================
-    // DESTROY
-    // ============================================================
 
     override fun onDestroy() {
 

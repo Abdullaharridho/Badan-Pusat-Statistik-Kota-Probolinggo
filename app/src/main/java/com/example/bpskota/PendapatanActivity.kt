@@ -15,6 +15,8 @@ import com.example.bpskota.bps.model.KonsumsiDetailResponse
 import com.example.bpskota.bps.model.KonsumsiResponse
 import com.example.bpskota.bps.model.KonsumsiVariable
 import com.example.bpskota.bps.repository.BpsRepository
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
@@ -25,7 +27,6 @@ import retrofit2.Response
 class PendapatanActivity : AppCompatActivity() {
 
     companion object {
-
         private const val DOMAIN = "3574"
 
         private const val SUBCSA_ID = 523
@@ -47,15 +48,6 @@ class PendapatanActivity : AppCompatActivity() {
     private val variabelTampil =
         mutableListOf<KonsumsiVariable>()
 
-    /**
-     * Menyimpan hasil pengecekan tahun.
-     *
-     * Contoh:
-     *
-     * 2026 -> [85]
-     * 2025 -> [85, 86, 89]
-     * 2024 -> [85, 89]
-     */
     private val cacheTahun =
         mutableMapOf<Int, MutableList<Int>>()
 
@@ -68,10 +60,11 @@ class PendapatanActivity : AppCompatActivity() {
 
     private lateinit var btnFilter: ImageView
 
+    private lateinit var activityTracker: ActivityTracker
+
     override fun onCreate(
         savedInstanceState: Bundle?
     ) {
-
         super.onCreate(
             savedInstanceState
         )
@@ -100,21 +93,24 @@ class PendapatanActivity : AppCompatActivity() {
                 R.id.progressLoading
             )
 
-        // ========================================================
-        // LOAD LOTTIE ANIMATION
-        // ========================================================
-
         progressLoading.setAnimation(
             "Loading_Animation.json"
         )
 
-        btnBack.setOnClickListener {
+        activityTracker = ActivityTracker(
+            this,
+            BpskpRetrofitClient.api
+        )
 
+        activityTracker.trackScreen(
+            screen = "Pendapatan"
+        )
+
+        btnBack.setOnClickListener {
             finish()
         }
 
         btnFilter.setOnClickListener {
-
             tampilkanDialogTahun()
         }
 
@@ -122,10 +118,6 @@ class PendapatanActivity : AppCompatActivity() {
             1
         )
     }
-
-    // ============================================================
-    // LOAD VARIABLE
-    // ============================================================
 
     private fun loadSemuaPage(
         page: Int
@@ -278,10 +270,6 @@ class PendapatanActivity : AppCompatActivity() {
         )
     }
 
-    // ============================================================
-    // SELESAI LOAD VARIABLE
-    // ============================================================
-
     private fun selesaiLoadVariable() {
 
         if (
@@ -301,20 +289,10 @@ class PendapatanActivity : AppCompatActivity() {
             return
         }
 
-        /*
-         * Cari tahun terbaru yang benar-benar
-         * memiliki data.
-         *
-         * Tidak langsung menggunakan 2026.
-         */
         cariTahunTerbaru(
             TAHUN_MULAI
         )
     }
-
-    // ============================================================
-    // CARI TAHUN TERBARU
-    // ============================================================
 
     private fun cariTahunTerbaru(
         tahun: Int
@@ -337,10 +315,6 @@ class PendapatanActivity : AppCompatActivity() {
             return
         }
 
-        /*
-         * Kalau tahun sudah pernah dicek,
-         * langsung gunakan hasil cache.
-         */
         if (
             cacheTahun.containsKey(
                 tahun
@@ -407,10 +381,6 @@ class PendapatanActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // CEK SATU TAHUN
-    // ============================================================
-
     private fun cekSatuTahun(
         tahun: Int,
         selesai: (
@@ -435,13 +405,6 @@ class PendapatanActivity : AppCompatActivity() {
             return
         }
 
-        /*
-         * Contoh:
-         *
-         * 2026 - 1900 = 126
-         * 2025 - 1900 = 125
-         * 2024 - 1900 = 124
-         */
         val th =
             tahun - 1900
 
@@ -603,10 +566,6 @@ class PendapatanActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // PARSE VARIABLE
-    // ============================================================
-
     private fun parseVariableList(
         response: KonsumsiResponse
     ): List<KonsumsiVariable> {
@@ -658,8 +617,6 @@ class PendapatanActivity : AppCompatActivity() {
                 )
 
             } catch (_: Exception) {
-
-                // Abaikan variable yang gagal diparse
             }
         }
 
@@ -704,10 +661,6 @@ class PendapatanActivity : AppCompatActivity() {
             1
         }
     }
-
-    // ============================================================
-    // FILTER TAHUN
-    // ============================================================
 
     private fun tampilkanDialogTahun() {
 
@@ -766,18 +719,10 @@ class PendapatanActivity : AppCompatActivity() {
             .show()
     }
 
-    // ============================================================
-    // LOAD DATA TAHUN
-    // ============================================================
-
     private fun loadDataTahun(
         tahun: Int
     ) {
 
-        /*
-         * Kalau tahun sudah pernah dicek,
-         * langsung gunakan cache.
-         */
         if (
             cacheTahun.containsKey(
                 tahun
@@ -815,10 +760,6 @@ class PendapatanActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // FILTER DARI CACHE
-    // ============================================================
-
     private fun filterDariCache(
         tahun: Int
     ) {
@@ -851,10 +792,6 @@ class PendapatanActivity : AppCompatActivity() {
 
         tampilkanDaftar()
     }
-
-    // ============================================================
-    // TAMPILKAN CARD
-    // ============================================================
 
     private fun tampilkanDaftar() {
 
@@ -951,10 +888,6 @@ class PendapatanActivity : AppCompatActivity() {
                     return@setOnClickListener
                 }
 
-                // =================================================
-                // MASUK KE DETAIL
-                // =================================================
-
                 val intent =
                     Intent(
                         this,
@@ -987,10 +920,6 @@ class PendapatanActivity : AppCompatActivity() {
             )
         }
     }
-
-    // ============================================================
-    // CEK DATA
-    // ============================================================
 
     private fun dataContentMemilikiData(
         dataContent: JsonElement?
@@ -1032,10 +961,6 @@ class PendapatanActivity : AppCompatActivity() {
             }
         }
     }
-
-    // ============================================================
-    // LOADING - LOTTIE
-    // ============================================================
 
     private fun tampilkanLoading(
         tampil: Boolean

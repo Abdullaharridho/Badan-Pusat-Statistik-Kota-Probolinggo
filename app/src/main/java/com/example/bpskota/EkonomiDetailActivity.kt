@@ -18,7 +18,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.widget.ImageView
@@ -34,6 +33,8 @@ import com.airbnb.lottie.LottieAnimationView
 import com.example.bpskota.bps.model.EkonomiDetailResponse
 import com.example.bpskota.bps.model.EkonomiItem
 import com.example.bpskota.bps.repository.BpsRepository
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import com.google.gson.JsonObject
 import retrofit2.Call
 import retrofit2.Callback
@@ -43,33 +44,25 @@ import java.io.FileOutputStream
 
 class EkonomiDetailActivity : AppCompatActivity() {
 
+    private lateinit var activityTracker: ActivityTracker
+
     companion object {
 
-        private const val TAG = "EKONOMI_DETAIL"
 
         const val EXTRA_ID = "ekonomi_id"
         const val EXTRA_JUDUL = "ekonomi_judul"
         const val EXTRA_TAHUN = "ekonomi_tahun"
 
-        // ========================================================
-        // DOWNLOAD PDF
-        // ========================================================
 
         private const val CHANNEL_ID = "bps_download_channel"
         private const val NOTIFICATION_ID = 2003
         private const val REQUEST_NOTIFICATION_PERMISSION = 1003
     }
 
-    // ============================================================
-    // REPOSITORY
-    // ============================================================
 
     private val repository =
         BpsRepository()
 
-    // ============================================================
-    // BPS
-    // ============================================================
 
     private val domain =
         "3574"
@@ -77,9 +70,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
     private val apiKey =
         "008edaaae5d450b1913b31a2cef618c3"
 
-    // ============================================================
-    // VIEW
-    // ============================================================
 
     private lateinit var tvDetailJudul: TextView
 
@@ -89,16 +79,10 @@ class EkonomiDetailActivity : AppCompatActivity() {
 
     private lateinit var progressLoading: LottieAnimationView
 
-    // ============================================================
-    // TAHUN YANG DIKLIK
-    // ============================================================
 
     private var tahunTerpilih =
         2025
 
-    // ============================================================
-    // DATA UNTUK PDF
-    // ============================================================
 
     private val pdfData =
         mutableListOf<PdfEkonomiData>()
@@ -109,9 +93,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
     private var pdfSectionTitle =
         ""
 
-    // ============================================================
-    // ON CREATE
-    // ============================================================
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -133,9 +114,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
 
         requestNotificationPermission()
 
-        // ========================================================
-        // AMBIL INTENT
-        // ========================================================
 
         val id =
             intent.getStringExtra(
@@ -153,39 +131,26 @@ class EkonomiDetailActivity : AppCompatActivity() {
                 2025
             )
 
-        Log.d(
-            TAG,
-            "========================================"
+        activityTracker = ActivityTracker(
+            this,
+            BpskpRetrofitClient.api
         )
 
-        Log.d(
-            TAG,
-            "EKONOMI DETAIL"
+        activityTracker.trackScreen(
+            screen = "EkonomiDetail",
+            metadata = mapOf(
+                "table_id" to (id ?: ""),
+                "tahun" to tahunTerpilih,
+                "judul" to (judul ?: "")
+            )
         )
 
-        Log.d(
-            TAG,
-            "ID = $id"
-        )
 
-        Log.d(
-            TAG,
-            "JUDUL = $judul"
-        )
 
-        Log.d(
-            TAG,
-            "TAHUN DIPILIH = $tahunTerpilih"
-        )
 
-        Log.d(
-            TAG,
-            "========================================"
-        )
 
-        // ========================================================
-        // HEADER
-        // ========================================================
+
+
 
         tvDetailJudul.text =
             judul ?: "Tanpa judul"
@@ -193,9 +158,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         tvDetailTahun.text =
             tahunTerpilih.toString()
 
-        // ========================================================
-        // VALIDASI ID
-        // ========================================================
 
         if (
             id.isNullOrBlank()
@@ -212,9 +174,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             return
         }
 
-        // ========================================================
-        // LOAD DETAIL
-        // ========================================================
 
         loadDetail(
             id = id,
@@ -222,9 +181,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         )
     }
 
-    // ============================================================
-    // INIT VIEW
-    // ============================================================
 
     private fun initView() {
 
@@ -248,18 +204,12 @@ class EkonomiDetailActivity : AppCompatActivity() {
                 R.id.progressLoading
             )
 
-        // ========================================================
-        // LOTTIE LOADING
-        // ========================================================
 
         progressLoading.setAnimation(
             "Loading_Animation.json"
         )
     }
 
-    // ============================================================
-    // BUTTON
-    // ============================================================
 
     private fun setupButton() {
 
@@ -278,9 +228,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // DIALOG DOWNLOAD
-    // ============================================================
 
     private fun tampilkanDialogDownload() {
 
@@ -306,15 +253,9 @@ class EkonomiDetailActivity : AppCompatActivity() {
             .show()
     }
 
-    // ============================================================
-    // DOWNLOAD PDF
-    // ============================================================
 
     private fun downloadPdf() {
 
-        // ========================================================
-        // VALIDASI DATA
-        // ========================================================
 
         if (
             pdfData.isEmpty()
@@ -337,11 +278,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             e: Exception
         ) {
 
-            Log.e(
-                TAG,
-                "Gagal membuat PDF",
-                e
-            )
 
             Toast.makeText(
                 this,
@@ -351,9 +287,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // GENERATE PDF EKONOMI
-    // ============================================================
 
     private fun downloadPdfEkonomi() {
 
@@ -382,9 +315,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         var y =
             45f
 
-        // ========================================================
-        // JUDUL UTAMA
-        // ========================================================
 
         paint.textSize =
             16f
@@ -404,9 +334,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
 
         y += 30f
 
-        // ========================================================
-        // JUDUL STATISTIK
-        // ========================================================
 
         paint.textSize =
             14f
@@ -422,9 +349,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
 
         y += 25f
 
-        // ========================================================
-        // INFORMASI
-        // ========================================================
 
         paint.textSize =
             11f
@@ -475,9 +399,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
 
         y += 12f
 
-        // ========================================================
-        // SECTION
-        // ========================================================
 
         if (
             pdfSectionTitle.isNotBlank()
@@ -504,9 +425,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             y += 25f
         }
 
-        // ========================================================
-        // DATA
-        // ========================================================
 
         paint.textSize =
             10f
@@ -515,9 +433,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         item in pdfData
         ) {
 
-            // ====================================================
-            // CEK PERGANTIAN HALAMAN
-            // ====================================================
 
             if (
                 y > 770f
@@ -545,9 +460,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                     10f
             }
 
-            // ====================================================
-            // NAMA WILAYAH / KATEGORI
-            // ====================================================
 
             paint.typeface =
                 Typeface.create(
@@ -566,9 +478,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
 
             y += 20f
 
-            // ====================================================
-            // SATUAN
-            // ====================================================
 
             if (
                 item.unit.isNotBlank()
@@ -587,9 +496,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                 y += 18f
             }
 
-            // ====================================================
-            // TRIWULAN I
-            // ====================================================
 
             y =
                 drawPdfRow(
@@ -600,9 +506,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                     y
                 )
 
-            // ====================================================
-            // TRIWULAN II
-            // ====================================================
 
             y =
                 drawPdfRow(
@@ -613,9 +516,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                     y
                 )
 
-            // ====================================================
-            // TRIWULAN III
-            // ====================================================
 
             y =
                 drawPdfRow(
@@ -626,9 +526,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                     y
                 )
 
-            // ====================================================
-            // TRIWULAN IV
-            // ====================================================
 
             y =
                 drawPdfRow(
@@ -639,9 +536,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                     y
                 )
 
-            // ====================================================
-            // TAHUNAN
-            // ====================================================
 
             y =
                 drawPdfRow(
@@ -654,9 +548,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
 
             y += 15f
 
-            // ====================================================
-            // GARIS PEMISAH
-            // ====================================================
 
             paint.strokeWidth =
                 0.7f
@@ -672,9 +563,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             y += 18f
         }
 
-        // ========================================================
-        // FOOTER
-        // ========================================================
 
         if (
             y > 800f
@@ -719,17 +607,11 @@ class EkonomiDetailActivity : AppCompatActivity() {
             paint
         )
 
-        // ========================================================
-        // FINISH PAGE
-        // ========================================================
 
         document.finishPage(
             page
         )
 
-        // ========================================================
-        // NAMA FILE
-        // ========================================================
 
         val judulFile =
             sanitasiNamaFile(
@@ -739,9 +621,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         val namaFile =
             "Ekonomi_${judulFile}_${tvDetailTahun.text}.pdf"
 
-        // ========================================================
-        // SIMPAN
-        // ========================================================
 
         val uri =
             savePdfToDownloads(
@@ -764,9 +643,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             return
         }
 
-        // ========================================================
-        // NOTIFIKASI
-        // ========================================================
 
         showDownloadNotification(
             uri,
@@ -780,9 +656,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         ).show()
     }
 
-    // ============================================================
-    // DRAW ROW PDF
-    // ============================================================
 
     private fun drawPdfRow(
         canvas: android.graphics.Canvas,
@@ -827,9 +700,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         return y + 18f
     }
 
-    // ============================================================
-    // CREATE PDF PAGE
-    // ============================================================
 
     private fun createPdfPage(
         document: PdfDocument,
@@ -848,9 +718,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         )
     }
 
-    // ============================================================
-    // SAVE PDF TO DOWNLOADS
-    // ============================================================
 
     private fun savePdfToDownloads(
         pdfDocument: PdfDocument,
@@ -989,19 +856,11 @@ class EkonomiDetailActivity : AppCompatActivity() {
             e: Exception
         ) {
 
-            Log.e(
-                TAG,
-                "Gagal menyimpan PDF",
-                e
-            )
 
             null
         }
     }
 
-    // ============================================================
-    // NOTIFICATION CHANNEL
-    // ============================================================
 
     private fun createNotificationChannel() {
 
@@ -1032,9 +891,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // REQUEST NOTIFICATION PERMISSION
-    // ============================================================
 
     private fun requestNotificationPermission() {
 
@@ -1061,18 +917,12 @@ class EkonomiDetailActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // SHOW DOWNLOAD NOTIFICATION
-    // ============================================================
 
     private fun showDownloadNotification(
         uri: Uri,
         namaFile: String
     ) {
 
-        // ========================================================
-        // CEK PERMISSION
-        // ========================================================
 
         if (
             Build.VERSION.SDK_INT >=
@@ -1090,9 +940,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             }
         }
 
-        // ========================================================
-        // INTENT BUKA PDF
-        // ========================================================
 
         val intent =
             Intent(
@@ -1118,9 +965,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                         PendingIntent.FLAG_IMMUTABLE
             )
 
-        // ========================================================
-        // NOTIFICATION
-        // ========================================================
 
         val notification =
             NotificationCompat.Builder(
@@ -1161,18 +1005,12 @@ class EkonomiDetailActivity : AppCompatActivity() {
         )
     }
 
-    // ============================================================
-    // LOAD DETAIL
-    // ============================================================
 
     private fun loadDetail(
         id: String,
         tahunDipilih: Int
     ) {
 
-        // ========================================================
-        // RESET DATA PDF
-        // ========================================================
 
         pdfData.clear()
 
@@ -1180,9 +1018,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
 
         pdfSectionTitle = ""
 
-        // ========================================================
-        // MULAI LOADING
-        // ========================================================
 
         progressLoading.visibility =
             View.VISIBLE
@@ -1191,20 +1026,8 @@ class EkonomiDetailActivity : AppCompatActivity() {
 
         tvDetailData.removeAllViews()
 
-        Log.d(
-            TAG,
-            "REQUEST DETAIL"
-        )
 
-        Log.d(
-            TAG,
-            "ID = $id"
-        )
 
-        Log.d(
-            TAG,
-            "TAHUN DIPILIH = $tahunDipilih"
-        )
 
         repository
             .getEkonomiDetail(
@@ -1225,32 +1048,18 @@ class EkonomiDetailActivity : AppCompatActivity() {
                         Response<EkonomiDetailResponse>
                     ) {
 
-                        // ====================================================
-                        // STOP LOADING
-                        // ====================================================
 
                         progressLoading.cancelAnimation()
 
                         progressLoading.visibility =
                             View.GONE
 
-                        Log.d(
-                            TAG,
-                            "HTTP CODE = ${response.code()}"
-                        )
 
-                        // ====================================================
-                        // HTTP ERROR
-                        // ====================================================
 
                         if (
                             !response.isSuccessful
                         ) {
 
-                            Log.e(
-                                TAG,
-                                "HTTP ERROR = ${response.code()}"
-                            )
 
                             Toast.makeText(
                                 this@EkonomiDetailActivity,
@@ -1261,9 +1070,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                             return
                         }
 
-                        // ====================================================
-                        // BODY
-                        // ====================================================
 
                         val body =
                             response.body()
@@ -1272,10 +1078,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                             body == null
                         ) {
 
-                            Log.e(
-                                TAG,
-                                "BODY NULL"
-                            )
 
                             Toast.makeText(
                                 this@EkonomiDetailActivity,
@@ -1286,58 +1088,16 @@ class EkonomiDetailActivity : AppCompatActivity() {
                             return
                         }
 
-                        // ====================================================
-                        // DEBUG
-                        // ====================================================
 
-                        Log.d(
-                            TAG,
-                            "========================================"
-                        )
 
-                        Log.d(
-                            TAG,
-                            "STATUS = ${body.status}"
-                        )
 
-                        Log.d(
-                            TAG,
-                            "AVAILABLE YEARS = ${body.availableYears}"
-                        )
 
-                        Log.d(
-                            TAG,
-                            "VARIABLE = ${body.variables}"
-                        )
 
-                        Log.d(
-                            TAG,
-                            "VERVAR = ${body.vervar}"
-                        )
 
-                        Log.d(
-                            TAG,
-                            "TAHUN = ${body.tahun}"
-                        )
 
-                        Log.d(
-                            TAG,
-                            "TURTAHUN = ${body.turtahun}"
-                        )
 
-                        Log.d(
-                            TAG,
-                            "DATACONTENT = ${body.dataContent}"
-                        )
 
-                        Log.d(
-                            TAG,
-                            "========================================"
-                        )
 
-                        // ====================================================
-                        // STATUS
-                        // ====================================================
 
                         if (
                             body.status
@@ -1353,9 +1113,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                             return
                         }
 
-                        // ====================================================
-                        // VALIDASI VARIABLE
-                        // ========================================================
 
                         if (
                             body.variables.isNullOrEmpty()
@@ -1368,9 +1125,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                             return
                         }
 
-                        // ====================================================
-                        // VALIDASI VERVAR
-                        // ========================================================
 
                         if (
                             body.vervar.isNullOrEmpty()
@@ -1383,9 +1137,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                             return
                         }
 
-                        // ====================================================
-                        // VALIDASI TAHUN
-                        // ========================================================
 
                         if (
                             body.tahun.isNullOrEmpty()
@@ -1398,9 +1149,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                             return
                         }
 
-                        // ====================================================
-                        // VALIDASI DATA
-                        // ========================================================
 
                         if (
                             body.dataContent == null
@@ -1413,9 +1161,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                             return
                         }
 
-                        // ====================================================
-                        // TAMPILKAN
-                        // ========================================================
 
                         tampilkanDetail(
                             body,
@@ -1430,20 +1175,12 @@ class EkonomiDetailActivity : AppCompatActivity() {
                         t: Throwable
                     ) {
 
-                        // ====================================================
-                        // STOP LOADING
-                        // ====================================================
 
                         progressLoading.cancelAnimation()
 
                         progressLoading.visibility =
                             View.GONE
 
-                        Log.e(
-                            TAG,
-                            "REQUEST ERROR",
-                            t
-                        )
 
                         Toast.makeText(
                             this@EkonomiDetailActivity,
@@ -1455,9 +1192,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             )
     }
 
-    // ============================================================
-    // TAMPILKAN DETAIL
-    // ============================================================
 
     private fun tampilkanDetail(
         response: EkonomiDetailResponse,
@@ -1470,9 +1204,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             response.variables
                 ?.firstOrNull()
 
-        // ========================================================
-        // CARI TAHUN YANG SESUAI
-        // ========================================================
 
         val tahun =
             cariTahun(
@@ -1480,19 +1211,8 @@ class EkonomiDetailActivity : AppCompatActivity() {
                 tahunDipilih
             )
 
-        Log.d(
-            TAG,
-            "TAHUN YANG DIPILIH = $tahunDipilih"
-        )
 
-        Log.d(
-            TAG,
-            "OBJECT TAHUN = $tahun"
-        )
 
-        // ========================================================
-        // JIKA TAHUN TIDAK DITEMUKAN
-        // ========================================================
 
         if (
             tahun == null
@@ -1505,17 +1225,11 @@ class EkonomiDetailActivity : AppCompatActivity() {
             return
         }
 
-        // ========================================================
-        // TAMPILKAN TAHUN
-        // ========================================================
 
         tvDetailTahun.text =
             tahun.label
                 ?: tahunDipilih.toString()
 
-        // ========================================================
-        // UNIT
-        // ========================================================
 
         if (
             !variable?.unit.isNullOrBlank()
@@ -1531,9 +1245,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             )
         }
 
-        // ========================================================
-        // SECTION TITLE
-        // ========================================================
 
         pdfSectionTitle =
             response.labelVervar
@@ -1546,9 +1257,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             )
         )
 
-        // ========================================================
-        // TAMPILKAN DATA
-        // ========================================================
 
         tampilkanData(
             body = response,
@@ -1556,9 +1264,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         )
     }
 
-    // ============================================================
-    // CARI TAHUN
-    // ============================================================
 
     private fun cariTahun(
         daftarTahun: List<EkonomiItem>?,
@@ -1575,9 +1280,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         val target =
             tahunDipilih.toString()
 
-        // ========================================================
-        // COCOKKAN LABEL
-        // ========================================================
 
         val berdasarkanLabel =
             daftarTahun.firstOrNull { item ->
@@ -1599,9 +1301,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             return berdasarkanLabel
         }
 
-        // ========================================================
-        // COBA COCOKKAN VALUE
-        // ========================================================
 
         return daftarTahun.firstOrNull { item ->
 
@@ -1615,9 +1314,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // TAMPILKAN DATA
-    // ============================================================
 
     private fun tampilkanData(
         body: EkonomiDetailResponse,
@@ -1634,9 +1330,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         val dataContent =
             body.dataContent
 
-        // ========================================================
-        // VALIDASI
-        // ========================================================
 
         if (
             variable == null ||
@@ -1649,9 +1342,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             return
         }
 
-        // ========================================================
-        // VARIABLE
-        // ========================================================
 
         val variableVal =
             variable.value
@@ -1668,9 +1358,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             return
         }
 
-        // ========================================================
-        // TAHUN VALUE
-        // ========================================================
 
         val tahunVal =
             tahun.value
@@ -1687,9 +1374,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             return
         }
 
-        // ========================================================
-        // FORMAT TAHUN
-        // ========================================================
 
         val tahunFormatted =
             tahunVal
@@ -1699,44 +1383,13 @@ class EkonomiDetailActivity : AppCompatActivity() {
                     '0'
                 )
 
-        Log.d(
-            TAG,
-            "========================================"
-        )
 
-        Log.d(
-            TAG,
-            "PEMBENTUKAN DATA"
-        )
 
-        Log.d(
-            TAG,
-            "TAHUN LABEL = ${tahun.label}"
-        )
 
-        Log.d(
-            TAG,
-            "TAHUN VALUE = $tahunVal"
-        )
 
-        Log.d(
-            TAG,
-            "TAHUN FORMAT = $tahunFormatted"
-        )
 
-        Log.d(
-            TAG,
-            "VARIABLE = $variableVal"
-        )
 
-        Log.d(
-            TAG,
-            "========================================"
-        )
 
-        // ========================================================
-        // LOOP VERVAR
-        // ========================================================
 
         for (
         item in vervar
@@ -1751,9 +1404,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                 item.label
                     ?: "-"
 
-            // ====================================================
-            // TRIWULAN I
-            // ====================================================
 
             val q1 =
                 ambilNilaiTriwulan(
@@ -1764,9 +1414,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                     turTahun = 31
                 )
 
-            // ====================================================
-            // TRIWULAN II
-            // ====================================================
 
             val q2 =
                 ambilNilaiTriwulan(
@@ -1777,9 +1424,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                     turTahun = 32
                 )
 
-            // ====================================================
-            // TRIWULAN III
-            // ====================================================
 
             val q3 =
                 ambilNilaiTriwulan(
@@ -1790,9 +1434,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                     turTahun = 33
                 )
 
-            // ====================================================
-            // TRIWULAN IV
-            // ====================================================
 
             val q4 =
                 ambilNilaiTriwulan(
@@ -1803,9 +1444,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                     turTahun = 34
                 )
 
-            // ====================================================
-            // TAHUNAN
-            // ====================================================
 
             val tahunan =
                 ambilNilaiTahunan(
@@ -1816,44 +1454,13 @@ class EkonomiDetailActivity : AppCompatActivity() {
                     turtahun = body.turtahun
                 )
 
-            Log.d(
-                TAG,
-                "----------------------------------------"
-            )
 
-            Log.d(
-                TAG,
-                "LABEL = $label"
-            )
 
-            Log.d(
-                TAG,
-                "Q1 = $q1"
-            )
 
-            Log.d(
-                TAG,
-                "Q2 = $q2"
-            )
 
-            Log.d(
-                TAG,
-                "Q3 = $q3"
-            )
 
-            Log.d(
-                TAG,
-                "Q4 = $q4"
-            )
 
-            Log.d(
-                TAG,
-                "TAHUNAN = $tahunan"
-            )
 
-            // ====================================================
-            // SIMPAN UNTUK PDF
-            // ====================================================
 
             pdfData.add(
                 PdfEkonomiData(
@@ -1867,9 +1474,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                 )
             )
 
-            // ====================================================
-            // TAMBAHKAN KE UI
-            // ====================================================
 
             tambahGrupTriwulan(
                 label = label,
@@ -1883,9 +1487,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // AMBIL NILAI TRIWULAN
-    // ============================================================
 
     private fun ambilNilaiTriwulan(
         dataContent: JsonObject,
@@ -1898,10 +1499,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         val key =
             "$vervarVal$variableVal$tahunFormatted$turTahun"
 
-        Log.d(
-            TAG,
-            "CEK KEY = $key"
-        )
 
         val jsonElement =
             dataContent.get(
@@ -1935,19 +1532,11 @@ class EkonomiDetailActivity : AppCompatActivity() {
             e: Exception
         ) {
 
-            Log.e(
-                TAG,
-                "Gagal membaca key=$key",
-                e
-            )
 
             "-"
         }
     }
 
-    // ============================================================
-    // AMBIL NILAI TAHUNAN
-    // ============================================================
 
     private fun ambilNilaiTahunan(
         dataContent: JsonObject,
@@ -1964,9 +1553,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             return "-"
         }
 
-        // ========================================================
-        // CARI KODE TAHUNAN
-        // ========================================================
 
         val itemTahunan =
             turtahun.firstOrNull { item ->
@@ -1982,9 +1568,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                         label.contains("annual")
             }
 
-        // ========================================================
-        // KODE TAHUNAN
-        // ========================================================
 
         val kodeTahunan =
             itemTahunan?.value
@@ -1994,10 +1577,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         val key =
             "$vervarVal$variableVal$tahunFormatted$kodeTahunan"
 
-        Log.d(
-            TAG,
-            "KEY TAHUNAN = $key"
-        )
 
         val jsonElement =
             dataContent.get(
@@ -2031,19 +1610,11 @@ class EkonomiDetailActivity : AppCompatActivity() {
             e: Exception
         ) {
 
-            Log.e(
-                TAG,
-                "Gagal membaca tahunan key=$key",
-                e
-            )
 
             "-"
         }
     }
 
-    // ============================================================
-    // TAMBAH GRUP TRIWULAN
-    // ============================================================
 
     private fun tambahGrupTriwulan(
         label: String,
@@ -2055,9 +1626,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         tahunan: String
     ) {
 
-        // ========================================================
-        // INFLATE CARD STATISTIK
-        // ========================================================
 
         val card =
             layoutInflater.inflate(
@@ -2066,9 +1634,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                 false
             ) as CardView
 
-        // ========================================================
-        // HEADER CARD
-        // ========================================================
 
         val tvNamaWilayah =
             card.findViewById<TextView>(
@@ -2080,18 +1645,12 @@ class EkonomiDetailActivity : AppCompatActivity() {
                 label
             )
 
-        // ========================================================
-        // CONTAINER VARIABLE
-        // ========================================================
 
         val containerVariable =
             card.findViewById<LinearLayout>(
                 R.id.containerVariable
             )
 
-        // ========================================================
-        // SATUAN
-        // ========================================================
 
         if (
             unit.isNotBlank()
@@ -2122,9 +1681,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             )
         }
 
-        // ========================================================
-        // TRIWULAN I
-        // ========================================================
 
         containerVariable.addView(
             buatBarisTriwulan(
@@ -2133,9 +1689,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             )
         )
 
-        // ========================================================
-        // TRIWULAN II
-        // ========================================================
 
         containerVariable.addView(
             buatBarisTriwulan(
@@ -2144,9 +1697,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             )
         )
 
-        // ========================================================
-        // TRIWULAN III
-        // ========================================================
 
         containerVariable.addView(
             buatBarisTriwulan(
@@ -2155,9 +1705,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             )
         )
 
-        // ========================================================
-        // TRIWULAN IV
-        // ========================================================
 
         containerVariable.addView(
             buatBarisTriwulan(
@@ -2166,9 +1713,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             )
         )
 
-        // ========================================================
-        // TAHUNAN
-        // ========================================================
 
         containerVariable.addView(
             buatBarisTriwulan(
@@ -2177,18 +1721,12 @@ class EkonomiDetailActivity : AppCompatActivity() {
             )
         )
 
-        // ========================================================
-        // ADD CARD
-        // ========================================================
 
         tvDetailData.addView(
             card
         )
     }
 
-    // ============================================================
-    // BARIS TRIWULAN
-    // ============================================================
 
     private fun buatBarisTriwulan(
         triwulan: String,
@@ -2217,9 +1755,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             dpToPx(7)
         )
 
-        // ========================================================
-        // NAMA TRIWULAN
-        // ========================================================
 
         val tvTriwulan =
             TextView(this)
@@ -2245,9 +1780,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                 1f
             )
 
-        // ========================================================
-        // NILAI
-        // ========================================================
 
         val tvNilai =
             TextView(this)
@@ -2280,9 +1812,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         tvNilai.gravity =
             Gravity.END
 
-        // ========================================================
-        // ADD
-        // ========================================================
 
         row.addView(
             tvTriwulan
@@ -2295,9 +1824,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         return row
     }
 
-    // ============================================================
-    // FORMAT NILAI
-    // ============================================================
 
     private fun formatNilai(
         value: String
@@ -2341,9 +1867,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // INFO UNIT
-    // ============================================================
 
     private fun buatInfoUnit(
         unit: String
@@ -2439,9 +1962,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         return container
     }
 
-    // ============================================================
-    // SECTION TITLE
-    // ============================================================
 
     private fun buatSectionTitle(
         title: String
@@ -2485,9 +2005,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         return textView
     }
 
-    // ============================================================
-    // DATA KOSONG
-    // ============================================================
 
     private fun tampilkanDataKosong() {
 
@@ -2519,9 +2036,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         )
     }
 
-    // ============================================================
-    // PESAN
-    // ============================================================
 
     private fun tampilkanPesan(
         pesan: String
@@ -2555,9 +2069,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         )
     }
 
-    // ============================================================
-    // BERSIHKAN HTML
-    // ============================================================
 
     private fun bersihkanHtml(
         text: String
@@ -2587,9 +2098,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             .trim()
     }
 
-    // ============================================================
-    // BERSIHKAN TEXT PDF
-    // ============================================================
 
     private fun bersihkanPdfText(
         text: String
@@ -2627,9 +2135,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             .trim()
     }
 
-    // ============================================================
-    // SANITASI NAMA FILE
-    // ============================================================
 
     private fun sanitasiNamaFile(
         nama: String
@@ -2650,9 +2155,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
             }
     }
 
-    // ============================================================
-    // DP TO PX
-    // ============================================================
 
     private fun dpToPx(
         dp: Int
@@ -2664,9 +2166,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
                 ).toInt()
     }
 
-    // ============================================================
-    // DATA CLASS PDF
-    // ============================================================
 
     private data class PdfEkonomiData(
 
@@ -2685,9 +2184,6 @@ class EkonomiDetailActivity : AppCompatActivity() {
         val tahunan: String
     )
 
-    // ============================================================
-    // ON DESTROY
-    // ============================================================
 
     override fun onDestroy() {
 

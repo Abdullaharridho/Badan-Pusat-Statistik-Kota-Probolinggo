@@ -16,6 +16,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
@@ -23,6 +24,8 @@ import com.example.bpskota.bps.model.AllSimdasiResponse
 import com.example.bpskota.bps.model.AllStaticTableResponse
 import com.example.bpskota.bps.model.AllVariableResponse
 import com.example.bpskota.bps.repository.BpsAllDataRepository
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import com.google.gson.JsonObject
 
 class SearchActivity : AppCompatActivity() {
@@ -35,7 +38,10 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var searchResultContainer: LinearLayout
     private lateinit var tvSearchEmpty: TextView
 
-    private val repository = BpsAllDataRepository()
+    private lateinit var activityTracker: ActivityTracker
+
+    private val repository =
+        BpsAllDataRepository()
 
     private data class SearchFeature(
         val title: String,
@@ -50,8 +56,11 @@ class SearchActivity : AppCompatActivity() {
         val sumber: String
     )
 
-    private val daftarKategori = mutableListOf<KategoriItem>()
-    private val kategoriSudahAda = mutableSetOf<String>()
+    private val daftarKategori =
+        mutableListOf<KategoriItem>()
+
+    private val kategoriSudahAda =
+        mutableSetOf<String>()
 
     private var simdasiSelesai = false
     private var staticSelesai = false
@@ -60,21 +69,49 @@ class SearchActivity : AppCompatActivity() {
     companion object {
         private const val WILAYAH = "3574000"
         private const val DOMAIN = "3574"
-        private const val API_KEY = "008edaaae5d450b1913b31a2cef618c3"
+        private const val API_KEY =
+            "008edaaae5d450b1913b31a2cef618c3"
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_search)
+        setContentView(
+            R.layout.activity_search
+        )
 
-        btnBackSearch = findViewById(R.id.btnBackSearch)
-        etSearch = findViewById(R.id.etSearch)
-        btnSearch = findViewById(R.id.btnSearch)
-        tvSearchTitle = findViewById(R.id.tvSearchTitle)
-        progressSearch = findViewById(R.id.progressSearch)
-        searchResultContainer = findViewById(R.id.searchResultContainer)
-        tvSearchEmpty = findViewById(R.id.tvSearchEmpty)
+        btnBackSearch =
+            findViewById(R.id.btnBackSearch)
+
+        etSearch =
+            findViewById(R.id.etSearch)
+
+        btnSearch =
+            findViewById(R.id.btnSearch)
+
+        tvSearchTitle =
+            findViewById(R.id.tvSearchTitle)
+
+        progressSearch =
+            findViewById(R.id.progressSearch)
+
+        searchResultContainer =
+            findViewById(R.id.searchResultContainer)
+
+        tvSearchEmpty =
+            findViewById(R.id.tvSearchEmpty)
+
+        activityTracker =
+            ActivityTracker(
+                this,
+                BpskpRetrofitClient.api
+            )
+
+        activityTracker.trackScreen(
+            screen = "Search"
+        )
 
         btnBackSearch.setOnClickListener {
             animateClick(it) {
@@ -88,15 +125,19 @@ class SearchActivity : AppCompatActivity() {
             }
         }
 
-        val keyword = intent
-            .getStringExtra("keyword")
-            ?.trim()
-            ?: ""
+        val keyword =
+            intent
+                .getStringExtra("keyword")
+                ?.trim()
+                ?: ""
 
         if (keyword.isNotEmpty()) {
 
             etSearch.setText(keyword)
-            etSearch.setSelection(etSearch.text.length)
+
+            etSearch.setSelection(
+                etSearch.text.length
+            )
 
             executeSearch()
 
@@ -109,18 +150,25 @@ class SearchActivity : AppCompatActivity() {
             }
         }
 
-        etSearch.setOnEditorActionListener { _, actionId, event ->
+        etSearch.setOnEditorActionListener {
+                _,
+                actionId,
+                event ->
 
             if (
-                actionId == EditorInfo.IME_ACTION_SEARCH ||
+                actionId ==
+                EditorInfo.IME_ACTION_SEARCH ||
                 (
                         event != null &&
-                                event.keyCode == KeyEvent.KEYCODE_ENTER &&
-                                event.action == KeyEvent.ACTION_DOWN
+                                event.keyCode ==
+                                KeyEvent.KEYCODE_ENTER &&
+                                event.action ==
+                                KeyEvent.ACTION_DOWN
                         )
             ) {
 
                 executeSearch()
+
                 true
 
             } else {
@@ -132,14 +180,17 @@ class SearchActivity : AppCompatActivity() {
 
     private fun executeSearch() {
 
-        val keyword = etSearch
-            .text
-            .toString()
-            .trim()
+        val keyword =
+            etSearch
+                .text
+                .toString()
+                .trim()
 
         if (keyword.isEmpty()) {
 
-            etSearch.error = "Masukkan kata pencarian"
+            etSearch.error =
+                "Masukkan kata pencarian"
+
             etSearch.requestFocus()
 
             return
@@ -175,7 +226,9 @@ class SearchActivity : AppCompatActivity() {
         loadApiSearch(keyword)
     }
 
-    private fun loadApiSearch(keyword: String) {
+    private fun loadApiSearch(
+        keyword: String
+    ) {
 
         searchResultContainer.removeAllViews()
 
@@ -184,7 +237,9 @@ class SearchActivity : AppCompatActivity() {
         loadVariablePage(1)
     }
 
-    private fun loadSimdasiPage(page: Int) {
+    private fun loadSimdasiPage(
+        page: Int
+    ) {
 
         repository.getAllSimdasi(
             wilayah = WILAYAH,
@@ -194,7 +249,10 @@ class SearchActivity : AppCompatActivity() {
 
             runOnUiThread {
 
-                if (error != null || response == null) {
+                if (
+                    error != null ||
+                    response == null
+                ) {
 
                     simdasiSelesai = true
                     cekApiSelesai()
@@ -205,11 +263,17 @@ class SearchActivity : AppCompatActivity() {
                 prosesSimdasi(response)
 
                 val totalPages =
-                    getSimdasiTotalPages(response)
+                    getSimdasiTotalPages(
+                        response
+                    )
 
-                if (page < totalPages) {
+                if (
+                    page < totalPages
+                ) {
 
-                    loadSimdasiPage(page + 1)
+                    loadSimdasiPage(
+                        page + 1
+                    )
 
                 } else {
 
@@ -228,28 +292,42 @@ class SearchActivity : AppCompatActivity() {
 
             val rootData =
                 response.data
-                    ?.takeIf { it.isJsonArray }
+                    ?.takeIf {
+                        it.isJsonArray
+                    }
                     ?.asJsonArray
                     ?: return
 
-            if (rootData.size() < 2) return
+            if (
+                rootData.size() < 2
+            ) {
+                return
+            }
 
             val wrapper =
                 rootData[1]
-                    .takeIf { it.isJsonObject }
+                    .takeIf {
+                        it.isJsonObject
+                    }
                     ?.asJsonObject
                     ?: return
 
             val data =
                 wrapper
                     .get("data")
-                    ?.takeIf { it.isJsonArray }
+                    ?.takeIf {
+                        it.isJsonArray
+                    }
                     ?.asJsonArray
                     ?: return
 
             for (element in data) {
 
-                if (!element.isJsonObject) continue
+                if (
+                    !element.isJsonObject
+                ) {
+                    continue
+                }
 
                 val obj =
                     element.asJsonObject
@@ -260,7 +338,11 @@ class SearchActivity : AppCompatActivity() {
                         "mms_subject"
                     )
 
-                if (nama.isBlank()) continue
+                if (
+                    nama.isBlank()
+                ) {
+                    continue
+                }
 
                 tambahKategori(
                     nama,
@@ -280,14 +362,22 @@ class SearchActivity : AppCompatActivity() {
 
             val data =
                 response.data
-                    ?.takeIf { it.isJsonArray }
+                    ?.takeIf {
+                        it.isJsonArray
+                    }
                     ?.asJsonArray
                     ?: return 1
 
-            if (data.isEmpty()) return 1
+            if (
+                data.isEmpty()
+            ) {
+                return 1
+            }
 
             data[0]
-                .takeIf { it.isJsonObject }
+                .takeIf {
+                    it.isJsonObject
+                }
                 ?.asJsonObject
                 ?.get("pages")
                 ?.asInt
@@ -299,7 +389,9 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadStaticTablePage(page: Int) {
+    private fun loadStaticTablePage(
+        page: Int
+    ) {
 
         repository.getAllStaticTables(
             domain = DOMAIN,
@@ -309,7 +401,10 @@ class SearchActivity : AppCompatActivity() {
 
             runOnUiThread {
 
-                if (error != null || response == null) {
+                if (
+                    error != null ||
+                    response == null
+                ) {
 
                     staticSelesai = true
                     cekApiSelesai()
@@ -320,11 +415,17 @@ class SearchActivity : AppCompatActivity() {
                 prosesStaticTable(response)
 
                 val totalPages =
-                    getStaticTotalPages(response)
+                    getStaticTotalPages(
+                        response
+                    )
 
-                if (page < totalPages) {
+                if (
+                    page < totalPages
+                ) {
 
-                    loadStaticTablePage(page + 1)
+                    loadStaticTablePage(
+                        page + 1
+                    )
 
                 } else {
 
@@ -343,21 +444,33 @@ class SearchActivity : AppCompatActivity() {
 
             val rootData =
                 response.data
-                    ?.takeIf { it.isJsonArray }
+                    ?.takeIf {
+                        it.isJsonArray
+                    }
                     ?.asJsonArray
                     ?: return
 
-            if (rootData.size() < 2) return
+            if (
+                rootData.size() < 2
+            ) {
+                return
+            }
 
             val data =
                 rootData[1]
-                    .takeIf { it.isJsonArray }
+                    .takeIf {
+                        it.isJsonArray
+                    }
                     ?.asJsonArray
                     ?: return
 
             for (element in data) {
 
-                if (!element.isJsonObject) continue
+                if (
+                    !element.isJsonObject
+                ) {
+                    continue
+                }
 
                 val obj =
                     element.asJsonObject
@@ -368,7 +481,11 @@ class SearchActivity : AppCompatActivity() {
                         "subj"
                     )
 
-                if (nama.isBlank()) continue
+                if (
+                    nama.isBlank()
+                ) {
+                    continue
+                }
 
                 tambahKategori(
                     nama,
@@ -388,14 +505,22 @@ class SearchActivity : AppCompatActivity() {
 
             val data =
                 response.data
-                    ?.takeIf { it.isJsonArray }
+                    ?.takeIf {
+                        it.isJsonArray
+                    }
                     ?.asJsonArray
                     ?: return 1
 
-            if (data.isEmpty()) return 1
+            if (
+                data.isEmpty()
+            ) {
+                return 1
+            }
 
             data[0]
-                .takeIf { it.isJsonObject }
+                .takeIf {
+                    it.isJsonObject
+                }
                 ?.asJsonObject
                 ?.get("pages")
                 ?.asInt
@@ -407,7 +532,9 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadVariablePage(page: Int) {
+    private fun loadVariablePage(
+        page: Int
+    ) {
 
         repository.getAllVariables(
             domain = DOMAIN,
@@ -417,7 +544,10 @@ class SearchActivity : AppCompatActivity() {
 
             runOnUiThread {
 
-                if (error != null || response == null) {
+                if (
+                    error != null ||
+                    response == null
+                ) {
 
                     variableSelesai = true
                     cekApiSelesai()
@@ -428,11 +558,17 @@ class SearchActivity : AppCompatActivity() {
                 prosesVariable(response)
 
                 val totalPages =
-                    getVariableTotalPages(response)
+                    getVariableTotalPages(
+                        response
+                    )
 
-                if (page < totalPages) {
+                if (
+                    page < totalPages
+                ) {
 
-                    loadVariablePage(page + 1)
+                    loadVariablePage(
+                        page + 1
+                    )
 
                 } else {
 
@@ -451,21 +587,33 @@ class SearchActivity : AppCompatActivity() {
 
             val rootData =
                 response.data
-                    ?.takeIf { it.isJsonArray }
+                    ?.takeIf {
+                        it.isJsonArray
+                    }
                     ?.asJsonArray
                     ?: return
 
-            if (rootData.size() < 2) return
+            if (
+                rootData.size() < 2
+            ) {
+                return
+            }
 
             val data =
                 rootData[1]
-                    .takeIf { it.isJsonArray }
+                    .takeIf {
+                        it.isJsonArray
+                    }
                     ?.asJsonArray
                     ?: return
 
             for (element in data) {
 
-                if (!element.isJsonObject) continue
+                if (
+                    !element.isJsonObject
+                ) {
+                    continue
+                }
 
                 val obj =
                     element.asJsonObject
@@ -476,7 +624,11 @@ class SearchActivity : AppCompatActivity() {
                         "subcsa_name"
                     )
 
-                if (nama.isBlank()) continue
+                if (
+                    nama.isBlank()
+                ) {
+                    continue
+                }
 
                 tambahKategori(
                     nama,
@@ -496,14 +648,22 @@ class SearchActivity : AppCompatActivity() {
 
             val data =
                 response.data
-                    ?.takeIf { it.isJsonArray }
+                    ?.takeIf {
+                        it.isJsonArray
+                    }
                     ?.asJsonArray
                     ?: return 1
 
-            if (data.isEmpty()) return 1
+            if (
+                data.isEmpty()
+            ) {
+                return 1
+            }
 
             data[0]
-                .takeIf { it.isJsonObject }
+                .takeIf {
+                    it.isJsonObject
+                }
                 ?.asJsonObject
                 ?.get("pages")
                 ?.asInt
@@ -528,12 +688,20 @@ class SearchActivity : AppCompatActivity() {
                     " "
                 )
 
-        if (namaBersih.isBlank()) return
+        if (
+            namaBersih.isBlank()
+        ) {
+            return
+        }
 
         val key =
             "$sumber|${namaBersih.lowercase()}"
 
-        if (!kategoriSudahAda.add(key)) return
+        if (
+            !kategoriSudahAda.add(key)
+        ) {
+            return
+        }
 
         daftarKategori.add(
             KategoriItem(
@@ -545,7 +713,11 @@ class SearchActivity : AppCompatActivity() {
 
     private fun cekApiSelesai() {
 
-        if (!semuaApiSelesai()) return
+        if (
+            !semuaApiSelesai()
+        ) {
+            return
+        }
 
         val keyword =
             etSearch
@@ -585,13 +757,17 @@ class SearchActivity : AppCompatActivity() {
 
         var jumlahHasil = 0
 
-        if (hasilFitur.isNotEmpty()) {
+        if (
+            hasilFitur.isNotEmpty()
+        ) {
 
             tambahHeader(
                 "Fitur"
             )
 
-            hasilFitur.forEachIndexed { index, feature ->
+            hasilFitur.forEachIndexed {
+                    index,
+                    feature ->
 
                 val card =
                     buatSearchResultCard(
@@ -611,13 +787,17 @@ class SearchActivity : AppCompatActivity() {
             }
         }
 
-        if (hasilApi.isNotEmpty()) {
+        if (
+            hasilApi.isNotEmpty()
+        ) {
 
             tambahHeader(
                 "Kategori Data BPS"
             )
 
-            hasilApi.forEachIndexed { index, kategori ->
+            hasilApi.forEachIndexed {
+                    index,
+                    kategori ->
 
                 val card =
                     buatKategoriApiCard(
@@ -637,7 +817,9 @@ class SearchActivity : AppCompatActivity() {
             }
         }
 
-        if (jumlahHasil == 0) {
+        if (
+            jumlahHasil == 0
+        ) {
 
             searchResultContainer.addView(
                 tvSearchEmpty
@@ -1410,7 +1592,8 @@ class SearchActivity : AppCompatActivity() {
 
             SearchFeature(
                 title = "Gender",
-                description = "Data statistik gender",
+                description =
+                "Data statistik gender",
                 category = "Data",
                 keywords = listOf(
                     "gender",
@@ -1431,7 +1614,8 @@ class SearchActivity : AppCompatActivity() {
 
             SearchFeature(
                 title = "Pertanian",
-                description = "Data statistik pertanian",
+                description =
+                "Data statistik pertanian",
                 category = "Data",
                 keywords = listOf(
                     "pertanian",
@@ -1453,7 +1637,8 @@ class SearchActivity : AppCompatActivity() {
 
             SearchFeature(
                 title = "Ekonomi",
-                description = "Data statistik ekonomi",
+                description =
+                "Data statistik ekonomi",
                 category = "Data",
                 keywords = listOf(
                     "ekonomi",
@@ -1474,7 +1659,8 @@ class SearchActivity : AppCompatActivity() {
 
             SearchFeature(
                 title = "Kependudukan",
-                description = "Data statistik kependudukan",
+                description =
+                "Data statistik kependudukan",
                 category = "Data",
                 keywords = listOf(
                     "kependudukan",
@@ -1494,7 +1680,8 @@ class SearchActivity : AppCompatActivity() {
 
             SearchFeature(
                 title = "Tenaga Kerja",
-                description = "Data statistik tenaga kerja",
+                description =
+                "Data statistik tenaga kerja",
                 category = "Data",
                 keywords = listOf(
                     "tenaga kerja",
@@ -1516,7 +1703,8 @@ class SearchActivity : AppCompatActivity() {
 
             SearchFeature(
                 title = "Konsumsi dan Pendapatan",
-                description = "Data konsumsi dan pendapatan",
+                description =
+                "Data konsumsi dan pendapatan",
                 category = "Data",
                 keywords = listOf(
                     "konsumsi",
@@ -1536,7 +1724,8 @@ class SearchActivity : AppCompatActivity() {
 
             SearchFeature(
                 title = "Kondisi Tempat Tinggal",
-                description = "Data kondisi tempat tinggal",
+                description =
+                "Data kondisi tempat tinggal",
                 category = "Data",
                 keywords = listOf(
                     "tempat tinggal",
@@ -1557,7 +1746,8 @@ class SearchActivity : AppCompatActivity() {
 
             SearchFeature(
                 title = "Berita",
-                description = "Berita terbaru BPS",
+                description =
+                "Berita terbaru BPS",
                 category = "Informasi",
                 keywords = listOf(
                     "berita",
@@ -1571,7 +1761,8 @@ class SearchActivity : AppCompatActivity() {
 
             SearchFeature(
                 title = "Infografis",
-                description = "Kumpulan infografis BPS",
+                description =
+                "Kumpulan infografis BPS",
                 category = "Informasi",
                 keywords = listOf(
                     "infografis",
@@ -1586,7 +1777,8 @@ class SearchActivity : AppCompatActivity() {
 
             SearchFeature(
                 title = "Publikasi",
-                description = "Publikasi statistik BPS",
+                description =
+                "Publikasi statistik BPS",
                 category = "Informasi",
                 keywords = listOf(
                     "publikasi",
@@ -1601,7 +1793,8 @@ class SearchActivity : AppCompatActivity() {
 
             SearchFeature(
                 title = "Data",
-                description = "Jelajahi data statistik",
+                description =
+                "Jelajahi data statistik",
                 category = "Lainnya",
                 keywords = listOf(
                     "data",
@@ -1614,7 +1807,8 @@ class SearchActivity : AppCompatActivity() {
 
             SearchFeature(
                 title = "Lainnya",
-                description = "Informasi dan fitur lainnya",
+                description =
+                "Informasi dan fitur lainnya",
                 category = "Lainnya",
                 keywords = listOf(
                     "lainnya",

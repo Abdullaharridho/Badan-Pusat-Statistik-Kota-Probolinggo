@@ -14,6 +14,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.example.bpskota.bps.repository.BpsAllDataRepository
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 
 class DataKategoriActivity : AppCompatActivity() {
 
@@ -27,6 +29,8 @@ class DataKategoriActivity : AppCompatActivity() {
     private lateinit var tvJudulKategori: TextView
     private lateinit var etSearchData: EditText
     private lateinit var dataContainer: LinearLayout
+
+    private lateinit var activityTracker: ActivityTracker
 
     private val repository = BpsAllDataRepository()
     private var namaKategori = ""
@@ -47,6 +51,13 @@ class DataKategoriActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_data_kategori)
+
+        activityTracker = ActivityTracker(
+            this,
+            BpskpRetrofitClient.api
+        )
+
+        activityTracker.trackScreen("DataKategori")
 
         namaKategori = intent.getStringExtra("NAMA_KATEGORI") ?: ""
 
@@ -74,10 +85,22 @@ class DataKategoriActivity : AppCompatActivity() {
 
     private fun setupSearch() {
         etSearchData.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            override fun beforeTextChanged(
+                s: CharSequence?,
+                start: Int,
+                count: Int,
+                after: Int
+            ) {}
+
+            override fun onTextChanged(
+                s: CharSequence?,
+                start: Int,
+                before: Int,
+                count: Int
+            ) {
                 filterData(s?.toString()?.trim() ?: "")
             }
+
             override fun afterTextChanged(s: Editable?) {}
         })
     }
@@ -94,39 +117,130 @@ class DataKategoriActivity : AppCompatActivity() {
     }
 
     private fun loadSimdasiPage(page: Int) {
-        repository.getAllSimdasi(wilayah = WILAYAH, page = page, apiKey = API_KEY) { response, error ->
-            if (error != null || response?.data == null || response.status != "OK") return@getAllSimdasi
+        repository.getAllSimdasi(
+            wilayah = WILAYAH,
+            page = page,
+            apiKey = API_KEY
+        ) { response, error ->
+
+            if (
+                error != null ||
+                response?.data == null ||
+                response.status != "OK"
+            ) {
+                return@getAllSimdasi
+            }
 
             // Parsing dilakukan di Background Thread agar UI tidak freeze
             val rootData = response.data
-            if (!rootData.isJsonArray) return@getAllSimdasi
+
+            if (!rootData.isJsonArray) {
+                return@getAllSimdasi
+            }
 
             val dataArray = rootData.asJsonArray
-            val pagination = dataArray.firstOrNull()?.takeIf { it.isJsonObject }?.asJsonObject
-            val totalPages = pagination?.get("pages")?.takeIf { !it.isJsonNull }?.let { runCatching { it.asInt }.getOrNull() } ?: 1
 
-            val wrapper = if (dataArray.size() > 1 && dataArray[1].isJsonObject) dataArray[1].asJsonObject else null
-            val dataList = wrapper?.get("data")?.takeIf { it.isJsonArray }?.asJsonArray
+            val pagination =
+                dataArray
+                    .firstOrNull()
+                    ?.takeIf { it.isJsonObject }
+                    ?.asJsonObject
+
+            val totalPages =
+                pagination
+                    ?.get("pages")
+                    ?.takeIf { !it.isJsonNull }
+                    ?.let {
+                        runCatching {
+                            it.asInt
+                        }.getOrNull()
+                    }
+                    ?: 1
+
+            val wrapper =
+                if (
+                    dataArray.size() > 1 &&
+                    dataArray[1].isJsonObject
+                ) {
+                    dataArray[1].asJsonObject
+                } else {
+                    null
+                }
+
+            val dataList =
+                wrapper
+                    ?.get("data")
+                    ?.takeIf { it.isJsonArray }
+                    ?.asJsonArray
 
             val newItems = mutableListOf<DataItem>()
 
             dataList?.forEach { element ->
-                if (!element.isJsonObject) return@forEach
+
+                if (!element.isJsonObject) {
+                    return@forEach
+                }
+
                 val obj = element.asJsonObject
 
-                val kategori = obj.get("mms_subject")?.takeIf { !it.isJsonNull }?.asString?.trim() ?: ""
-                if (!kategori.equals(namaKategori, ignoreCase = true)) return@forEach
+                val kategori =
+                    obj.get("mms_subject")
+                        ?.takeIf { !it.isJsonNull }
+                        ?.asString
+                        ?.trim()
+                        ?: ""
 
-                val judul = obj.get("judul")?.takeIf { !it.isJsonNull }?.asString?.trim() ?: ""
-                val idTabel = obj.get("id_tabel")?.takeIf { !it.isJsonNull }?.asString?.trim() ?: ""
+                if (
+                    !kategori.equals(
+                        namaKategori,
+                        ignoreCase = true
+                    )
+                ) {
+                    return@forEach
+                }
 
-                if (judul.isEmpty() || idTabel.isEmpty()) return@forEach
+                val judul =
+                    obj.get("judul")
+                        ?.takeIf { !it.isJsonNull }
+                        ?.asString
+                        ?.trim()
+                        ?: ""
 
-                val tahunTersedia = obj.get("ketersediaan_tahun")?.takeIf { it.isJsonArray }?.asJsonArray
-                    ?.mapNotNull { runCatching { if (it.isJsonPrimitive) it.asInt else null }.getOrNull() }
-                    ?.filter { it > 0 }?.distinct()?.sortedDescending() ?: emptyList()
+                val idTabel =
+                    obj.get("id_tabel")
+                        ?.takeIf { !it.isJsonNull }
+                        ?.asString
+                        ?.trim()
+                        ?: ""
 
-                if (tahunTersedia.isEmpty()) return@forEach
+                if (
+                    judul.isEmpty() ||
+                    idTabel.isEmpty()
+                ) {
+                    return@forEach
+                }
+
+                val tahunTersedia =
+                    obj.get("ketersediaan_tahun")
+                        ?.takeIf { it.isJsonArray }
+                        ?.asJsonArray
+                        ?.mapNotNull {
+                            runCatching {
+                                if (it.isJsonPrimitive) {
+                                    it.asInt
+                                } else {
+                                    null
+                                }
+                            }.getOrNull()
+                        }
+                        ?.filter { it > 0 }
+                        ?.distinct()
+                        ?.sortedDescending()
+                        ?: emptyList()
+
+                if (tahunTersedia.isEmpty()) {
+                    return@forEach
+                }
 
                 newItems.add(
                     DataItem(
@@ -144,94 +258,242 @@ class DataKategoriActivity : AppCompatActivity() {
             // Kembalikan ke Main Thread HANYA untuk update UI
             runOnUiThread {
                 tambahDataBaru(newItems)
-                if (page < totalPages) loadSimdasiPage(page + 1)
+
+                if (page < totalPages) {
+                    loadSimdasiPage(page + 1)
+                }
             }
         }
     }
 
     private fun loadStaticTablePage(page: Int) {
-        repository.getAllStaticTables(domain = DOMAIN, page = page, apiKey = API_KEY) { response, error ->
-            if (error != null || response?.data == null || response.status != "OK") return@getAllStaticTables
+        repository.getAllStaticTables(
+            domain = DOMAIN,
+            page = page,
+            apiKey = API_KEY
+        ) { response, error ->
+
+            if (
+                error != null ||
+                response?.data == null ||
+                response.status != "OK"
+            ) {
+                return@getAllStaticTables
+            }
 
             val rootData = response.data
             val dataArray = rootData.asJsonArray
-            val pagination = dataArray.firstOrNull()?.takeIf { it.isJsonObject }?.asJsonObject
-            val totalPages = pagination?.get("pages")?.asInt ?: 1
-            val dataList = if (dataArray.size() > 1) dataArray[1].asJsonArray else null
+
+            val pagination =
+                dataArray
+                    .firstOrNull()
+                    ?.takeIf { it.isJsonObject }
+                    ?.asJsonObject
+
+            val totalPages =
+                pagination
+                    ?.get("pages")
+                    ?.asInt
+                    ?: 1
+
+            val dataList =
+                if (dataArray.size() > 1) {
+                    dataArray[1].asJsonArray
+                } else {
+                    null
+                }
 
             val newItems = mutableListOf<DataItem>()
 
             dataList?.forEach { element ->
-                if (!element.isJsonObject) return@forEach
+
+                if (!element.isJsonObject) {
+                    return@forEach
+                }
+
                 val obj = element.asJsonObject
 
-                val kategori = obj.get("subj")?.asString?.trim() ?: ""
-                if (!kategori.equals(namaKategori, ignoreCase = true)) return@forEach
+                val kategori =
+                    obj.get("subj")
+                        ?.asString
+                        ?.trim()
+                        ?: ""
 
-                val judul = obj.get("title")?.asString?.trim() ?: ""
-                val tableId = obj.get("table_id")?.asString?.trim() ?: ""
+                if (
+                    !kategori.equals(
+                        namaKategori,
+                        ignoreCase = true
+                    )
+                ) {
+                    return@forEach
+                }
+
+                val judul =
+                    obj.get("title")
+                        ?.asString
+                        ?.trim()
+                        ?: ""
+
+                val tableId =
+                    obj.get("table_id")
+                        ?.asString
+                        ?.trim()
+                        ?: ""
 
                 if (judul.isNotEmpty()) {
-                    newItems.add(DataItem(judul, kategori, "Static Table", tableId, null, emptyList(), "STATIC"))
+                    newItems.add(
+                        DataItem(
+                            judul,
+                            kategori,
+                            "Static Table",
+                            tableId,
+                            null,
+                            emptyList(),
+                            "STATIC"
+                        )
+                    )
                 }
             }
 
             runOnUiThread {
                 tambahDataBaru(newItems)
-                if (page < totalPages) loadStaticTablePage(page + 1)
+
+                if (page < totalPages) {
+                    loadStaticTablePage(page + 1)
+                }
             }
         }
     }
 
     private fun loadVariablePage(page: Int) {
-        repository.getAllVariables(domain = DOMAIN, page = page, apiKey = API_KEY) { response, error ->
-            if (error != null || response?.data == null || response.status != "OK") return@getAllVariables
+        repository.getAllVariables(
+            domain = DOMAIN,
+            page = page,
+            apiKey = API_KEY
+        ) { response, error ->
+
+            if (
+                error != null ||
+                response?.data == null ||
+                response.status != "OK"
+            ) {
+                return@getAllVariables
+            }
 
             val rootData = response.data
             val dataArray = rootData.asJsonArray
-            val pagination = dataArray.firstOrNull()?.takeIf { it.isJsonObject }?.asJsonObject
-            val totalPages = pagination?.get("pages")?.asInt ?: 1
-            val dataList = if (dataArray.size() > 1) dataArray[1].asJsonArray else null
+
+            val pagination =
+                dataArray
+                    .firstOrNull()
+                    ?.takeIf { it.isJsonObject }
+                    ?.asJsonObject
+
+            val totalPages =
+                pagination
+                    ?.get("pages")
+                    ?.asInt
+                    ?: 1
+
+            val dataList =
+                if (dataArray.size() > 1) {
+                    dataArray[1].asJsonArray
+                } else {
+                    null
+                }
 
             val newItems = mutableListOf<DataItem>()
 
             dataList?.forEach { element ->
-                if (!element.isJsonObject) return@forEach
+
+                if (!element.isJsonObject) {
+                    return@forEach
+                }
+
                 val obj = element.asJsonObject
 
-                val kategori = obj.get("subcsa_name")?.asString?.trim() ?: ""
-                if (!kategori.equals(namaKategori, ignoreCase = true)) return@forEach
+                val kategori =
+                    obj.get("subcsa_name")
+                        ?.asString
+                        ?.trim()
+                        ?: ""
 
-                val judul = obj.get("title")?.asString?.trim() ?: ""
-                val varId = obj.get("var_id")?.asString?.trim() ?: ""
+                if (
+                    !kategori.equals(
+                        namaKategori,
+                        ignoreCase = true
+                    )
+                ) {
+                    return@forEach
+                }
+
+                val judul =
+                    obj.get("title")
+                        ?.asString
+                        ?.trim()
+                        ?: ""
+
+                val varId =
+                    obj.get("var_id")
+                        ?.asString
+                        ?.trim()
+                        ?: ""
 
                 if (judul.isNotEmpty()) {
-                    newItems.add(DataItem(judul, kategori, "Variable", varId, null, emptyList(), "VARIABLE"))
+                    newItems.add(
+                        DataItem(
+                            judul,
+                            kategori,
+                            "Variable",
+                            varId,
+                            null,
+                            emptyList(),
+                            "VARIABLE"
+                        )
+                    )
                 }
             }
 
             runOnUiThread {
                 tambahDataBaru(newItems)
-                if (page < totalPages) loadVariablePage(page + 1)
+
+                if (page < totalPages) {
+                    loadVariablePage(page + 1)
+                }
             }
         }
     }
 
     // Fungsi baru untuk merender data secara instan saat data berhasil di-parse
-    private fun tambahDataBaru(newItems: List<DataItem>) {
-        if (newItems.isEmpty()) return
+    private fun tambahDataBaru(
+        newItems: List<DataItem>
+    ) {
+        if (newItems.isEmpty()) {
+            return
+        }
 
         semuaData.addAll(newItems)
 
-        val keyword = etSearchData.text.toString().trim()
-        val filtered = if (keyword.isEmpty()) {
-            newItems
-        } else {
-            newItems.filter { it.judul.contains(keyword, ignoreCase = true) }
-        }
+        val keyword =
+            etSearchData.text
+                .toString()
+                .trim()
+
+        val filtered =
+            if (keyword.isEmpty()) {
+                newItems
+            } else {
+                newItems.filter {
+                    it.judul.contains(
+                        keyword,
+                        ignoreCase = true
+                    )
+                }
+            }
 
         if (filtered.isNotEmpty()) {
             dataTampil.addAll(filtered)
+
             for (data in filtered) {
                 tambahCard(data)
             }
@@ -242,13 +504,20 @@ class DataKategoriActivity : AppCompatActivity() {
         dataTampil.clear()
         dataContainer.removeAllViews()
 
-        val filtered = if (keyword.isEmpty()) {
-            semuaData
-        } else {
-            semuaData.filter { it.judul.contains(keyword, ignoreCase = true) }
-        }
+        val filtered =
+            if (keyword.isEmpty()) {
+                semuaData
+            } else {
+                semuaData.filter {
+                    it.judul.contains(
+                        keyword,
+                        ignoreCase = true
+                    )
+                }
+            }
 
         dataTampil.addAll(filtered)
+
         for (data in dataTampil) {
             tambahCard(data)
         }
@@ -256,67 +525,207 @@ class DataKategoriActivity : AppCompatActivity() {
 
     // Merapikan parameter dengan memanggil Object DataItem langsung
     private fun tambahCard(data: DataItem) {
-        val view = LayoutInflater.from(this).inflate(R.layout.item_statistik, dataContainer, false)
 
-        val tvJudul = view.findViewById<TextView>(R.id.tvJudul)
-        val tvKategori = view.findViewById<TextView>(R.id.tvKategori)
-        val tvKode = view.findViewById<TextView>(R.id.tvKode)
-        val tvTahun = view.findViewById<TextView>(R.id.tvTahun)
-        val tvNilai = view.findViewById<TextView>(R.id.tvNilai)
+        val view =
+            LayoutInflater
+                .from(this)
+                .inflate(
+                    R.layout.item_statistik,
+                    dataContainer,
+                    false
+                )
+
+        val tvJudul =
+            view.findViewById<TextView>(
+                R.id.tvJudul
+            )
+
+        val tvKategori =
+            view.findViewById<TextView>(
+                R.id.tvKategori
+            )
+
+        val tvKode =
+            view.findViewById<TextView>(
+                R.id.tvKode
+            )
+
+        val tvTahun =
+            view.findViewById<TextView>(
+                R.id.tvTahun
+            )
+
+        val tvNilai =
+            view.findViewById<TextView>(
+                R.id.tvNilai
+            )
 
         tvJudul.text = data.judul
-        tvKategori.visibility = View.GONE
-        tvKode.visibility = View.GONE
-        tvNilai.visibility = View.GONE
 
-        if (data.type.equals("SIMDASI", ignoreCase = true) && data.tahun != null) {
-            tvTahun.text = data.tahun.toString()
-            tvTahun.visibility = View.GONE
+        tvKategori.visibility =
+            View.GONE
+
+        tvKode.visibility =
+            View.GONE
+
+        tvNilai.visibility =
+            View.GONE
+
+        if (
+            data.type.equals(
+                "SIMDASI",
+                ignoreCase = true
+            ) &&
+            data.tahun != null
+        ) {
+            tvTahun.text =
+                data.tahun.toString()
+
+            tvTahun.visibility =
+                View.GONE
         } else {
-            tvTahun.visibility = View.GONE
+            tvTahun.visibility =
+                View.GONE
         }
 
-        val kategoriParams = tvKategori.layoutParams as ConstraintLayout.LayoutParams
-        kategoriParams.startToStart = ConstraintLayout.LayoutParams.UNSET
-        kategoriParams.startToEnd = R.id.viewAccent
-        kategoriParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID
-        kategoriParams.topToBottom = ConstraintLayout.LayoutParams.UNSET
-        kategoriParams.marginStart = 20
-        kategoriParams.topMargin = 16
-        tvKategori.layoutParams = kategoriParams
+        val kategoriParams =
+            tvKategori.layoutParams
+                    as ConstraintLayout.LayoutParams
 
-        val judulParams = tvJudul.layoutParams as ConstraintLayout.LayoutParams
-        judulParams.topToTop = ConstraintLayout.LayoutParams.UNSET
-        judulParams.topToBottom = R.id.tvKategori
-        judulParams.topMargin = 8
-        tvJudul.layoutParams = judulParams
+        kategoriParams.startToStart =
+            ConstraintLayout.LayoutParams.UNSET
+
+        kategoriParams.startToEnd =
+            R.id.viewAccent
+
+        kategoriParams.topToTop =
+            ConstraintLayout.LayoutParams.PARENT_ID
+
+        kategoriParams.topToBottom =
+            ConstraintLayout.LayoutParams.UNSET
+
+        kategoriParams.marginStart =
+            20
+
+        kategoriParams.topMargin =
+            16
+
+        tvKategori.layoutParams =
+            kategoriParams
+
+        val judulParams =
+            tvJudul.layoutParams
+                    as ConstraintLayout.LayoutParams
+
+        judulParams.topToTop =
+            ConstraintLayout.LayoutParams.UNSET
+
+        judulParams.topToBottom =
+            R.id.tvKategori
+
+        judulParams.topMargin =
+            8
+
+        tvJudul.layoutParams =
+            judulParams
 
         view.setOnClickListener {
-            if (data.type.equals("SIMDASI", ignoreCase = true)) {
-                if (data.tahun == null || data.ketersediaanTahun.isEmpty()) return@setOnClickListener
 
-                val intent = Intent(this, StatistikDetailActivity::class.java).apply {
-                    putExtra(StatistikDetailActivity.EXTRA_ID_TABEL, data.id)
-                    putExtra(StatistikDetailActivity.EXTRA_TAHUN, data.tahun)
-                    putExtra(StatistikDetailActivity.EXTRA_JUDUL, data.judul)
-                    putExtra(StatistikDetailActivity.EXTRA_KODE, "")
-                    putIntegerArrayListExtra(StatistikDetailActivity.EXTRA_KETERSEDIAAN_TAHUN, ArrayList(data.ketersediaanTahun))
+            if (
+                data.type.equals(
+                    "SIMDASI",
+                    ignoreCase = true
+                )
+            ) {
+                if (
+                    data.tahun == null ||
+                    data.ketersediaanTahun.isEmpty()
+                ) {
+                    return@setOnClickListener
                 }
+
+                val intent =
+                    Intent(
+                        this,
+                        StatistikDetailActivity::class.java
+                    ).apply {
+
+                        putExtra(
+                            StatistikDetailActivity.EXTRA_ID_TABEL,
+                            data.id
+                        )
+
+                        putExtra(
+                            StatistikDetailActivity.EXTRA_TAHUN,
+                            data.tahun
+                        )
+
+                        putExtra(
+                            StatistikDetailActivity.EXTRA_JUDUL,
+                            data.judul
+                        )
+
+                        putExtra(
+                            StatistikDetailActivity.EXTRA_KODE,
+                            ""
+                        )
+
+                        putIntegerArrayListExtra(
+                            StatistikDetailActivity.EXTRA_KETERSEDIAAN_TAHUN,
+                            ArrayList(
+                                data.ketersediaanTahun
+                            )
+                        )
+                    }
+
                 startActivity(intent)
 
             } else {
-                val intent = Intent(this, DetailKategoriActivity::class.java).apply {
-                    putExtra("JUDUL", data.judul)
-                    putExtra("KATEGORI", data.kategori)
-                    // Sumber dikirim ke intent tapi tidak di set ke XML manapun
-                    putExtra("SUMBER", data.sumber)
-                    putExtra("ID", data.id)
-                    putExtra("TYPE", data.type)
-                    if (data.tahun != null) putExtra("TAHUN", data.tahun)
-                }
+
+                val intent =
+                    Intent(
+                        this,
+                        DetailKategoriActivity::class.java
+                    ).apply {
+
+                        putExtra(
+                            "JUDUL",
+                            data.judul
+                        )
+
+                        putExtra(
+                            "KATEGORI",
+                            data.kategori
+                        )
+
+                        // Sumber dikirim ke intent tapi tidak di set ke XML manapun
+                        putExtra(
+                            "SUMBER",
+                            data.sumber
+                        )
+
+                        putExtra(
+                            "ID",
+                            data.id
+                        )
+
+                        putExtra(
+                            "TYPE",
+                            data.type
+                        )
+
+                        if (data.tahun != null) {
+                            putExtra(
+                                "TAHUN",
+                                data.tahun
+                            )
+                        }
+                    }
+
                 startActivity(intent)
             }
         }
+
         dataContainer.addView(view)
     }
 }

@@ -3,7 +3,6 @@ package com.example.bpskota
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -17,6 +16,8 @@ import com.airbnb.lottie.LottieAnimationView
 import com.example.bpskota.bps.model.TempatTinggalResponse
 import com.example.bpskota.bps.model.TempatTinggalVariable
 import com.example.bpskota.bps.repository.BpsRepository
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
+import com.example.bpskota.tracking.ActivityTracker
 import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
@@ -25,9 +26,6 @@ import retrofit2.Response
 class TempattinggalActivity : AppCompatActivity() {
 
     companion object {
-
-        private const val TAG =
-            "TEMPAT_TINGGAL"
 
         private const val DOMAIN =
             "3574"
@@ -58,6 +56,8 @@ class TempattinggalActivity : AppCompatActivity() {
     private lateinit var progressLoading: LottieAnimationView
     private lateinit var btnFilter: ImageView
     private lateinit var tvHeaderTitle: TextView
+
+    private lateinit var activityTracker: ActivityTracker
 
     private val repository =
         BpsRepository()
@@ -96,6 +96,16 @@ class TempattinggalActivity : AppCompatActivity() {
 
         setupButton()
 
+        activityTracker =
+            ActivityTracker(
+                this,
+                BpskpRetrofitClient.api
+            )
+
+        activityTracker.trackScreen(
+            screen = "Tempattinggal"
+        )
+
         tvHeaderTitle.text =
             "$SUBCSA_NAME ($TAHUN_DEFAULT)"
 
@@ -129,10 +139,6 @@ class TempattinggalActivity : AppCompatActivity() {
                 R.id.tvHeaderTitle
             )
 
-        // ========================================================
-        // LOTTIE LOADING
-        // ========================================================
-
         progressLoading.setAnimation(
             "Loading_Animation.json"
         )
@@ -163,29 +169,10 @@ class TempattinggalActivity : AppCompatActivity() {
 
         cardContainer.removeAllViews()
 
-        // ========================================================
-        // MULAI LOTTIE
-        // ========================================================
-
         progressLoading.visibility =
             View.VISIBLE
 
         progressLoading.playAnimation()
-
-        Log.d(
-            TAG,
-            "========================================"
-        )
-
-        Log.d(
-            TAG,
-            "MULAI LOAD $TOTAL_PAGE HALAMAN"
-        )
-
-        Log.d(
-            TAG,
-            "========================================"
-        )
 
         for (page in 1..TOTAL_PAGE) {
 
@@ -268,11 +255,6 @@ class TempattinggalActivity : AppCompatActivity() {
 
                         requestSelesai++
 
-                        Log.d(
-                            TAG,
-                            "PAGE $page = ${hasil.size}"
-                        )
-
                         cekSemuaRequestSelesai()
                     }
 
@@ -280,12 +262,6 @@ class TempattinggalActivity : AppCompatActivity() {
                         call: Call<TempatTinggalResponse>,
                         t: Throwable
                     ) {
-
-                        Log.e(
-                            TAG,
-                            "ERROR PAGE $page",
-                            t
-                        )
 
                         requestGagal++
 
@@ -356,12 +332,6 @@ class TempattinggalActivity : AppCompatActivity() {
                 )
 
             } catch (e: Exception) {
-
-                Log.e(
-                    TAG,
-                    "GAGAL PARSE VARIABLE",
-                    e
-                )
             }
         }
 
@@ -378,10 +348,6 @@ class TempattinggalActivity : AppCompatActivity() {
 
         runOnUiThread {
 
-            // ====================================================
-            // STOP LOTTIE
-            // ====================================================
-
             progressLoading.cancelAnimation()
 
             progressLoading.visibility =
@@ -396,31 +362,6 @@ class TempattinggalActivity : AppCompatActivity() {
                         ?: emptyList()
                 )
             }
-
-            Log.d(
-                TAG,
-                "========================================"
-            )
-
-            Log.d(
-                TAG,
-                "SEMUA PAGE SELESAI"
-            )
-
-            Log.d(
-                TAG,
-                "TOTAL VARIABLE = ${semuaVariable.size}"
-            )
-
-            Log.d(
-                TAG,
-                "REQUEST GAGAL = $requestGagal"
-            )
-
-            Log.d(
-                TAG,
-                "========================================"
-            )
 
             if (
                 semuaVariable.isEmpty()
@@ -455,31 +396,6 @@ class TempattinggalActivity : AppCompatActivity() {
 
             return
         }
-
-        Log.d(
-            TAG,
-            "========================================"
-        )
-
-        Log.d(
-            TAG,
-            "MENAMPILKAN CARD"
-        )
-
-        Log.d(
-            TAG,
-            "TAHUN = $tahunTerpilih"
-        )
-
-        Log.d(
-            TAG,
-            "JUMLAH CARD = ${semuaVariable.size}"
-        )
-
-        Log.d(
-            TAG,
-            "========================================"
-        )
 
         for (item in semuaVariable) {
 
@@ -548,41 +464,6 @@ class TempattinggalActivity : AppCompatActivity() {
 
             return
         }
-
-        Log.d(
-            TAG,
-            "========================================"
-        )
-
-        Log.d(
-            TAG,
-            "BUKA DETAIL"
-        )
-
-        Log.d(
-            TAG,
-            "VAR ID = $varId"
-        )
-
-        Log.d(
-            TAG,
-            "JUDUL = ${item.title}"
-        )
-
-        Log.d(
-            TAG,
-            "TAHUN = $tahunTerpilih"
-        )
-
-        Log.d(
-            TAG,
-            "KODE TAHUN = ${kodeTahunBps(tahunTerpilih)}"
-        )
-
-        Log.d(
-            TAG,
-            "========================================"
-        )
 
         val intent =
             Intent(
@@ -681,13 +562,6 @@ class TempattinggalActivity : AppCompatActivity() {
         )
 
         cardContainer.removeAllViews()
-
-        // ========================================================
-        // TIDAK ADA REQUEST BARU
-        //
-        // Card tetap ditampilkan.
-        // Ketersediaan data dicek ketika detail dibuka.
-        // ========================================================
 
         tampilkanHasil()
     }

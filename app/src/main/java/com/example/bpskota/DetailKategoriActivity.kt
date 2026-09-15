@@ -14,7 +14,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.bpskota.bps.repository.BpsAllDataRepository
+import com.example.bpskota.bpskp.api.BpskpRetrofitClient
 import com.example.bpskota.databinding.ActivityDetailKategoriBinding
+import com.example.bpskota.tracking.ActivityTracker
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
 import java.util.Calendar
@@ -24,6 +26,8 @@ class DetailKategoriActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDetailKategoriBinding
 
     private val repository = BpsAllDataRepository()
+
+    private lateinit var activityTracker: ActivityTracker
 
     companion object {
         private const val TAG = "DetailKategoriActivity"
@@ -62,6 +66,15 @@ class DetailKategoriActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // ============================================================
+        // TRACKING
+        // ============================================================
+
+        activityTracker = ActivityTracker(
+            this,
+            BpskpRetrofitClient.api
+        )
+
+        // ============================================================
         // AMBIL DATA DARI INTENT
         // ============================================================
 
@@ -74,6 +87,20 @@ class DetailKategoriActivity : AppCompatActivity() {
         Log.d(
             TAG,
             "Menerima Intent -> ID: $idData, TYPE: $typeData"
+        )
+
+        // ============================================================
+        // CATAT SCREEN VIEW + METADATA
+        // ============================================================
+
+        activityTracker.trackScreen(
+            screen = "DetailKategori",
+            metadata = mapOf(
+                "type" to typeData,
+                "data_id" to idData,
+                "category" to kategoriData,
+                "source" to sumberData
+            )
         )
 
         setupUI()
@@ -172,14 +199,18 @@ class DetailKategoriActivity : AppCompatActivity() {
                         )
 
                     tv.text = listTahun[position].toString()
+
                     tv.setTextColor(
                         Color.parseColor("#111827")
                     )
+
                     tv.textSize = 15f
+
                     tv.setTypeface(
                         null,
                         Typeface.BOLD
                     )
+
                     tv.gravity = Gravity.CENTER
 
                     return view

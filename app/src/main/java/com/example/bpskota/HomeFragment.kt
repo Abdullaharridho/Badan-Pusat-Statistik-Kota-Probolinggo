@@ -41,6 +41,7 @@ class HomeFragment : Fragment(), RefreshableFragment {
     private var infografikAnimated = false
     private var beritaAnimated = false
     private var publikasiAnimated = false
+    private var statistikScrollAnimator: ObjectAnimator? = null
 
     private lateinit var repository: BpsRepository
 
@@ -755,7 +756,7 @@ class HomeFragment : Fragment(), RefreshableFragment {
                                 tahun = tahunLabel,
                                 unit = unit,
                                 index = index,
-                                bukaEkonomi = false
+                                bukaEkonomi = false,
                             )
                         }
                 }
@@ -1490,7 +1491,8 @@ class HomeFragment : Fragment(), RefreshableFragment {
                                 tahun = tahunLabel,
                                 unit = unit,
                                 index = index,
-                                bisaDiklik = false
+                                bisaDiklik = true,
+                                bukaHarga = true,
                             )
                         }
                 }
@@ -1525,7 +1527,8 @@ class HomeFragment : Fragment(), RefreshableFragment {
         index: Int,
         bukaEkonomi: Boolean = false,
         bukaGender: Boolean = false,
-        bisaDiklik: Boolean = true
+        bisaDiklik: Boolean = true,
+        bukaHarga : Boolean = false,
     ) {
 
         val card =
@@ -1604,16 +1607,21 @@ class HomeFragment : Fragment(), RefreshableFragment {
 
             card.setOnClickListener {
 
-                val tujuan = when {
+                if (bukaHarga) {
+                    val intent = Intent(requireContext(), DataKategoriActivity::class.java).apply {
+                        putExtra("NAMA_KATEGORI", kategori)
+                    }
+                    startActivity(intent)
+                    return@setOnClickListener
+                }
 
+                val tujuan = when {
                     bukaEkonomi -> {
                         EkonomiActivity::class.java
                     }
-
                     bukaGender -> {
                         GenderActivity::class.java
                     }
-
                     else -> {
                         TenagakerjaActivity::class.java
                     }
@@ -1914,25 +1922,28 @@ class HomeFragment : Fragment(), RefreshableFragment {
                 )
                     ?: return
 
-            val animator =
+            statistikScrollAnimator?.cancel()
+
+            statistikScrollAnimator =
                 ObjectAnimator.ofInt(
                     scrollView,
                     "scrollX",
                     scrollView.scrollX,
                     targetX
-                )
+                ).apply {
 
-            animator.duration =
-                800L
+                    duration = 800L
 
-            animator.interpolator =
-                DecelerateInterpolator(
-                    1.5f
-                )
+                    interpolator =
+                        DecelerateInterpolator(
+                            1.5f
+                        )
 
-            animator.start()
+                    start()
+                }
 
         } else {
+            statistikScrollAnimator?.cancel()
 
             statistikScrollView.scrollTo(
                 targetX,
@@ -3009,9 +3020,15 @@ class HomeFragment : Fragment(), RefreshableFragment {
 
     override fun onDestroyView() {
 
+        statistikScrollAnimator?.cancel()
+        statistikScrollAnimator = null
+
         statistikHandler.removeCallbacks(
             statistikAutoScrollRunnable
         )
+
+        statistikScrollView.setOnScrollChangeListener(null)
+        statistikScrollView.setOnTouchListener(null)
 
         super.onDestroyView()
 
