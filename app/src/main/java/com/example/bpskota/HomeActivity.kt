@@ -60,7 +60,7 @@ class HomeActivity : AppCompatActivity() {
         // TRACKING APP OPEN
         // =====================================================
 
-        activityTracker.trackAppOpen()
+
 
         viewPager = findViewById(R.id.viewPager)
         homeHeader = findViewById(R.id.homeHeader)

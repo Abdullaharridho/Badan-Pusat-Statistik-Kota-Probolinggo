@@ -1705,4 +1705,234 @@ class BpskpRepository {
                 }
             })
     }
+    fun getActivityStatistics(
+        callback: (ActivityStatisticsResponse?, String?) -> Unit
+    ) {
+        Log.d(
+            TAG,
+            "GET /activity-statistics request dimulai"
+        )
+
+        BpskpRetrofitClient.api
+            .getActivityStatistics()
+            .enqueue(object : Callback<ActivityStatisticsResponse> {
+
+                override fun onResponse(
+                    call: Call<ActivityStatisticsResponse>,
+                    response: Response<ActivityStatisticsResponse>
+                ) {
+                    val httpCode = response.code()
+
+                    Log.d(
+                        TAG,
+                        "GET /activity-statistics HTTP CODE = $httpCode"
+                    )
+
+                    Log.d(
+                        TAG,
+                        "GET /activity-statistics HTTP MESSAGE = ${response.message()}"
+                    )
+
+                    if (response.isSuccessful) {
+
+                        val body = response.body()
+
+                        Log.d(
+                            TAG,
+                            "GET /activity-statistics success = ${body?.success}"
+                        )
+
+                        Log.d(
+                            TAG,
+                            "GET /activity-statistics users = ${body?.summary?.users_accessing}"
+                        )
+
+                        Log.d(
+                            TAG,
+                            "GET /activity-statistics total access = ${body?.summary?.total_access}"
+                        )
+
+                        if (
+                            body != null &&
+                            body.success &&
+                            body.summary != null
+                        ) {
+                            Log.d(
+                                TAG,
+                                "GET /activity-statistics berhasil"
+                            )
+
+                            callback(
+                                body,
+                                null
+                            )
+                        } else {
+                            Log.e(
+                                TAG,
+                                "GET /activity-statistics response tidak valid"
+                            )
+
+                            callback(
+                                null,
+                                "Response statistik aktivitas tidak valid."
+                            )
+                        }
+
+                    } else {
+
+                        val errorBody =
+                            try {
+                                response.errorBody()?.string()
+                            } catch (_: Exception) {
+                                null
+                            }
+
+                        Log.e(
+                            TAG,
+                            "GET /activity-statistics gagal"
+                        )
+
+                        Log.e(
+                            TAG,
+                            "GET /activity-statistics HTTP CODE = $httpCode"
+                        )
+
+                        Log.e(
+                            TAG,
+                            "GET /activity-statistics ERROR BODY = $errorBody"
+                        )
+
+                        callback(
+                            null,
+                            getActivityStatisticsErrorMessage(httpCode)
+                        )
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<ActivityStatisticsResponse>,
+                    t: Throwable
+                ) {
+                    Log.e(
+                        TAG,
+                        "GET /activity-statistics onFailure"
+                    )
+
+                    Log.e(
+                        TAG,
+                        "GET /activity-statistics exception = ${t.javaClass.simpleName}"
+                    )
+
+                    Log.e(
+                        TAG,
+                        "GET /activity-statistics message = ${t.message}",
+                        t
+                    )
+
+                    callback(
+                        null,
+                        getConnectionErrorMessage(t)
+                    )
+                }
+            })
+    }
+    private fun getActivityStatisticsErrorMessage(code: Int): String {
+        return when (code) {
+            400 -> "Permintaan statistik tidak valid."
+            401 -> "Statistik penggunaan tidak dapat diakses."
+            403 -> "Statistik penggunaan tidak dapat diakses."
+            404 -> "Data statistik tidak ditemukan."
+            500 -> "Terjadi kesalahan pada server."
+            else -> "Gagal mengambil statistik. Kode: $code"
+        }
+    }
+    fun getAdminActivityStatistics(
+        session: BpskpAuthSession,
+        callback: (AdminActivityStatisticsResponse?, String?) -> Unit
+    ) {
+        val authorization = getAuthorizationHeader(session)
+            ?: run {
+                callback(null, "Sesi login tidak ditemukan.")
+                return
+            }
+
+        BpskpRetrofitClient.api
+            .getAdminActivityStatistics(authorization)
+            .enqueue(object : Callback<AdminActivityStatisticsResponse> {
+
+                override fun onResponse(
+                    call: Call<AdminActivityStatisticsResponse>,
+                    response: Response<AdminActivityStatisticsResponse>
+                ) {
+                    if (response.isSuccessful) {
+
+                        val body = response.body()
+
+                        if (body != null && body.success && body.summary != null) {
+
+                            Log.d(
+                                TAG,
+                                "Statistik admin berhasil diambil"
+                            )
+
+                            Log.d(
+                                TAG,
+                                "Total pengguna = ${body.summary.users_accessing}"
+                            )
+
+                            Log.d(
+                                TAG,
+                                "Total akses = ${body.summary.total_access}"
+                            )
+
+                            Log.d(
+                                TAG,
+                                "Total durasi = ${body.summary.total_duration_seconds} detik"
+                            )
+
+                            callback(body, null)
+
+                        } else {
+                            callback(
+                                null,
+                                "Data statistik penggunaan tidak valid."
+                            )
+                        }
+
+                    } else {
+
+                        val errorMessage =
+                            getActivityStatisticsErrorMessage(
+                                response.code()
+                            )
+
+                        Log.e(
+                            TAG,
+                            "Gagal mengambil statistik admin. HTTP ${response.code()}"
+                        )
+
+                        callback(
+                            null,
+                            errorMessage
+                        )
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<AdminActivityStatisticsResponse>,
+                    t: Throwable
+                ) {
+                    Log.e(
+                        TAG,
+                        "Request statistik admin gagal",
+                        t
+                    )
+
+                    callback(
+                        null,
+                        t.message ?: "Gagal terhubung ke server."
+                    )
+                }
+            })
+    }
 }

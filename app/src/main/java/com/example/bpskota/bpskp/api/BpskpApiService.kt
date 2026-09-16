@@ -47,6 +47,12 @@ interface BpskpApiService {
     fun logActivity(
         @Body request: ActivityLogRequest
     ): Call<ActivityLogResponse>
+    @GET("activity-statistics")
+    fun getActivityStatistics(): Call<ActivityStatisticsResponse>
+    @GET("activity-statistics/admin")
+    fun getAdminActivityStatistics(
+        @Header("Authorization") authorization: String
+    ): Call<AdminActivityStatisticsResponse>
 
     // =========================
     // PROFILE USER

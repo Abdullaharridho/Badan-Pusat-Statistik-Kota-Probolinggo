@@ -37,9 +37,20 @@ class ActivityTracker(
         )
     }
 
+    fun trackAppClose(
+        metadata: Map<String, Any>? = null
+    ) {
+        sendActivity(
+            event = "app_close",
+            screen = null,
+            metadata = metadata
+        )
+    }
+
     // ================================================================
     // SCREEN VIEW
     // ================================================================
+
 
     fun trackScreen(
         screen: String,
@@ -61,6 +72,10 @@ class ActivityTracker(
         screen: String?,
         metadata: Map<String, Any>? = null
     ) {
+        Log.d(
+            TAG,
+            "Mengirim aktivitas: event=$event, screen=$screen"
+        )
 
         val request = ActivityLogRequest(
             anonymous_id =

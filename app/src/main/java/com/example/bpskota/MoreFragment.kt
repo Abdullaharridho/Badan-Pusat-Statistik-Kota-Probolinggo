@@ -1,5 +1,6 @@
 package com.example.bpskota
 
+import android.animation.LayoutTransition
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
@@ -7,14 +8,23 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
+import com.example.bpskota.bpskp.repository.BpskpRepository
 
 class MoreFragment : Fragment() {
+
+    // =========================================================
+    // REPOSITORY
+    // =========================================================
+
+    private val bpskpRepository = BpskpRepository()
+
 
     // =========================================================
     // LIFECYCLE
@@ -92,6 +102,13 @@ class MoreFragment : Fragment() {
 
 
         // =====================================================
+        // CARD PENGGUNAAN APLIKASI
+        // =====================================================
+
+        setupUsageCard(view)
+
+
+        // =====================================================
         // CARD DEVELOPER
         // =====================================================
 
@@ -103,6 +120,233 @@ class MoreFragment : Fragment() {
             showDeveloperDialog()
 
         }
+
+
+        // =====================================================
+        // LOAD STATISTIK PENGGUNAAN
+        // =====================================================
+
+        loadActivityStatistics()
+
+    }
+
+
+    // =========================================================
+    // SETUP CARD PENGGUNAAN APLIKASI
+    // =========================================================
+
+    private fun setupUsageCard(view: View) {
+
+        val cardUsage =
+            view.findViewById<CardView>(R.id.cardUsage)
+
+        val layoutUsageHeader =
+            view.findViewById<LinearLayout>(R.id.layoutUsageHeader)
+
+        val layoutUsageDetail =
+            view.findViewById<LinearLayout>(R.id.layoutUsageDetail)
+
+        val ivUsageArrow =
+            view.findViewById<ImageView>(R.id.ivUsageArrow)
+
+
+        // =====================================================
+        // KONDISI AWAL
+        // =====================================================
+
+        layoutUsageDetail.visibility = View.GONE
+
+        ivUsageArrow.rotation = 0f
+
+
+        // =====================================================
+        // ANIMASI LAYOUT
+        // =====================================================
+
+        (layoutUsageDetail.parent as? ViewGroup)?.layoutTransition =
+            LayoutTransition().apply {
+
+                enableTransitionType(
+                    LayoutTransition.CHANGING
+                )
+
+            }
+
+
+        // =====================================================
+        // CLICK CARD
+        // =====================================================
+
+        val toggleUsage = {
+
+            if (layoutUsageDetail.visibility == View.GONE) {
+
+                layoutUsageDetail.visibility = View.VISIBLE
+
+                ivUsageArrow.animate()
+                    .rotation(180f)
+                    .setDuration(200)
+                    .start()
+
+            } else {
+
+                layoutUsageDetail.visibility = View.GONE
+
+                ivUsageArrow.animate()
+                    .rotation(0f)
+                    .setDuration(200)
+                    .start()
+
+            }
+
+        }
+
+
+        cardUsage?.setOnClickListener {
+
+            toggleUsage()
+
+        }
+
+        layoutUsageHeader?.setOnClickListener {
+
+            toggleUsage()
+
+        }
+
+    }
+
+
+    // =========================================================
+    // LOAD STATISTIK AKTIVITAS
+    // =========================================================
+
+    private fun loadActivityStatistics() {
+
+        if (!isAdded) {
+            return
+        }
+
+
+        bpskpRepository.getActivityStatistics { response, error ->
+
+            if (!isAdded) {
+                return@getActivityStatistics
+            }
+
+            requireActivity().runOnUiThread {
+
+                if (!isAdded) {
+                    return@runOnUiThread
+                }
+
+
+                if (response != null) {
+
+                    val users =
+                        response.summary?.users_accessing ?: 0
+
+                    val totalAccess =
+                        response.summary?.total_access ?: 0
+
+
+                    updateUsageStatistics(
+                        users,
+                        totalAccess
+                    )
+
+                } else {
+
+                    showUsageStatisticsError(
+                        error
+                    )
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+    // =========================================================
+    // UPDATE STATISTIK
+    // =========================================================
+
+    private fun updateUsageStatistics(
+        users: Int,
+        totalAccess: Int
+    ) {
+
+        val tvTotalPengguna =
+            view?.findViewById<TextView>(
+                R.id.tvTotalPengguna
+            )
+
+        val tvTotalAkses =
+            view?.findViewById<TextView>(
+                R.id.tvTotalAkses
+            )
+
+
+        tvTotalPengguna?.text =
+            formatNumber(users)
+
+        tvTotalAkses?.text =
+            formatNumber(totalAccess)
+
+    }
+
+
+    // =========================================================
+    // ERROR STATISTIK
+    // =========================================================
+
+    private fun showUsageStatisticsError(
+        error: String?
+    ) {
+
+        val tvTotalPengguna =
+            view?.findViewById<TextView>(
+                R.id.tvTotalPengguna
+            )
+
+        val tvTotalAkses =
+            view?.findViewById<TextView>(
+                R.id.tvTotalAkses
+            )
+
+
+        tvTotalPengguna?.text = "-"
+
+        tvTotalAkses?.text = "-"
+
+        if (!error.isNullOrBlank()) {
+
+            android.util.Log.e(
+                "MoreFragment",
+                "Gagal mengambil statistik: $error"
+            )
+
+        }
+
+    }
+
+
+    // =========================================================
+    // FORMAT ANGKA
+    // =========================================================
+
+    private fun formatNumber(
+        value: Int
+    ): String {
+
+        return String.format(
+            java.util.Locale("id", "ID"),
+            "%,d",
+            value
+        ).replace(",", ".")
 
     }
 
@@ -337,19 +581,6 @@ class MoreFragment : Fragment() {
 
     private fun openWhatsApp() {
 
-        /*
-         * GANTI dengan nomor WhatsApp resmi BPS.
-         *
-         * Contoh:
-         *
-         * 6281234567890
-         *
-         * Jangan gunakan:
-         * +62
-         * spasi
-         * tanda -
-         */
-
         val nomorWhatsApp = "628xxxxxxxxxx"
 
         val pesan = Uri.encode(
@@ -392,10 +623,6 @@ class MoreFragment : Fragment() {
 
         try {
 
-            // ================================================
-            // COBA BUKA GOOGLE MAPS
-            // ================================================
-
             val mapsIntent = Intent(
                 Intent.ACTION_VIEW,
                 Uri.parse(
@@ -410,10 +637,6 @@ class MoreFragment : Fragment() {
             startActivity(mapsIntent)
 
         } catch (e: ActivityNotFoundException) {
-
-            // ================================================
-            // FALLBACK KE BROWSER
-            // ================================================
 
             try {
 
@@ -477,9 +700,11 @@ class MoreFragment : Fragment() {
         }
 
     }
+
+
     // =========================================================
-// POPUP TENTANG DEVELOPER
-// =========================================================
+    // POPUP TENTANG DEVELOPER
+    // =========================================================
 
     private fun showDeveloperDialog() {
 
