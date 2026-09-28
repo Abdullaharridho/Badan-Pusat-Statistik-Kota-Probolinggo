@@ -1,14 +1,10 @@
 package com.example.bpskota.bpskp.api
 
 import com.example.bpskota.bpskp.model.*
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Call
-import retrofit2.http.Body
-import retrofit2.http.DELETE
-import retrofit2.http.GET
-import retrofit2.http.Header
-import retrofit2.http.POST
-import retrofit2.http.PUT
-import retrofit2.http.Path
+import retrofit2.http.*
 
 interface BpskpApiService {
 
@@ -111,6 +107,153 @@ interface BpskpApiService {
         @Header("Authorization") authorization: String,
         @Path("id") id: Int
     ): Call<UserActionResponse>
-}
 
+
+    @GET("surat-masuk")
+    fun getSuratMasuk(
+        @Header("Authorization") authorization: String,
+        @Query("search") search: String? = null,
+        @Query("status") status: String? = null
+    ): Call<SuratMasukListResponse>
+    @GET("surat-masuk/{id}")
+    fun getSuratMasukDetail(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: Int
+    ): Call<SuratMasukResponse>
+    @Multipart
+    @POST("surat-masuk/simpan")
+    fun createSuratMasuk(
+        @Header("Authorization") authorization: String,
+
+        @Part("nomor_surat") nomorSurat: RequestBody,
+        @Part("tanggal_surat") tanggalSurat: RequestBody,
+        @Part("tanggal_diterima") tanggalDiterima: RequestBody,
+        @Part("asal_surat") asalSurat: RequestBody,
+        @Part("perihal") perihal: RequestBody,
+
+        @Part("isi_ringkas") isiRingkas: RequestBody?,
+        @Part("tanggal_acara") tanggalAcara: RequestBody?,
+        @Part("waktu_mulai") waktuMulai: RequestBody?,
+        @Part("waktu_selesai") waktuSelesai: RequestBody?,
+        @Part("lokasi") lokasi: RequestBody?,
+        @Part("status") status: RequestBody?,
+
+        @Part fileSurat: MultipartBody.Part?
+    ): Call<SuratMasukActionResponse>
+    @Multipart
+    @POST("surat-masuk/{id}")
+    fun updateSuratMasuk(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: Int,
+
+        @Part("nomor_surat") nomorSurat: RequestBody?,
+        @Part("tanggal_surat") tanggalSurat: RequestBody?,
+        @Part("tanggal_diterima") tanggalDiterima: RequestBody?,
+        @Part("asal_surat") asalSurat: RequestBody?,
+        @Part("perihal") perihal: RequestBody?,
+        @Part("isi_ringkas") isiRingkas: RequestBody?,
+        @Part("tanggal_acara") tanggalAcara: RequestBody?,
+        @Part("waktu_mulai") waktuMulai: RequestBody?,
+        @Part("waktu_selesai") waktuSelesai: RequestBody?,
+        @Part("lokasi") lokasi: RequestBody?,
+        @Part("status") status: RequestBody?,
+        @Part fileSurat: MultipartBody.Part?
+    ): Call<SuratMasukActionResponse>
+    @PATCH("surat-masuk/{id}/status")
+    fun updateSuratMasukStatus(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: Int,
+        @Body request: SuratMasukStatusRequest
+    ): Call<SuratMasukActionResponse>
+    @DELETE("surat-masuk/{id}")
+    fun deleteSuratMasuk(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: Int
+    ): Call<SuratMasukActionResponse>
+
+    // =========================
+    // MANAJEMEN TIM
+    // =========================
+
+    /**
+     * Mengambil daftar tim.
+     *
+     * GET /tim
+     */
+    @GET("tim")
+    fun getTim(
+        @Header("Authorization") authorization: String,
+        @Query("search") search: String? = null,
+        @Query("status") status: String? = null
+    ): Call<TimListResponse>
+
+    /**
+     * Mengambil detail tim beserta daftar anggota.
+     *
+     * GET /tim/{id}
+     */
+    @GET("tim/{id}")
+    fun getDetailTim(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: Int
+    ): Call<TimDetailResponse>
+
+    /**
+     * Membuat tim sekaligus menentukan ketua.
+     *
+     * POST /tim
+     */
+    @POST("tim")
+    fun buatTim(
+        @Header("Authorization") authorization: String,
+        @Body request: TimRequest
+    ): Call<TimMutationResponse>
+
+    /**
+     * Memperbarui data tim.
+     *
+     * PUT /tim/{id}
+     */
+    @PUT("tim/{id}")
+    fun updateTim(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: Int,
+        @Body request: TimUpdateRequest
+    ): Call<TimMutationResponse>
+
+    /**
+     * Menghapus tim.
+     *
+     * DELETE /tim/{id}
+     */
+    @DELETE("tim/{id}")
+    fun hapusTim(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: Int
+    ): Call<TimMutationResponse>
+
+    /**
+     * Menambahkan anggota ke tim.
+     *
+     * POST /tim/{id}/anggota
+     */
+    @POST("tim/{id}/anggota")
+    fun tambahAnggotaTim(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: Int,
+        @Body request: TambahAnggotaRequest
+    ): Call<TimMutationResponse>
+
+    /**
+     * Menghapus anggota dari tim.
+     *
+     * DELETE /tim/{id}/anggota/{pegawai_id}
+     */
+    @DELETE("tim/{id}/anggota/{pegawai_id}")
+    fun hapusAnggotaTim(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: Int,
+        @Path("pegawai_id") pegawaiId: Int
+    ): Call<TimMutationResponse>
+}
 

@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginTop="6dp"
+    android:layout_marginBottom="6dp"
+
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- ===================================================== -->
+        <!-- NOMOR SURAT                                           -->
+        <!-- ===================================================== -->
+
+        <TextView
+            android:id="@+id/tvNomorSurat"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="-"
+            android:textColor="#111827"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:maxLines="2"
+            android:ellipsize="end"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/tvStatusSurat" />
+
+        <!-- ===================================================== -->
+        <!-- STATUS                                                 -->
+        <!-- ===================================================== -->
+
+        <TextView
+            android:id="@+id/tvStatusSurat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:text="BARU"
+            android:textColor="#F97316"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:background="#FFF1E8"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- ===================================================== -->
+        <!-- ASAL SURAT                                            -->
+        <!-- ===================================================== -->
+
+        <TextView
+            android:id="@+id/tvAsalSurat"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="-"
+            android:textColor="#4B5563"
+            android:textSize="13sp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            app:layout_constraintTop_toBottomOf="@id/tvNomorSurat"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- ===================================================== -->
+        <!-- PERIHAL                                                -->
+        <!-- ===================================================== -->
+
+        <TextView
+            android:id="@+id/tvPerihalSurat"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="-"
+            android:textColor="#111827"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:maxLines="3"
+            android:ellipsize="end"
+            app:layout_constraintTop_toBottomOf="@id/tvAsalSurat"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- ===================================================== -->
+        <!-- TANGGAL DITERIMA                                      -->
+        <!-- ===================================================== -->
+
+        <TextView
+            android:id="@+id/tvTanggalDiterima"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Diterima: -"
+            android:textColor="#6B7280"
+            android:textSize="12sp"
+            app:layout_constraintTop_toBottomOf="@id/tvPerihalSurat"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- ===================================================== -->
+        <!-- TANGGAL ACARA                                         -->
+        <!-- ===================================================== -->
+
+        <TextView
+            android:id="@+id/tvTanggalAcara"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Acara: -"
+            android:textColor="#6B7280"
+            android:textSize="12sp"
+            app:layout_constraintTop_toBottomOf="@id/tvTanggalDiterima"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- ===================================================== -->
+        <!-- GARIS PEMBATAS                                        -->
+        <!-- ===================================================== -->
+
+        <View
+            android:id="@+id/viewDividerSurat"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginTop="14dp"
+            android:background="#E5E7EB"
+            app:layout_constraintTop_toBottomOf="@id/tvTanggalAcara"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- ===================================================== -->
+        <!-- DETAIL                                                 -->
+        <!-- ===================================================== -->
+
+        <TextView
+            android:id="@+id/btnDetailSurat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:text="Detail"
+            android:textColor="#F97316"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"
+            app:layout_constraintTop_toBottomOf="@id/viewDividerSurat"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <!-- ===================================================== -->
+        <!-- EDIT                                                   -->
+        <!-- ===================================================== -->
+
+        <TextView
+            android:id="@+id/btnEditSurat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:text="Edit"
+            android:textColor="#6B7280"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"
+            app:layout_constraintTop_toBottomOf="@id/viewDividerSurat"
+            app:layout_constraintEnd_toStartOf="@id/btnHapusSurat" />
+
+        <!-- ===================================================== -->
+        <!-- HAPUS                                                  -->
+        <!-- ===================================================== -->
+
+        <TextView
+            android:id="@+id/btnHapusSurat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:text="Hapus"
+            android:textColor="#DC2626"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"
+            app:layout_constraintTop_toBottomOf="@id/viewDividerSurat"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

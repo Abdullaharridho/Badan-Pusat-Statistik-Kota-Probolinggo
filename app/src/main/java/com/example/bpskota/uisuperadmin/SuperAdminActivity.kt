@@ -9,14 +9,13 @@ import android.view.Menu
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.example.bpskota.HomeActivity
-import com.example.bpskota.databinding.ActivitySuperAdminBinding
 import com.example.bpskota.bpskp.repository.BpskpAuthSession
 import com.example.bpskota.bpskp.repository.BpskpRepository
+import com.example.bpskota.databinding.ActivitySuperAdminBinding
 
 class SuperAdminActivity : AppCompatActivity() {
 
@@ -66,6 +65,10 @@ class SuperAdminActivity : AppCompatActivity() {
         binding.navSuperUsers.setOnClickListener {
             binding.superAdminViewPager.currentItem = 1
         }
+
+        binding.navSuperMenu.setOnClickListener {
+            binding.superAdminViewPager.currentItem = 2
+        }
     }
 
     private fun setupAccountMenu() {
@@ -96,7 +99,12 @@ class SuperAdminActivity : AppCompatActivity() {
                 when (item.itemId) {
 
                     1 -> {
-                        startActivity(Intent(this@SuperAdminActivity,SuperadminProfileActivity::class.java))
+                        startActivity(
+                            Intent(
+                                this@SuperAdminActivity,
+                                SuperadminProfileActivity::class.java
+                            )
+                        )
 
                         true
                     }
@@ -128,7 +136,6 @@ class SuperAdminActivity : AppCompatActivity() {
             .setPositiveButton(
                 "Keluar"
             ) { _, _ ->
-
                 logout()
             }
             .show()
@@ -165,20 +172,16 @@ class SuperAdminActivity : AppCompatActivity() {
         val inactiveColor =
             Color.parseColor("#9CA3AF")
 
+        // =====================================================
+        // HOME
+        // =====================================================
+
         val homeIcon =
             binding.navSuperHome
                 .getChildAt(0) as? ImageView
 
         val homeText =
             binding.navSuperHome
-                .getChildAt(1) as? TextView
-
-        val usersIcon =
-            binding.navSuperUsers
-                .getChildAt(0) as? ImageView
-
-        val usersText =
-            binding.navSuperUsers
                 .getChildAt(1) as? TextView
 
         homeIcon?.setColorFilter(
@@ -203,6 +206,18 @@ class SuperAdminActivity : AppCompatActivity() {
                 Typeface.NORMAL
         )
 
+        // =====================================================
+        // USERS
+        // =====================================================
+
+        val usersIcon =
+            binding.navSuperUsers
+                .getChildAt(0) as? ImageView
+
+        val usersText =
+            binding.navSuperUsers
+                .getChildAt(1) as? TextView
+
         usersIcon?.setColorFilter(
             if (position == 1)
                 activeColor
@@ -224,13 +239,47 @@ class SuperAdminActivity : AppCompatActivity() {
             else
                 Typeface.NORMAL
         )
+
+        // =====================================================
+        // MENU
+        // =====================================================
+
+        val menuIcon =
+            binding.navSuperMenu
+                .getChildAt(0) as? ImageView
+
+        val menuText =
+            binding.navSuperMenu
+                .getChildAt(1) as? TextView
+
+        menuIcon?.setColorFilter(
+            if (position == 2)
+                activeColor
+            else
+                inactiveColor
+        )
+
+        menuText?.setTextColor(
+            if (position == 2)
+                activeColor
+            else
+                inactiveColor
+        )
+
+        menuText?.setTypeface(
+            null,
+            if (position == 2)
+                Typeface.BOLD
+            else
+                Typeface.NORMAL
+        )
     }
 
     private class SuperAdminPagerAdapter(
         activity: AppCompatActivity
     ) : FragmentStateAdapter(activity) {
 
-        override fun getItemCount(): Int = 2
+        override fun getItemCount(): Int = 3
 
         override fun createFragment(position: Int) =
             when (position) {
@@ -238,6 +287,8 @@ class SuperAdminActivity : AppCompatActivity() {
                 0 -> SuperAdminHomeFragment()
 
                 1 -> SuperadminUserManagementFragment()
+
+                2 -> SuperAdminMenuFragment()
 
                 else -> SuperAdminHomeFragment()
             }

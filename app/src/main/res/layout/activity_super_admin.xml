@@ -141,7 +141,7 @@
             android:clipToPadding="false">
 
             <!-- ================================================= -->
-            <!-- CURVE BACKGROUND                                    -->
+            <!-- CURVE BACKGROUND                                   -->
             <!-- ================================================= -->
 
             <com.example.bpskota.BottomNavCurveView
@@ -162,66 +162,112 @@
                 android:paddingEnd="8dp">
 
                 <!-- ============================================= -->
-                <!-- AKUN                                             -->
+                <!-- NAVIGATION ITEMS                              -->
                 <!-- ============================================= -->
 
                 <LinearLayout
-                    android:id="@+id/navSuperUsers"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:clickable="true"
-                    android:focusable="true">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp">
 
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_account"
-                        app:tint="#9CA3AF"
-                        android:contentDescription="Akun" />
+                    <!-- ========================================= -->
+                    <!-- AKUN                                       -->
+                    <!-- ========================================= -->
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Akun"
-                        android:textColor="#9CA3AF"
-                        android:textSize="10sp" />
+                    <LinearLayout
+                        android:id="@+id/navSuperUsers"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true">
 
-                </LinearLayout>
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_account"
+                            app:tint="#9CA3AF"
+                            android:contentDescription="Akun" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Akun"
+                            android:textColor="#9CA3AF"
+                            android:textSize="10sp" />
+
+                    </LinearLayout>
 
 
-                <!-- ============================================= -->
-                <!-- BERANDA                                         -->
-                <!-- ============================================= -->
+                    <!-- ========================================= -->
+                    <!-- BERANDA                                    -->
+                    <!-- ========================================= -->
 
-                <LinearLayout
-                    android:id="@+id/navSuperHome"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:clickable="true"
-                    android:focusable="true">
+                    <LinearLayout
+                        android:id="@+id/navSuperHome"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true">
 
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_home"
-                        app:tint="#F97316"
-                        android:contentDescription="Beranda" />
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_home"
+                            app:tint="#F97316"
+                            android:contentDescription="Beranda" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Beranda"
-                        android:textColor="#F97316"
-                        android:textSize="10sp"
-                        android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Beranda"
+                            android:textColor="#F97316"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+
+                    <!-- ========================================= -->
+                    <!-- MENU                                       -->
+                    <!-- ========================================= -->
+
+                    <LinearLayout
+                        android:id="@+id/navSuperMenu"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_menu1"
+                            app:tint="#9CA3AF"
+                            android:contentDescription="Menu" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Menu"
+                            android:textColor="#9CA3AF"
+                            android:textSize="10sp" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 

@@ -7,7 +7,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 object BpskpRetrofitClient {
 
     private const val BASE_URL =
-        "http://172.16.16.42:8000/api/"
+        "http://172.16.16.197:8000/api/"
 
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor { chain ->
