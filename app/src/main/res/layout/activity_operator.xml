@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F6F2EE">
+
+    <!-- ================= HEADER ================= -->
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/headerOperatorActivity"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        android:elevation="2dp"
+        android:minHeight="94dp"
+        android:paddingStart="16dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="14dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Logo BPS -->
+
+        <ImageView
+            android:id="@+id/imgOperatorLogo"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="Logo BPS Kota Probolinggo"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_bpslogo"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <!-- Identitas aplikasi -->
+
+        <LinearLayout
+            android:id="@+id/headerOperatorText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="10dp"
+            android:orientation="vertical"
+            android:gravity="center_vertical"
+            app:layout_constraintStart_toEndOf="@id/imgOperatorLogo"
+            app:layout_constraintEnd_toStartOf="@id/cardOperatorAccount"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="BPS KOTA PROBOLINGGO"
+                android:textColor="#F97316"
+                android:textSize="10sp"
+                android:letterSpacing="0.08"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvOperatorGreeting"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Dashboard Operator"
+                android:textColor="#292524"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tvOperatorSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="Kelola layanan dan data operasional"
+                android:textColor="#78716C"
+                android:textSize="11sp"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+        </LinearLayout>
+
+        <!-- Tombol akun -->
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardOperatorAccount"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            app:cardBackgroundColor="#FFF3E8"
+            app:cardCornerRadius="22dp"
+            app:cardElevation="0dp"
+            app:cardUseCompatPadding="false"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <ImageView
+                android:id="@+id/btnOperatorAccount"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Menu akun operator"
+                android:padding="11dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_account"
+                app:tint="#F97316" />
+
+        </androidx.cardview.widget.CardView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    <!-- ================= VIEW PAGER ================= -->
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPagerOperator"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingBottom="8dp"
+        app:layout_constraintTop_toBottomOf="@id/headerOperatorActivity"
+        app:layout_constraintBottom_toTopOf="@id/bottomOperatorActivity"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+
+    <!-- ================= BOTTOM NAVIGATION ================= -->
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/bottomOperatorActivity"
+        android:layout_width="0dp"
+        android:layout_height="76dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="20dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="10dp"
+        app:cardUseCompatPadding="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <FrameLayout
+            android:id="@+id/operatorBottomNavContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <!-- Indikator navigasi -->
+
+            <com.example.bpskota.BottomNavCurveView
+                android:id="@+id/bottomNavCurveOperator"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:layout_gravity="center_vertical"
+                android:clickable="false"
+                android:focusable="false" />
+
+            <!-- Urutan: Ruangan, Surat Masuk, Beranda, Maps, Profil -->
+
+            <LinearLayout
+                android:id="@+id/operatorBottomNavItems"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp">
+
+                <!-- RUANGAN -->
+
+                <LinearLayout
+                    android:id="@+id/navOperatorRuangan"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="Ruangan dan pemesanan"
+                        android:src="@drawable/ic_penduduk"
+                        app:tint="#9CA3AF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Ruangan"
+                        android:textColor="#9CA3AF"
+                        android:textSize="9sp"
+                        android:maxLines="1" />
+
+                </LinearLayout>
+
+
+                <!-- SURAT MASUK -->
+
+                <LinearLayout
+                    android:id="@+id/navOperatorSuratMasuk"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="Surat Masuk"
+                        android:src="@drawable/ic_mail"
+                        app:tint="#9CA3AF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Surat Masuk"
+                        android:textColor="#9CA3AF"
+                        android:textSize="9sp"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                </LinearLayout>
+
+
+                <!-- BERANDA -->
+
+                <LinearLayout
+                    android:id="@+id/navOperatorBeranda"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="Beranda"
+                        android:src="@drawable/ic_home"
+                        app:tint="#F97316" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Beranda"
+                        android:textColor="#F97316"
+                        android:textSize="9sp"
+                        android:textStyle="bold"
+                        android:maxLines="1" />
+
+                </LinearLayout>
+
+
+                <!-- MAPS -->
+
+                <LinearLayout
+                    android:id="@+id/navOperatorMaps"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="Peta Kode Rumah"
+                        android:src="@drawable/ic_master_wilayah"
+                        app:tint="#9CA3AF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Maps"
+                        android:textColor="#9CA3AF"
+                        android:textSize="9sp"
+                        android:maxLines="1" />
+
+                </LinearLayout>
+
+
+                <!-- PROFIL -->
+
+                <LinearLayout
+                    android:id="@+id/navOperatorProfil"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="Profil"
+                        android:src="@drawable/ic_account"
+                        app:tint="#9CA3AF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Profil"
+                        android:textColor="#9CA3AF"
+                        android:textSize="9sp"
+                        android:maxLines="1" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </FrameLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

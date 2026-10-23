@@ -145,6 +145,7 @@
             <!-- ================================================= -->
 
             <com.example.bpskota.BottomNavCurveView
+                android:id="@+id/bottomNavCurveSuperAdmin"
                 android:layout_width="match_parent"
                 android:layout_height="64dp" />
 

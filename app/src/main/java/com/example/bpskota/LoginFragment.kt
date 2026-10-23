@@ -18,6 +18,10 @@ import com.example.bpskota.bpskp.repository.BpsBiometricSecureStorage
 import com.example.bpskota.bpskp.repository.BpskpAuthSession
 import com.example.bpskota.bpskp.repository.BpskpRepository
 import com.example.bpskota.databinding.FragmentLoginBinding
+import com.example.bpskota.uiketuatim.KetuaTimActivity
+import com.example.bpskota.uioperator.OperatorActivity
+import com.example.bpskota.uipegawai.PegawaiActivity
+import com.example.bpskota.uipimpinan.PimpinanActivity
 import com.example.bpskota.uisuperadmin.SuperAdminActivity
 
 class LoginFragment : Fragment() {
@@ -503,48 +507,51 @@ class LoginFragment : Fragment() {
     private fun masukBerdasarkanRole(
         role: String
     ) {
-
-        when (role.lowercase()) {
+        when (role.trim().lowercase()) {
 
             "super_admin" -> {
-
                 startActivity(
                     Intent(
                         requireContext(),
                         SuperAdminActivity::class.java
                     )
                 )
+                requireActivity().finish()
+            }
 
+            "ketua_tim" -> {
+                startActivity(
+                    Intent(
+                        requireContext(),
+                        KetuaTimActivity::class.java
+                    )
+                )
                 requireActivity().finish()
             }
 
             "pimpinan" -> {
-
-                Toast.makeText(
-                    requireContext(),
-                    "Login sebagai Pimpinan.",
-                    Toast.LENGTH_SHORT
-                ).show()
+                startActivity(Intent(requireContext(), PimpinanActivity::class.java))
+                requireActivity().finish()
             }
 
-            "user" -> {
-
-                Toast.makeText(
-                    requireContext(),
-                    "Login sebagai User.",
-                    Toast.LENGTH_SHORT
-                ).show()
+            "pegawai" -> {
+               startActivity(Intent(requireContext(), PegawaiActivity::class.java))
+                requireActivity().finish()
+            }
+            "operator" -> {
+                startActivity(Intent(requireContext(), OperatorActivity::class.java))
+                requireActivity().finish()
             }
 
             else -> {
-
                 Toast.makeText(
                     requireContext(),
-                    "Role pengguna tidak dikenali.",
+                    "Role pengguna tidak dikenali: $role",
                     Toast.LENGTH_LONG
                 ).show()
             }
         }
+
     }
 
     private fun setupAnimations() {

@@ -311,13 +311,7 @@ interface BpsApiService {
         key: String
 
     ): Call<KonsumsiDetailResponse>
-    @GET("list")
-    fun getWilayah(
-        @Query("model") model: String = "vervar",
-        @Query("domain") domain: String = "3574",
-        @Query("page") page: Int,
-        @Query("key") apiKey: String
-    ): Call<WilayahResponse>
+
     @GET("list/")
 
     fun getInfographics(

@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -29,59 +28,104 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
 
+                <!-- Warna Biru Gelap Khas BPS -->
                 <TextView
                     android:id="@+id/tvUserName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Super Admin"
-                    android:textColor="#111827"
+                    android:textColor="#0056B3"
                     android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:text="-" />
 
                 <TextView
                     android:id="@+id/tvUserUsername"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:text="superadmin"
+                    android:layout_marginTop="2dp"
                     android:textColor="#6B7280"
-                    android:textSize="12sp" />
+                    android:textSize="12sp"
+                    android:text="-" />
 
             </LinearLayout>
 
+            <!-- Menggunakan teks titik tiga bawaan (opsional diganti icon di kodenya nanti) -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:paddingStart="8dp"
+                android:paddingEnd="0dp"
                 android:text="⋮"
                 android:textColor="#9CA3AF"
-                android:textSize="24sp" />
+                android:textSize="24sp"
+                android:textStyle="bold" />
 
         </LinearLayout>
 
         <!-- ROLE -->
+        <!-- Background Oranye sangat muda, teks Oranye BPS -->
         <TextView
             android:id="@+id/tvUserRole"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="12dp"
             android:background="#FFF7ED"
-            android:paddingStart="10dp"
-            android:paddingTop="5dp"
-            android:paddingEnd="10dp"
-            android:paddingBottom="5dp"
-            android:text="SUPER ADMIN"
-            android:textColor="#C2410C"
+            android:paddingStart="8dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="4dp"
+            android:textColor="#E65100"
             android:textSize="10sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:text="-" />
 
-        <!-- DIVIDER -->
+        <!-- INFORMASI KEGIATAN -->
+        <!-- Menggunakan drawableStart untuk menyisipkan icon tanpa menambah tag ImageView -->
+        <TextView
+            android:id="@+id/tvKegiatanTanggal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:drawableStart="@android:drawable/ic_menu_my_calendar"
+            android:drawablePadding="10dp"
+            android:gravity="center_vertical"
+            android:textColor="#4B5563"
+            android:textSize="12sp"
+            android:text="-" />
+
+        <TextView
+            android:id="@+id/tvKegiatanJam"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:drawableStart="@android:drawable/ic_menu_recent_history"
+            android:drawablePadding="10dp"
+            android:gravity="center_vertical"
+            android:textColor="#4B5563"
+            android:textSize="12sp"
+            android:text="-" />
+
+        <TextView
+            android:id="@+id/tvKegiatanLokasi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:drawableStart="@android:drawable/ic_menu_mylocation"
+            android:drawablePadding="10dp"
+            android:gravity="center_vertical"
+            android:textColor="#4B5563"
+            android:textSize="12sp"
+            android:text="-" />
+
+        <!-- DIVIDER / PEMBATAS -->
+        <!-- Warna diperlembut dan margin disesuaikan agar memberi ruang bernapas (breathing room) -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginTop="16dp"
-            android:background="#F3F4F6" />
+            android:background="#E5E7EB" />
 
-        <!-- ACTION -->
+        <!-- ACTION BUTTONS -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -89,23 +133,27 @@
             android:gravity="end"
             android:orientation="horizontal">
 
+            <!-- Edit: Teks Oranye BPS, Background Krem -->
             <TextView
                 android:id="@+id/btnEditUser"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
+                android:layout_height="36dp"
+                android:background="#FFEDCC"
                 android:gravity="center"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
-                android:text="Edit"
-                android:textColor="#F97316"
+                android:text="Edit Data"
+                android:textColor="#E65100"
                 android:textSize="13sp"
                 android:textStyle="bold" />
 
+            <!-- Delete: Teks Merah BPS, Background Merah Muda -->
             <TextView
                 android:id="@+id/btnDeleteUser"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_marginStart="4dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"
+                android:background="#FFEBEE"
                 android:gravity="center"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"

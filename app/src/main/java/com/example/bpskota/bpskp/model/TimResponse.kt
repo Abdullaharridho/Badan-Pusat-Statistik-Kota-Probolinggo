@@ -127,3 +127,24 @@ data class TambahAnggotaRequest(
     @SerializedName("pegawai_id")
     val pegawaiId: Int
 )
+data class PegawaiTersediaResponse(
+    @SerializedName("success")
+    val success: Boolean,
+
+    @SerializedName("message")
+    val message: String? = null,
+
+    @SerializedName("data")
+    val data: List<PegawaiTersedia> = emptyList()
+)
+
+data class PegawaiTersedia(
+    @SerializedName("id")
+    val id: Int,
+
+    @SerializedName("name")
+    val nama: String,
+
+    @SerializedName("role")
+    val role: String
+)

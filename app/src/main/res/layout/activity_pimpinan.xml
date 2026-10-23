@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F6F2EE">
+
+    <!-- HEADER PIMPINAN -->
+    <LinearLayout
+        android:id="@+id/pimpinanHeader"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="14dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Dashboard Pimpinan"
+                android:textColor="#292524"
+                android:textSize="21sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnPimpinanMenu"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Menu akun"
+            android:padding="11dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_menu1"
+            app:tint="#000000" />
+
+    </LinearLayout>
+
+    <!-- KONTEN UTAMA -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/pimpinanViewPager"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        app:layout_constraintTop_toBottomOf="@id/pimpinanHeader"
+        app:layout_constraintBottom_toTopOf="@id/bottomPimpinanActivity"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- BOTTOM NAVIGATION -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/bottomPimpinanActivity"
+        android:layout_width="0dp"
+        android:layout_height="78dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="12dp"
+        app:cardBackgroundColor="#F2FFFFFF"
+        app:cardCornerRadius="27dp"
+        app:cardElevation="5dp"
+        app:cardUseCompatPadding="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <FrameLayout
+            android:id="@+id/navPimpinanContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <!-- KURVA NAVIGASI -->
+            <com.example.bpskota.BottomNavCurveView
+                android:id="@+id/bottomNavCurvePimpinan"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <!-- ITEM NAVIGASI -->
+            <LinearLayout
+                android:id="@+id/navPimpinanItems"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp">
+
+                <!-- 1. KEGIATAN -->
+                <LinearLayout
+                    android:id="@+id/navPimpinanKegiatan"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="23dp"
+                        android:layout_height="23dp"
+                        android:contentDescription="Kegiatan"
+                        android:src="@drawable/ic_kalender"
+                        app:tint="#78716C" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:singleLine="true"
+                        android:text="Kegiatan"
+                        android:textColor="#78716C"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <!-- 2. PETA -->
+                <LinearLayout
+                    android:id="@+id/navPimpinanPeta"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="23dp"
+                        android:layout_height="23dp"
+                        android:contentDescription="Peta Kode Rumah"
+                        android:src="@drawable/ic_master_wilayah"
+                        app:tint="#78716C" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:singleLine="true"
+                        android:text="Peta"
+                        android:textColor="#78716C"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <!-- 3. BERANDA: TENGAH -->
+                <LinearLayout
+                    android:id="@+id/navPimpinanBeranda"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="23dp"
+                        android:layout_height="23dp"
+                        android:contentDescription="Beranda"
+                        android:src="@drawable/ic_home"
+                        app:tint="#78716C" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:singleLine="true"
+                        android:text="Beranda"
+                        android:textColor="#78716C"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <!-- 4. LAINNYA: KANAN SEBELUM PROFIL -->
+                <LinearLayout
+                    android:id="@+id/navPimpinanLainnya"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="23dp"
+                        android:layout_height="23dp"
+                        android:contentDescription="Lainnya"
+                        android:src="@drawable/ic_lainnya"
+                        app:tint="#78716C" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:singleLine="true"
+                        android:text="Lainnya"
+                        android:textColor="#78716C"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <!-- 5. PROFIL: PALING KANAN -->
+                <LinearLayout
+                    android:id="@+id/navPimpinanProfil"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="23dp"
+                        android:layout_height="23dp"
+                        android:contentDescription="Profil"
+                        android:src="@drawable/ic_account"
+                        app:tint="#78716C" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:singleLine="true"
+                        android:text="Profil"
+                        android:textColor="#78716C"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </FrameLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

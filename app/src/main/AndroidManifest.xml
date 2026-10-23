@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
         android:name=".tracking.BpsKotaApplication"
@@ -17,6 +19,33 @@
         android:theme="@style/Theme.Bpskota"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+        <activity
+            android:name=".uipimpinan.PimpinanDataTimActivity"
+            android:exported="false" />
+        <activity
+            android:name=".uipimpinan.PimpinanPenugasanActivity"
+            android:exported="false" />
+        <activity
+            android:name=".uipimpinan.PimpinanSuratMasukActivity"
+            android:exported="false" />
+        <activity
+            android:name=".uipimpinan.PimpinanActivity"
+            android:exported="false" />
+        <activity
+            android:name=".uioperator.OperatorActivity"
+            android:exported="false" />
+        <activity
+            android:name=".uipegawai.KegiatanHarianActivity"
+            android:exported="false" />
+        <activity
+            android:name=".uipegawai.KegiatanDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".uipegawai.PegawaiActivity"
+            android:exported="false" />
+        <activity
+            android:name=".uiketuatim.KetuaTimActivity"
+            android:exported="false" />
         <activity
             android:name=".uisuperadmin.ManagementTimActivity"
             android:exported="false" />

@@ -382,50 +382,21 @@ class SuperadminUserManagementFragment : Fragment() {
     // ROLE YANG TERSEDIA
     // =========================================================
 
+
     private fun getAvailableRoles(
         editingUser: UserManagementData?
     ): List<String> {
 
-        val roles = mutableListOf<String>()
+        // Role yang tersedia untuk penambahan pengguna baru.
+        val roles = mutableListOf(
+            "pegawai",
+            "ketua_tim",
+            "operator"
+        )
 
-        // USER SELALU TERSEDIA
-        roles.add("user")
-
-        // Cek apakah sudah ada pimpinan
-        val pimpinanExists = users.any { existingUser ->
-
-            existingUser.role?.equals(
-                "pimpinan",
-                ignoreCase = true
-            ) == true &&
-                    existingUser.id != editingUser?.id
-        }
-
-        if (!pimpinanExists) {
-            roles.add("pimpinan")
-        }
-
-        // Cek apakah sudah ada super admin
-        val superAdminExists = users.any { existingUser ->
-
-            existingUser.role?.equals(
-                "super_admin",
-                ignoreCase = true
-            ) == true &&
-                    existingUser.id != editingUser?.id
-        }
-
-        if (!superAdminExists) {
-            roles.add("super_admin")
-        }
-
-        // -----------------------------------------------------
-        // PENTING:
-        // Role user yang sedang diedit harus tetap tersedia.
-        // -----------------------------------------------------
-
-        val currentRole =
-            editingUser?.role?.lowercase()
+        // Saat edit, pertahankan role akun yang sedang diedit
+        // agar role lama tidak hilang dari pilihan.
+        val currentRole = editingUser?.role?.lowercase()
 
         if (
             !currentRole.isNullOrBlank() &&
@@ -756,23 +727,15 @@ class SuperadminUserManagementFragment : Fragment() {
     // FORMAT ROLE
     // =========================================================
 
-    private fun formatRole(
-        role: String?
-    ): String {
 
+    private fun formatRole(role: String?): String {
         return when (role?.lowercase()) {
-
-            "super_admin" ->
-                "SUPER ADMIN"
-
-            "pimpinan" ->
-                "PIMPINAN"
-
-            "user" ->
-                "USER"
-
-            else ->
-                role?.uppercase() ?: "-"
+            "super_admin" -> "SUPER ADMIN"
+            "pimpinan" -> "PIMPINAN"
+            "ketua_tim" -> "KETUA TIM"
+            "pegawai" -> "PEGAWAI"
+            "operator" -> "OPERATOR"
+            else -> role?.uppercase() ?: "-"
         }
     }
 

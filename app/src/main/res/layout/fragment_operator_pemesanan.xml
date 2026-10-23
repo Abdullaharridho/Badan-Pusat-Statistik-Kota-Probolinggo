@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F6F2EE"
+    android:paddingStart="16dp"
+    android:paddingTop="16dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="8dp">
+
+    <!-- HEADER -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pemesanan Ruangan"
+            android:textColor="#1F2937"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="14dp"
+            android:text="Kelola jadwal penggunaan ruangan kantor"
+            android:textColor="#6B7280"
+            android:textSize="13sp" />
+
+    </LinearLayout>
+
+    <!-- TOMBOL TAMBAH -->
+    <Button
+        android:id="@+id/btnTambahPemesananRuangan"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:backgroundTint="#F97316"
+        android:text="+ Tambah Pemesanan"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:cornerRadius="12dp" />
+
+    <!-- PENCARIAN -->
+    <EditText
+        android:id="@+id/etCariPemesananRuangan"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="14dp"
+        android:backgroundTint="#D1D5DB"
+        android:drawableStart="@android:drawable/ic_menu_search"
+        android:drawablePadding="10dp"
+        android:hint="Cari kegiatan, pemesan, atau ruangan..."
+        android:inputType="text"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:singleLine="true"
+        android:textColor="#1F2937"
+        android:textColorHint="#9CA3AF"
+        android:textSize="13sp" />
+
+    <!-- FILTER TANGGAL DAN RESET -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnFilterTanggalPemesanan"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:backgroundTint="#FFFFFF"
+            android:text="Pilih tanggal"
+            android:textAllCaps="false"
+            android:textColor="#F97316"
+            android:textSize="13sp"
+            app:cornerRadius="10dp"
+            app:strokeColor="#E5E7EB"
+            app:strokeWidth="1dp" />
+
+        <Button
+            android:id="@+id/btnResetFilterPemesanan"
+            android:layout_width="84dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="#FFFFFF"
+            android:text="Reset"
+            android:textAllCaps="false"
+            android:textColor="#6B7280"
+            android:textSize="13sp"
+            app:cornerRadius="10dp"
+            app:strokeColor="#E5E7EB"
+            app:strokeWidth="1dp" />
+
+    </LinearLayout>
+
+    <!-- JUMLAH DATA -->
+    <TextView
+        android:id="@+id/tvTotalPemesananRuangan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:layout_marginBottom="6dp"
+        android:text="Daftar pemesanan"
+        android:textColor="#6B7280"
+        android:textSize="13sp" />
+
+    <!-- LOADING -->
+    <ProgressBar
+        android:id="@+id/progressPemesananRuangan"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_gravity="center_horizontal"
+        android:indeterminateTint="#F97316"
+        android:visibility="gone" />
+
+    <!-- KONDISI KOSONG -->
+    <TextView
+        android:id="@+id/tvKosongPemesananRuangan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="24dp"
+        android:text="Belum ada data pemesanan ruangan."
+        android:textColor="#6B7280"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <!-- DAFTAR PEMESANAN -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvPemesananRuangan"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="4dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingTop="4dp"
+        android:paddingBottom="12dp" />
+
+</LinearLayout>

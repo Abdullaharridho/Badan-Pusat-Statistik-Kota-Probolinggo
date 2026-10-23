@@ -76,6 +76,8 @@ class HomeActivity : AppCompatActivity() {
         setupViewPager()
 
         val startPage = intent.getIntExtra("START_PAGE", 4)
+            .coerceIn(0, 6)
+
         viewPager.setCurrentItem(startPage, false)
 
         setupBottomNavigation()
@@ -568,18 +570,6 @@ class HomeActivity : AppCompatActivity() {
             R.id.navInfografik
         ).setOnClickListener {
 
-            val target =
-                findViewById<View>(
-                    R.id.navInfografik
-                )
-
-            animateActiveNavigation(target)
-
-            positionBottomNavCurve(
-                target,
-                true
-            )
-
             showInformasiPanel()
         }
 
@@ -612,43 +602,61 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    private fun animateActiveNavigation(
-        targetView: View
-    ) {
+    private fun animateActiveNavigation(targetView: View) {
 
-        val navigationItems =
-            listOf(
-                R.id.navInfografik,
-                R.id.navData,
-                R.id.navHome,
-                R.id.navMore,
-                R.id.navAkun
-            )
+        val navigationItems = listOf(
+            R.id.navInfografik,
+            R.id.navData,
+            R.id.navHome,
+            R.id.navMore,
+            R.id.navAkun
+        )
 
         navigationItems.forEach { id ->
+            val item = findViewById<View>(id)
 
-            val item =
-                findViewById<View>(id)
+            item.animate().cancel()
 
             item.animate()
                 .scaleX(1f)
                 .scaleY(1f)
+                .translationX(0f)
                 .translationY(0f)
-                .setDuration(250)
-                .setInterpolator(
-                    DecelerateInterpolator()
-                )
+                .alpha(1f)
+                .setDuration(150)
                 .start()
         }
 
+        // Efek glitch singkat pada item aktif.
+        targetView.animate().cancel()
+
+        targetView.alpha = 1f
+        targetView.translationX = 0f
+
         targetView.animate()
-            .scaleX(1.10f)
-            .scaleY(1.10f)
-            .translationY(-12f)
-            .setDuration(350)
-            .setInterpolator(
-                OvershootInterpolator(1.5f)
-            )
+            .translationX(3f)
+            .alpha(0.65f)
+            .setDuration(45)
+            .withEndAction {
+                targetView.animate()
+                    .translationX(-2f)
+                    .alpha(0.85f)
+                    .setDuration(45)
+                    .withEndAction {
+                        targetView.animate()
+                            .translationX(0f)
+                            .alpha(1f)
+                            .scaleX(1.06f)
+                            .scaleY(1.06f)
+                            .translationY(-8f)
+                            .setDuration(220)
+                            .setInterpolator(
+                                OvershootInterpolator(1.2f)
+                            )
+                            .start()
+                    }
+                    .start()
+            }
             .start()
     }
 
@@ -1102,22 +1110,18 @@ class HomeActivity : AppCompatActivity() {
                 OvershootInterpolator(1.1f)
             )
             .withEndAction {
-
                 if (::bottomNavCurve.isInitialized) {
 
-                    val home =
-                        findViewById<View>(
-                            R.id.navHome
-                        )
+                    val activeView = when (viewPager.currentItem) {
+                        in 0..2 -> findViewById<View>(R.id.navInfografik)
+                        3 -> findViewById<View>(R.id.navData)
+                        4 -> findViewById<View>(R.id.navHome)
+                        5 -> findViewById<View>(R.id.navMore)
+                        6 -> findViewById<View>(R.id.navAkun)
+                        else -> findViewById<View>(R.id.navHome)
+                    }
 
-                    positionBottomNavCurve(
-                        home,
-                        false
-                    )
-
-                    animateActiveNavigation(
-                        home
-                    )
+                    positionBottomNavCurve(activeView, false)
                 }
             }
             .start()
