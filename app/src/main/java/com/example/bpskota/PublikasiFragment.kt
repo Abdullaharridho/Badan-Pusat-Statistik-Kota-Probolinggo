@@ -1,3 +1,4 @@
+
 package com.example.bpskota
 
 import android.app.Dialog
@@ -6,13 +7,11 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -24,10 +23,12 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.widget.NestedScrollView
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.airbnb.lottie.LottieAnimationView
 import com.airbnb.lottie.LottieDrawable
 import com.bumptech.glide.Glide
@@ -42,43 +43,49 @@ import com.example.bpskota.bps.repository.BpsRepository
 class PublikasiFragment : Fragment(), RefreshableFragment {
 
     companion object {
-        private const val TAG = "PublikasiFragment"
-
-        // Posisi Publikasi pada ViewPager2.
-        private const val PAGE_INDEX = 3
+        private const val PAGE_INDEX = 2
+        private const val MAX_PARALLEL_REQUESTS = 3
     }
 
     private val API_KEY = "008edaaae5d450b1913b31a2cef618c3"
     private val DOMAIN = "3574"
 
+    // =========================================================
+    // DATA
+    // =========================================================
+
     private val semuaPublikasi = mutableListOf<Publikasi>()
 
     private var tahunTerpilih: String? = null
-    private var kataKunci: String = ""
+    private var kataKunci = ""
 
-    private lateinit var publikasiContainer: LinearLayout
+    private var sedangMemuatSemua = false
+    private var sudahMemuat = false
+    private var sedangRefresh = false
+
+    private val repository = BpsRepository()
+
+    // =========================================================
+    // VIEW
+    // =========================================================
+
+    private lateinit var publikasiContainer: RecyclerView
     private lateinit var tvJumlahPublikasi: TextView
     private lateinit var etSearchPublikasi: EditText
     private lateinit var btnFilterPublikasi: View
     private lateinit var publikasiLoading: LottieAnimationView
-    private lateinit var cardInfoPublikasi: View
 
-    private val repository = BpsRepository()
+    private lateinit var publikasiAdapter: PublikasiAdapter
 
-    // Container scroll vertikal pada layout Publikasi.
-    private var verticalScrollView: View? = null
-
-    // Menandai bahwa proses loading sedang berasal dari pull-to-refresh.
-    private var sedangRefresh = false
+    // =========================================================
+    // CREATE VIEW
+    // =========================================================
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
-        Log.d(TAG, "onCreateView")
-
         return inflater.inflate(
             R.layout.fragment_publikasi,
             container,
@@ -86,17 +93,15 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
         )
     }
 
+    // =========================================================
+    // VIEW CREATED
+    // =========================================================
+
     override fun onViewCreated(
         view: View,
         savedInstanceState: Bundle?
     ) {
-
-        super.onViewCreated(
-            view,
-            savedInstanceState
-        )
-
-        Log.d(TAG, "onViewCreated")
+        super.onViewCreated(view, savedInstanceState)
 
         publikasiContainer =
             view.findViewById(R.id.publikasiContainer)
@@ -113,115 +118,117 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
         publikasiLoading =
             view.findViewById(R.id.PublikasiLoading)
 
-        cardInfoPublikasi =
-            view.findViewById(R.id.cardInfoPublikasi)
-
-        // Cari container yang digunakan untuk scroll vertikal.
-        verticalScrollView =
-            findVerticalScrollContainer(view)
-
+        setupRecyclerView()
         setupSwipeRefreshState()
-
-        mulaiLoading()
-
         setupSearch()
         setupFilter()
+
+        when {
+            sedangMemuatSemua && semuaPublikasi.isEmpty() -> {
+                mulaiLoading()
+            }
+
+            sudahMemuat -> {
+                selesaiLoading()
+                tampilkanHasil()
+            }
+
+            semuaPublikasi.isNotEmpty() -> {
+                selesaiLoading()
+                tampilkanHasil()
+            }
+
+            sedangMemuatSemua -> {
+                mulaiLoading()
+            }
+        }
+    }
+
+    // =========================================================
+    // SETUP RECYCLERVIEW
+    // =========================================================
+
+    private fun setupRecyclerView() {
+
+        publikasiAdapter = PublikasiAdapter { publikasi ->
+            tampilkanPopupPublikasi(publikasi)
+        }
+
+        publikasiContainer.apply {
+
+            layoutManager = LinearLayoutManager(requireContext())
+
+            adapter = publikasiAdapter
+
+            setHasFixedSize(false)
+
+            itemAnimator = null
+
+            overScrollMode = View.OVER_SCROLL_NEVER
+
+            addOnScrollListener(
+                object : RecyclerView.OnScrollListener() {
+
+                    override fun onScrolled(
+                        recyclerView: RecyclerView,
+                        dx: Int,
+                        dy: Int
+                    ) {
+                        super.onScrolled(recyclerView, dx, dy)
+                        updateRefreshState()
+                    }
+                }
+            )
+        }
+    }
+
+    // =========================================================
+    // LOAD KETIKA MENU PUBLIKASI AKTIF
+    // =========================================================
+
+    override fun onResume() {
+        super.onResume()
+
+        val homeActivity = activity as? HomeActivity ?: return
+
+        if (homeActivity.currentPage != PAGE_INDEX) return
+
+        if (sudahMemuat || sedangMemuatSemua) return
+
+        if (semuaPublikasi.isEmpty()) {
+            mulaiLoading()
+        }
 
         loadSemuaPublikasi()
     }
 
     // =========================================================
-    // CARI CONTAINER SCROLL
-    // =========================================================
-
-    private fun findVerticalScrollContainer(
-        root: View
-    ): View? {
-
-        if (root is android.widget.ScrollView) {
-            return root
-        }
-
-        if (root is NestedScrollView) {
-            return root
-        }
-
-        if (root is RecyclerView) {
-            return root
-        }
-
-        if (root is ViewGroup) {
-
-            for (i in 0 until root.childCount) {
-
-                val child =
-                    root.getChildAt(i)
-
-                val result =
-                    findVerticalScrollContainer(child)
-
-                if (result != null) {
-                    return result
-                }
-            }
-        }
-
-        return null
-    }
-
-    // =========================================================
-    // SETUP PULL TO REFRESH
+    // SETUP SWIPE REFRESH
     // =========================================================
 
     private fun setupSwipeRefreshState() {
 
-        val scrollView =
-            verticalScrollView ?: return
-
-        scrollView.setOnScrollChangeListener {
-                _,
-                _,
-                _,
-                _,
-                _ ->
-
-            updateRefreshState()
-        }
-
-        scrollView.post {
+        publikasiContainer.post {
             updateRefreshState()
         }
     }
 
     // =========================================================
-    // UPDATE STATUS REFRESH
+    // UPDATE STATUS SWIPE REFRESH
     // =========================================================
 
     override fun updateRefreshState() {
 
-        if (!isAdded) return
+        if (!isAdded || !::publikasiContainer.isInitialized) return
 
-        val homeActivity =
-            activity as? HomeActivity
-                ?: return
+        val homeActivity = activity as? HomeActivity ?: return
 
-        // Hanya aktif pada halaman Publikasi.
-        if (homeActivity.currentPage != PAGE_INDEX) {
-            return
-        }
+        if (homeActivity.currentPage != PAGE_INDEX) return
 
-        val scrollView =
-            verticalScrollView
-                ?: return
-
-        // Pull-to-refresh hanya aktif ketika posisi
-        // scroll sudah berada paling atas.
         val isAtTop =
-            !scrollView.canScrollVertically(-1)
+            !publikasiContainer.canScrollVertically(-1)
 
-        homeActivity.setSwipeRefreshEnabled(
-            isAtTop
-        )
+        homeActivity.setSwipeRefreshEnabled(isAtTop)
     }
 
     // =========================================================
@@ -232,30 +239,16 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
 
         if (!isAdded) return
 
-        val homeActivity =
-            activity as? HomeActivity
-                ?: return
+        val homeActivity = activity as? HomeActivity ?: return
 
-        // Pastikan Publikasi sedang aktif.
-        if (homeActivity.currentPage != PAGE_INDEX) {
+        if (homeActivity.currentPage != PAGE_INDEX) return
+
+        if (publikasiContainer.canScrollVertically(-1)) return
+
+        if (sedangMemuatSemua) {
+            homeActivity.finishSwipeRefresh()
             return
         }
-
-        val scrollView =
-            verticalScrollView
-
-        // Jangan refresh jika masih berada di tengah/bawah.
-        if (
-            scrollView != null &&
-            scrollView.canScrollVertically(-1)
-        ) {
-            return
-        }
-
-        Log.d(
-            TAG,
-            "Pull-to-refresh Publikasi dimulai"
-        )
 
         sedangRefresh = true
 
@@ -263,59 +256,43 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
     }
 
     // =========================================================
-    // LOADING
+    // MULAI LOADING
     // =========================================================
 
     private fun mulaiLoading() {
 
-        Log.d(
-            TAG,
-            "Memulai loading publikasi"
-        )
+        if (!isAdded || view == null) return
 
-        publikasiLoading.visibility =
-            View.VISIBLE
+        publikasiLoading.visibility = View.VISIBLE
 
-        cardInfoPublikasi.visibility =
-            View.GONE
+        publikasiLoading.setAnimation("Loading_Animation.json")
 
-        publikasiLoading.setAnimation(
-            "Loading_Animation.json"
-        )
-
-        publikasiLoading.repeatCount =
-            LottieDrawable.INFINITE
+        publikasiLoading.repeatCount = LottieDrawable.INFINITE
 
         publikasiLoading.playAnimation()
 
-        publikasiContainer.visibility =
-            View.GONE
+        publikasiContainer.visibility = View.GONE
 
-        tvJumlahPublikasi.text =
-            "Memuat..."
-    }
-
-    private fun selesaiLoading() {
-
-        Log.d(
-            TAG,
-            "Loading publikasi selesai. Total data = ${semuaPublikasi.size}"
-        )
-
-        publikasiLoading.cancelAnimation()
-
-        publikasiLoading.visibility =
-            View.GONE
-
-        cardInfoPublikasi.visibility =
-            View.VISIBLE
-
-        publikasiContainer.visibility =
-            View.VISIBLE
+        tvJumlahPublikasi.text = "Memuat..."
     }
 
     // =========================================================
-    // SEARCH
+    // SELESAI LOADING
+    // =========================================================
+
+    private fun selesaiLoading() {
+
+        if (!isAdded || view == null) return
+
+        publikasiLoading.cancelAnimation()
+
+        publikasiLoading.visibility = View.GONE
+
+        publikasiContainer.visibility = View.VISIBLE
+    }
+
+    // =========================================================
+    // SEARCH LOKAL
     // =========================================================
 
     private fun setupSearch() {
@@ -328,8 +305,7 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
                     start: Int,
                     count: Int,
                     after: Int
-                ) {
-                }
+                ) {}
 
                 override fun onTextChanged(
                     s: CharSequence?,
@@ -338,21 +314,12 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
                     count: Int
                 ) {
 
-                    kataKunci =
-                        s?.toString()?.trim() ?: ""
-
-                    Log.d(
-                        TAG,
-                        "Pencarian berubah: '$kataKunci'"
-                    )
+                    kataKunci = s?.toString()?.trim() ?: ""
 
                     tampilkanHasil()
                 }
 
-                override fun afterTextChanged(
-                    s: Editable?
-                ) {
-                }
+                override fun afterTextChanged(s: Editable?) {}
             }
         )
     }
@@ -364,12 +331,6 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
     private fun setupFilter() {
 
         btnFilterPublikasi.setOnClickListener {
-
-            Log.d(
-                TAG,
-                "Tombol filter tahun diklik"
-            )
-
             tampilkanDialogTahun()
         }
     }
@@ -380,44 +341,20 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
 
     private fun loadSemuaPublikasi() {
 
-        Log.d(
-            TAG,
-            "========================================"
-        )
+        if (sedangMemuatSemua) return
 
-        Log.d(
-            TAG,
-            "Mulai mengambil semua publikasi"
-        )
+        sedangMemuatSemua = true
 
-        Log.d(
-            TAG,
-            "DOMAIN = $DOMAIN"
-        )
+        // Saat pertama membuka halaman, data ditampilkan
+        // secara bertahap.
+        //
+        // Saat refresh, data lama tetap ditampilkan
+        // sampai data baru selesai dimuat.
 
-        // Saat refresh, tampilkan loading internal
-        // seperti proses loading biasa.
-        if (sedangRefresh) {
+        val tampilkanBertahap = semuaPublikasi.isEmpty()
 
-            publikasiLoading.visibility =
-                View.VISIBLE
-
-            publikasiLoading.setAnimation(
-                "Loading_Animation.json"
-            )
-
-            publikasiLoading.repeatCount =
-                LottieDrawable.INFINITE
-
-            publikasiLoading.playAnimation()
-        }
-
-        semuaPublikasi.clear()
-
-        Log.d(
-            TAG,
-            "Meminta halaman 1..."
-        )
+        val dataPerHalaman =
+            mutableMapOf<Int, List<Publikasi>>()
 
         repository.getPublikasi(
             page = 1,
@@ -426,324 +363,215 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
         ) { response ->
 
             if (!isAdded) {
-
-                Log.d(
-                    TAG,
-                    "Fragment sudah tidak terpasang"
-                )
-
+                sedangMemuatSemua = false
                 return@getPublikasi
             }
 
             if (response == null) {
-
-                Log.e(
-                    TAG,
-                    "Response halaman 1 = NULL"
-                )
-
                 gagalLoadPublikasi()
                 return@getPublikasi
             }
 
-            Log.d(
-                TAG,
-                "Response halaman 1 diterima"
-            )
+            val pagination = response.getPagination()
 
-            Log.d(
-                TAG,
-                "Status = ${response.status}"
-            )
+            val dataHalamanPertama = response.getPublikasi()
 
-            Log.d(
-                TAG,
-                "Data availability = ${response.dataAvailability}"
-            )
-
-            val pagination =
-                response.getPagination()
-
-            Log.d(
-                TAG,
-                "Pagination = $pagination"
-            )
-
-            val publikasiHalamanPertama =
-                response.getPublikasi()
-
-            Log.d(
-                TAG,
-                "Jumlah publikasi halaman 1 = ${publikasiHalamanPertama.size}"
-            )
-
-            publikasiHalamanPertama.forEachIndexed {
-                    index,
-                    publikasi ->
-
-                Log.d(
-                    TAG,
-                    "PAGE 1 [$index] " +
-                            "pub_id=${publikasi.pub_id}, " +
-                            "title=${publikasi.title}, " +
-                            "rl_date=${publikasi.rl_date}, " +
-                            "cover=${publikasi.cover}"
-                )
-            }
-
-            semuaPublikasi.addAll(
-                publikasiHalamanPertama
-            )
+            dataPerHalaman[1] = dataHalamanPertama
 
             val totalPage =
-                pagination?.pages ?: 1
+                (pagination?.pages ?: 1).coerceAtLeast(1)
 
-            Log.d(
-                TAG,
-                "Total halaman = $totalPage"
-            )
-
-            Log.d(
-                TAG,
-                "Total data sementara = ${semuaPublikasi.size}"
-            )
+            if (tampilkanBertahap) {
+                perbaruiDataPublikasi(dataPerHalaman)
+            }
 
             if (totalPage <= 1) {
 
-                Log.d(
-                    TAG,
-                    "Hanya ada 1 halaman"
-                )
-
-                selesaiLoadSemuaPublikasi()
+                selesaiLoadSemuaPublikasi(dataPerHalaman)
 
             } else {
 
-                Log.d(
-                    TAG,
-                    "Melanjutkan ke halaman 2 sampai $totalPage"
-                )
-
                 loadHalamanBerikutnya(
                     halaman = 2,
-                    totalPage = totalPage
+                    totalPage = totalPage,
+                    dataPerHalaman = dataPerHalaman,
+                    tampilkanBertahap = tampilkanBertahap
                 )
             }
         }
     }
 
     // =========================================================
-    // LOAD HALAMAN BERIKUTNYA
+    // LOAD HALAMAN BERIKUTNYA SECARA PARALEL
     // =========================================================
 
     private fun loadHalamanBerikutnya(
         halaman: Int,
-        totalPage: Int
+        totalPage: Int,
+        dataPerHalaman: MutableMap<Int, List<Publikasi>>,
+        tampilkanBertahap: Boolean
     ) {
 
         if (halaman > totalPage) {
-
-            Log.d(
-                TAG,
-                "Semua halaman sudah selesai dimuat"
-            )
-
-            selesaiLoadSemuaPublikasi()
+            selesaiLoadSemuaPublikasi(dataPerHalaman)
             return
         }
 
-        Log.d(
-            TAG,
-            "Meminta halaman $halaman dari $totalPage..."
+        val halamanTerakhir = minOf(
+            halaman + MAX_PARALLEL_REQUESTS - 1,
+            totalPage
         )
 
-        repository.getPublikasi(
-            page = halaman,
-            domain = DOMAIN,
-            apiKey = API_KEY
-        ) { response ->
+        val jumlahRequest = halamanTerakhir - halaman + 1
 
-            if (!isAdded) {
+        var jumlahSelesai = 0
 
-                Log.d(
-                    TAG,
-                    "Fragment sudah tidak terpasang saat halaman $halaman"
-                )
+        var adaKegagalan = false
 
-                return@getPublikasi
-            }
+        for (page in halaman..halamanTerakhir) {
 
-            if (response == null) {
+            repository.getPublikasi(
+                page = page,
+                domain = DOMAIN,
+                apiKey = API_KEY
+            ) { response ->
 
-                Log.e(
-                    TAG,
-                    "Response halaman $halaman = NULL"
-                )
-
-            } else {
-
-                Log.d(
-                    TAG,
-                    "Response halaman $halaman diterima"
-                )
-
-                Log.d(
-                    TAG,
-                    "Status halaman $halaman = ${response.status}"
-                )
-
-                val publikasi =
-                    response.getPublikasi()
-
-                Log.d(
-                    TAG,
-                    "Jumlah publikasi halaman $halaman = ${publikasi.size}"
-                )
-
-                publikasi.forEachIndexed {
-                        index,
-                        item ->
-
-                    Log.d(
-                        TAG,
-                        "PAGE $halaman [$index] " +
-                                "pub_id=${item.pub_id}, " +
-                                "title=${item.title}, " +
-                                "rl_date=${item.rl_date}"
-                    )
+                if (!isAdded) {
+                    sedangMemuatSemua = false
+                    return@getPublikasi
                 }
 
-                semuaPublikasi.addAll(
-                    publikasi
-                )
+                if (response == null) {
+                    adaKegagalan = true
+                } else {
+                    dataPerHalaman[page] = response.getPublikasi()
+                }
 
-                Log.d(
-                    TAG,
-                    "Total data setelah halaman $halaman = ${semuaPublikasi.size}"
-                )
+                jumlahSelesai++
+
+                if (jumlahSelesai == jumlahRequest) {
+
+                    if (adaKegagalan) {
+                        gagalLoadPublikasi()
+                        return@getPublikasi
+                    }
+
+                    if (tampilkanBertahap) {
+                        perbaruiDataPublikasi(dataPerHalaman)
+                    }
+
+                    loadHalamanBerikutnya(
+                        halaman = halamanTerakhir + 1,
+                        totalPage = totalPage,
+                        dataPerHalaman = dataPerHalaman,
+                        tampilkanBertahap = tampilkanBertahap
+                    )
+                }
             }
-
-            loadHalamanBerikutnya(
-                halaman = halaman + 1,
-                totalPage = totalPage
-            )
         }
     }
 
     // =========================================================
-    // SELESAI LOAD SEMUA DATA
+    // IDENTITAS PUBLIKASI
     // =========================================================
 
-    private fun selesaiLoadSemuaPublikasi() {
+    private fun identitasPublikasi(
+        publikasi: Publikasi
+    ): String {
+
+        return publikasi.pub_id
+            ?.takeIf { it.isNotBlank() }
+            ?: "${publikasi.title}_${publikasi.sch_date}_${publikasi.rl_date}"
+    }
+
+    // =========================================================
+    // GABUNGKAN DATA BERDASARKAN NOMOR HALAMAN
+    // =========================================================
+
+    private fun perbaruiDataPublikasi(
+        dataPerHalaman: Map<Int, List<Publikasi>>
+    ) {
+        if (!isAdded) return
+
+        // Simpan data sementara, tetapi jangan tampilkan dahulu.
+        // Loading tetap berjalan sampai seluruh halaman selesai.
+    }
+
+    // =========================================================
+    // SEMUA HALAMAN SELESAI
+    // =========================================================
+
+    private fun selesaiLoadSemuaPublikasi(
+        dataPerHalaman: Map<Int, List<Publikasi>>
+    ) {
+
+        sedangMemuatSemua = false
 
         if (!isAdded) return
 
-        Log.d(
-            TAG,
-            "========================================"
-        )
-
-        Log.d(
-            TAG,
-            "Selesai mengambil semua halaman"
-        )
-
-        Log.d(
-            TAG,
-            "Total data sebelum distinct = ${semuaPublikasi.size}"
-        )
-
-        val publikasiUnik =
-            semuaPublikasi.distinctBy {
-                it.pub_id
-            }
-
-        Log.d(
-            TAG,
-            "Total data setelah distinct = ${publikasiUnik.size}"
-        )
+        val dataLengkap = dataPerHalaman
+            .toSortedMap()
+            .values
+            .flatten()
+            .distinctBy { identitasPublikasi(it) }
 
         semuaPublikasi.clear()
+        semuaPublikasi.addAll(dataLengkap)
 
-        semuaPublikasi.addAll(
-            publikasiUnik
-        )
+        sudahMemuat = true
 
-        semuaPublikasi.forEachIndexed {
-                index,
-                publikasi ->
+        if (view != null) {
 
-            Log.d(
-                TAG,
-                "DATA FINAL [$index] " +
-                        "pub_id=${publikasi.pub_id}, " +
-                        "title=${publikasi.title}, " +
-                        "tahun=${ambilTahun(publikasi)}, " +
-                        "cover=${publikasi.cover}"
-            )
+            // Loading baru dihilangkan setelah semua halaman selesai.
+            selesaiLoading()
+
+            // Tampilkan seluruh data.
+            tampilkanHasil()
+
+            publikasiContainer.post {
+                updateRefreshState()
+            }
         }
 
-        selesaiLoading()
-
-        tampilkanHasil()
-
-        // Matikan spinner SwipeRefresh setelah seluruh
-        // proses refresh selesai.
         if (sedangRefresh) {
-
             sedangRefresh = false
-
-            (activity as? HomeActivity)
-                ?.finishSwipeRefresh()
+            (activity as? HomeActivity)?.finishSwipeRefresh()
         }
-
-        // Evaluasi ulang apakah refresh masih boleh digunakan.
-        view?.post {
-            updateRefreshState()
-        }
-
-        Log.d(
-            TAG,
-            "========================================"
-        )
     }
 
     // =========================================================
-    // GAGAL LOAD
+    // GAGAL LOAD PUBLIKASI
     // =========================================================
 
     private fun gagalLoadPublikasi() {
 
+        sedangMemuatSemua = false
+
         if (!isAdded) return
 
-        Log.e(
-            TAG,
-            "Gagal memuat data publikasi"
-        )
+        if (view != null) {
 
-        publikasiLoading.cancelAnimation()
+            publikasiLoading.cancelAnimation()
+            publikasiLoading.visibility = View.GONE
 
-        publikasiLoading.visibility =
-            View.GONE
+            publikasiContainer.visibility = View.VISIBLE
 
-        publikasiContainer.visibility =
-            View.VISIBLE
+            if (semuaPublikasi.isEmpty()) {
+                publikasiAdapter.submitList(emptyList())
+                tvJumlahPublikasi.text = "Gagal memuat"
+            } else {
+                // Jika refresh gagal, data lama tetap ditampilkan.
+                tampilkanHasil()
+            }
 
-        publikasiContainer.removeAllViews()
-
-        tvJumlahPublikasi.text =
-            "Gagal memuat"
-
-        if (sedangRefresh) {
-
-            sedangRefresh = false
-
-            (activity as? HomeActivity)
-                ?.finishSwipeRefresh()
+            publikasiContainer.post {
+                updateRefreshState()
+            }
         }
 
-        view?.post {
-            updateRefreshState()
+        if (sedangRefresh) {
+            sedangRefresh = false
+            (activity as? HomeActivity)?.finishSwipeRefresh()
         }
 
         Toast.makeText(
@@ -753,74 +581,50 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
         ).show()
     }
 
-    // =========================================================
-    // TAMPILKAN HASIL
-    // =========================================================
-
     private fun tampilkanHasil() {
 
-        val hasil =
-            semuaPublikasi
-                .filter { publikasi ->
+        if (!isAdded || view == null) return
 
-                    val sesuaiTahun =
-                        tahunTerpilih == null ||
-                                ambilTahun(publikasi) ==
-                                tahunTerpilih
+        val hasil = semuaPublikasi.filter { publikasi ->
 
-                    val sesuaiPencarian =
-                        kataKunci.isEmpty() ||
-                                publikasi.title
-                                    ?.contains(
-                                        kataKunci,
-                                        ignoreCase = true
-                                    ) == true
+            val sesuaiTahun =
+                tahunTerpilih == null ||
+                        ambilTahun(publikasi) == tahunTerpilih
 
-                    sesuaiTahun &&
-                            sesuaiPencarian
-                }
-                .distinctBy {
-                    it.pub_id
-                }
+            val sesuaiPencarian =
+                kataKunci.isEmpty() ||
+                        publikasi.title?.contains(
+                            kataKunci,
+                            ignoreCase = true
+                        ) == true
 
-        Log.d(
-            TAG,
-            "Filter hasil: " +
-                    "tahun=$tahunTerpilih, " +
-                    "keyword='$kataKunci', " +
-                    "hasil=${hasil.size}"
-        )
+            sesuaiTahun && sesuaiPencarian
+        }
 
-        publikasiContainer.removeAllViews()
+        publikasiAdapter.submitList(hasil)
 
         tvJumlahPublikasi.text =
-            "${hasil.size} publikasi"
+            if (hasil.isEmpty() && semuaPublikasi.isNotEmpty()) {
+                "0 publikasi • tidak ditemukan"
+            } else {
+                "${hasil.size} publikasi"
+            }
 
-        hasil.forEach { publikasi ->
-
-            tambahCardPublikasi(
-                publikasiContainer,
-                publikasi
-            )
-        }
+        publikasiContainer.visibility = View.VISIBLE
     }
 
     // =========================================================
-    // AMBIL TAHUN
+    // AMBIL TAHUN PUBLIKASI
     // =========================================================
 
     private fun ambilTahun(
         publikasi: Publikasi
     ): String? {
 
-        val tanggal =
-            publikasi.rl_date
-                ?: publikasi.sch_date
+        val tanggal = publikasi.rl_date ?: publikasi.sch_date
 
         return tanggal
-            ?.takeIf {
-                it.length >= 4
-            }
+            ?.takeIf { it.length >= 4 }
             ?.substring(0, 4)
     }
 
@@ -830,18 +634,10 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
 
     private fun tampilkanDialogTahun() {
 
-        val tahun =
-            semuaPublikasi
-                .mapNotNull {
-                    ambilTahun(it)
-                }
-                .distinct()
-                .sortedDescending()
-
-        Log.d(
-            TAG,
-            "Daftar tahun tersedia = $tahun"
-        )
+        val tahun = semuaPublikasi
+            .mapNotNull { ambilTahun(it) }
+            .distinct()
+            .sortedDescending()
 
         if (tahun.isEmpty()) {
 
@@ -854,28 +650,18 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
             return
         }
 
-        val pilihan =
-            mutableListOf("Semua Tahun")
+        val pilihan = mutableListOf("Semua Tahun")
 
         pilihan.addAll(tahun)
 
-        val posisiTerpilih =
-            if (tahunTerpilih == null) {
+        val posisiTerpilih = if (tahunTerpilih == null) {
+            0
+        } else {
+            pilihan.indexOf(tahunTerpilih)
+                .takeIf { it >= 0 } ?: 0
+        }
 
-                0
-
-            } else {
-
-                pilihan.indexOf(
-                    tahunTerpilih
-                ).takeIf {
-                    it >= 0
-                } ?: 0
-            }
-
-        androidx.appcompat.app.AlertDialog.Builder(
-            requireContext()
-        )
+        AlertDialog.Builder(requireContext())
             .setTitle("Filter Tahun")
             .setSingleChoiceItems(
                 pilihan.toTypedArray(),
@@ -883,16 +669,7 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
             ) { dialog, which ->
 
                 tahunTerpilih =
-                    if (which == 0) {
-                        null
-                    } else {
-                        pilihan[which]
-                    }
-
-                Log.d(
-                    TAG,
-                    "Tahun dipilih = $tahunTerpilih"
-                )
+                    if (which == 0) null else pilihan[which]
 
                 tampilkanHasil()
 
@@ -902,404 +679,166 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
     }
 
     // =========================================================
-    // CARD PUBLIKASI
-    // =========================================================
-
-    private fun tambahCardPublikasi(
-        container: LinearLayout,
-        publikasi: Publikasi
-    ) {
-
-        Log.d(
-            TAG,
-            "Membuat card publikasi: " +
-                    "pub_id=${publikasi.pub_id}, " +
-                    "title=${publikasi.title}"
-        )
-
-        val card =
-            LayoutInflater.from(
-                requireContext()
-            ).inflate(
-                R.layout.item_home_panjang,
-                container,
-                false
-            )
-
-        val image =
-            card.findViewById<ImageView>(
-                R.id.imgStatistik
-            )
-
-        val imageLoading =
-            card.findViewById<ProgressBar>(
-                R.id.imageLoading
-            )
-
-        val title =
-            card.findViewById<TextView>(
-                R.id.tvStatistikTitle
-            )
-
-        val description =
-            card.findViewById<TextView>(
-                R.id.tvStatistikDescription
-            )
-
-        title.text =
-            publikasi.title
-                ?: "Publikasi"
-
-        description.text =
-            ""
-
-        imageLoading.visibility =
-            View.VISIBLE
-
-        Log.d(
-            TAG,
-            "Load cover: pub_id=${publikasi.pub_id}, url=${publikasi.cover}"
-        )
-
-        Glide.with(this)
-            .load(publikasi.cover)
-            .placeholder(
-                R.drawable.ic_bpslogo
-            )
-            .diskCacheStrategy(
-                DiskCacheStrategy.ALL
-            )
-            .error(
-                R.drawable.ic_bpslogo
-            )
-            .listener(
-                object : RequestListener<Drawable> {
-
-                    override fun onLoadFailed(
-                        e: GlideException?,
-                        model: Any?,
-                        target: Target<Drawable>,
-                        isFirstResource: Boolean
-                    ): Boolean {
-
-                        Log.e(
-                            TAG,
-                            "Gagal load cover: " +
-                                    "pub_id=${publikasi.pub_id}, " +
-                                    "url=${publikasi.cover}",
-                            e
-                        )
-
-                        imageLoading.visibility =
-                            View.GONE
-
-                        return false
-                    }
-
-                    override fun onResourceReady(
-                        resource: Drawable,
-                        model: Any,
-                        target: Target<Drawable>,
-                        dataSource: DataSource,
-                        isFirstResource: Boolean
-                    ): Boolean {
-
-                        Log.d(
-                            TAG,
-                            "Cover berhasil dimuat: " +
-                                    "pub_id=${publikasi.pub_id}"
-                        )
-
-                        imageLoading.visibility =
-                            View.GONE
-
-                        return false
-                    }
-                }
-            )
-            .into(image)
-
-        card.setOnClickListener {
-
-            Log.d(
-                TAG,
-                "Card publikasi diklik: " +
-                        "pub_id=${publikasi.pub_id}"
-            )
-
-            tampilkanPopupPublikasi(
-                publikasi
-            )
-        }
-
-        container.addView(card)
-    }
-
-    // =========================================================
-    // POPUP DETAIL PUBLIKASI
+    // DETAIL PUBLIKASI
     // =========================================================
 
     private fun tampilkanPopupPublikasi(
         publikasi: Publikasi
     ) {
 
-        Log.d(
-            TAG,
-            "Membuka popup publikasi: pub_id=${publikasi.pub_id}"
+        val dialog = Dialog(requireContext())
+
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+
+        val dialogView = LayoutInflater.from(requireContext()).inflate(
+            R.layout.dialog_detail_home,
+            null,
+            false
         )
 
-        val dialog =
-            Dialog(requireContext())
-
-        dialog.requestWindowFeature(
-            Window.FEATURE_NO_TITLE
+        val image = dialogView.findViewById<ImageView>(
+            R.id.imgDetailHome
         )
 
-        val view =
-            LayoutInflater.from(
-                requireContext()
-            ).inflate(
-                R.layout.dialog_detail_home,
-                null,
-                false
-            )
+        val title = dialogView.findViewById<TextView>(
+            R.id.tvDetailHomeTitle
+        )
 
-        // =========================
-        // FIND VIEW
-        // =========================
+        val date = dialogView.findViewById<TextView>(
+            R.id.tvDetailHomeDate
+        )
 
-        val image =
-            view.findViewById<ImageView>(
-                R.id.imgDetailHome
-            )
+        val description = dialogView.findViewById<TextView>(
+            R.id.tvDetailHomeDescription
+        )
 
-        val title =
-            view.findViewById<TextView>(
-                R.id.tvDetailHomeTitle
-            )
+        val containerDownload = dialogView.findViewById<LinearLayout>(
+            R.id.containerDownload
+        )
 
-        val date =
-            view.findViewById<TextView>(
-                R.id.tvDetailHomeDate
-            )
+        title.text = publikasi.title ?: "Publikasi"
 
-        val description =
-            view.findViewById<TextView>(
-                R.id.tvDetailHomeDescription
-            )
+        date.text = ambilTahun(publikasi) ?: "-"
 
-        val containerDownload =
-            view.findViewById<LinearLayout>(
-                R.id.containerDownload
-            )
-
-        // =========================
-        // SET DATA AWAL
-        // =========================
-
-        title.text =
-            publikasi.title
-                ?: "Publikasi"
-
-        date.text =
-            ambilTahun(publikasi)
-                ?: "-"
-
-        description.text =
-            "Memuat deskripsi..."
-
-        // =========================
-        // LOAD COVER
-        // =========================
+        description.text = "Memuat deskripsi..."
 
         Glide.with(this)
             .load(publikasi.cover)
-            .placeholder(
-                R.drawable.ic_bpslogo
-            )
-            .error(
-                R.drawable.ic_bpslogo
-            )
+            .thumbnail(0.25f)
+            .placeholder(R.drawable.ic_bpslogo)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .skipMemoryCache(false)
+            .error(R.drawable.ic_bpslogo)
             .into(image)
 
-        // =========================
-        // TOMBOL DOWNLOAD
-        // =========================
+        // =====================================================
+        // TOMBOL DOWNLOAD PDF
+        // =====================================================
 
-        val tombolDownload =
-            TextView(requireContext()).apply {
+        val tombolDownload = TextView(requireContext()).apply {
 
-                text = "Download PDF"
+            text = "Download PDF"
 
-                textSize = 14f
+            textSize = 14f
 
-                setTextColor(
-                    Color.WHITE
-                )
+            setTextColor(Color.WHITE)
 
-                gravity =
-                    Gravity.CENTER
+            gravity = Gravity.CENTER
 
-                typeface =
-                    Typeface.DEFAULT_BOLD
+            typeface = Typeface.DEFAULT_BOLD
 
-                setPadding(
-                    20,
-                    14,
-                    20,
-                    14
-                )
+            setPadding(20, 14, 20, 14)
 
-                setBackgroundColor(
-                    Color.parseColor("#F97316")
-                )
+            setBackgroundColor(Color.parseColor("#F97316"))
 
-                isClickable = true
-                isFocusable = true
+            isClickable = true
 
-                setOnClickListener {
+            isFocusable = true
 
-                    val pdfUrl =
-                        publikasi.pdf
+            setOnClickListener {
 
-                    // =========================
-                    // CEK PDF
-                    // =========================
+                val pdfUrl = publikasi.pdf
 
-                    if (pdfUrl.isNullOrBlank()) {
+                if (pdfUrl.isNullOrBlank()) {
 
-                        Toast.makeText(
-                            requireContext(),
-                            "File PDF tidak tersedia",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "File PDF tidak tersedia",
+                        Toast.LENGTH_SHORT
+                    ).show()
 
-                        return@setOnClickListener
-                    }
-
-                    // =========================
-                    // NAMA FILE
-                    // =========================
-
-                    val namaPublikasi =
-                        publikasi.title
-                            ?.trim()
-                            ?.replace(
-                                Regex("[\\\\/:*?\"<>|]"),
-                                "_"
-                            )
-                            ?.replace(
-                                Regex("\\s+"),
-                                " "
-                            )
-                            ?.take(150)
-                            ?.takeIf {
-                                it.isNotBlank()
-                            }
-                            ?: "Publikasi"
-
-                    // =========================
-                    // KONFIRMASI DOWNLOAD
-                    // =========================
-
-                    androidx.appcompat.app.AlertDialog.Builder(
-                        requireContext()
-                    )
-                        .setTitle(
-                            "Download Publikasi"
-                        )
-                        .setMessage(
-                            "Yakin ingin mendownload publikasi:\n\n$namaPublikasi?"
-                        )
-                        .setNegativeButton(
-                            "Batal",
-                            null
-                        )
-                        .setPositiveButton(
-                            "Download"
-                        ) { _, _ ->
-
-                            try {
-
-                                val request =
-                                    DownloadManager.Request(
-                                        Uri.parse(pdfUrl)
-                                    )
-
-                                request.setTitle(
-                                    namaPublikasi
-                                )
-
-                                request.setDescription(
-                                    "Mengunduh publikasi PDF..."
-                                )
-
-                                request.setNotificationVisibility(
-                                    DownloadManager
-                                        .Request
-                                        .VISIBILITY_VISIBLE_NOTIFY_COMPLETED
-                                )
-
-                                request.setDestinationInExternalPublicDir(
-                                    Environment.DIRECTORY_DOWNLOADS,
-                                    "$namaPublikasi.pdf"
-                                )
-
-                                request.setMimeType(
-                                    "application/pdf"
-                                )
-
-                                request.setAllowedOverMetered(
-                                    true
-                                )
-
-                                request.setAllowedOverRoaming(
-                                    true
-                                )
-
-                                val downloadManager =
-                                    requireContext()
-                                        .getSystemService(
-                                            Context.DOWNLOAD_SERVICE
-                                        ) as DownloadManager
-
-                                downloadManager.enqueue(
-                                    request
-                                )
-
-                                Toast.makeText(
-                                    requireContext(),
-                                    "Download dimulai",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-
-                                Log.d(
-                                    TAG,
-                                    "Download PDF dimulai: $pdfUrl"
-                                )
-
-                            } catch (e: Exception) {
-
-                                Log.e(
-                                    TAG,
-                                    "Gagal memulai download PDF",
-                                    e
-                                )
-
-                                Toast.makeText(
-                                    requireContext(),
-                                    "Gagal memulai download",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                        .show()
+                    return@setOnClickListener
                 }
-            }
 
-        // =========================
-        // MASUKKAN BUTTON KE CONTAINER
-        // =========================
+                val namaPublikasi = publikasi.title
+                    ?.trim()
+                    ?.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+                    ?.replace(Regex("\\s+"), " ")
+                    ?.take(150)
+                    ?.takeIf { it.isNotBlank() }
+                    ?: "Publikasi"
+
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Download Publikasi")
+                    .setMessage(
+                        "Yakin ingin mendownload publikasi:\n\n$namaPublikasi?"
+                    )
+                    .setNegativeButton("Batal", null)
+                    .setPositiveButton("Download") { _, _ ->
+
+                        try {
+
+                            val request = DownloadManager.Request(
+                                Uri.parse(pdfUrl)
+                            )
+
+                            request.setTitle(namaPublikasi)
+
+                            request.setDescription(
+                                "Mengunduh publikasi PDF..."
+                            )
+
+                            request.setNotificationVisibility(
+                                DownloadManager.Request
+                                    .VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+                            )
+
+                            request.setDestinationInExternalPublicDir(
+                                Environment.DIRECTORY_DOWNLOADS,
+                                "$namaPublikasi.pdf"
+                            )
+
+                            request.setMimeType("application/pdf")
+
+                            request.setAllowedOverMetered(true)
+
+                            request.setAllowedOverRoaming(true)
+
+                            val downloadManager = requireContext()
+                                .getSystemService(
+                                    Context.DOWNLOAD_SERVICE
+                                ) as DownloadManager
+
+                            downloadManager.enqueue(request)
+
+                            Toast.makeText(
+                                requireContext(),
+                                "Download dimulai",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                        } catch (e: Exception) {
+
+                            Toast.makeText(
+                                requireContext(),
+                                "Gagal memulai download",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                    .show()
+            }
+        }
 
         containerDownload.addView(
             tombolDownload,
@@ -1309,24 +848,12 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
             )
         )
 
-        // =========================
-        // TAMPILKAN DIALOG
-        // =========================
-
-        dialog.setContentView(
-            view
-        )
+        dialog.setContentView(dialogView)
 
         dialog.show()
 
-        // =========================
-        // STYLE DIALOG
-        // =========================
-
         dialog.window?.setBackgroundDrawable(
-            ColorDrawable(
-                Color.TRANSPARENT
-            )
+            ColorDrawable(Color.TRANSPARENT)
         )
 
         dialog.window?.setLayout(
@@ -1334,38 +861,18 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
 
-        // =========================
+        // =====================================================
         // AMBIL DETAIL PUBLIKASI
-        // =========================
+        // =====================================================
 
-        Log.d(
-            TAG,
-            "Meminta detail publikasi: pub_id=${publikasi.pub_id}"
-        )
-
-        val pubId =
-            publikasi.pub_id
-
-        // =========================
-        // CEK PUB ID
-        // =========================
+        val pubId = publikasi.pub_id
 
         if (pubId.isNullOrBlank()) {
 
-            Log.e(
-                TAG,
-                "pub_id kosong, tidak bisa mengambil detail"
-            )
-
-            description.text =
-                "Deskripsi tidak tersedia"
+            description.text = "Deskripsi tidak tersedia"
 
             return
         }
-
-        // =========================
-        // REQUEST DETAIL
-        // =========================
 
         repository.getPublikasiDetail(
             id = pubId,
@@ -1373,73 +880,188 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
             apiKey = API_KEY
         ) { response ->
 
-            if (!isAdded) {
-                return@getPublikasiDetail
-            }
+            if (!isAdded) return@getPublikasiDetail
 
-            // =========================
-            // RESPONSE NULL
-            // =========================
+            if (!dialog.isShowing) return@getPublikasiDetail
 
             if (response == null) {
 
-                Log.e(
-                    TAG,
-                    "Response detail publikasi = NULL"
-                )
-
-                description.text =
-                    "Gagal memuat deskripsi"
+                description.text = "Gagal memuat deskripsi"
 
                 return@getPublikasiDetail
             }
 
-            Log.d(
-                TAG,
-                "Response detail diterima: pub_id=$pubId"
-            )
+            val abstractText = response.data?.abstract
 
-            Log.d(
-                TAG,
-                "Status detail = ${response.status}"
-            )
+            description.text = abstractText
+                ?.replace(
+                    Regex("<br\\s*/?>", RegexOption.IGNORE_CASE),
+                    "\n"
+                )
+                ?.replace(Regex("<[^>]*>"), "")
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: "Deskripsi tidak tersedia"
+        }
+    }
 
-            // =========================
-            // AMBIL ABSTRACT
-            // =========================
+    // =========================================================
+    // RECYCLERVIEW ADAPTER
+    // =========================================================
 
-            val abstractText =
-                response.data?.abstract
+    private class PublikasiAdapter(
+        private val onItemClick: (Publikasi) -> Unit
+    ) : ListAdapter<Publikasi, PublikasiAdapter.PublikasiViewHolder>(
+        DIFF_CALLBACK
+    ) {
 
-            Log.d(
-                TAG,
-                "Abstract detail = $abstractText"
-            )
+        companion object {
 
-            // =========================
-            // BERSIHKAN HTML
-            // =========================
+            private val DIFF_CALLBACK =
+                object : DiffUtil.ItemCallback<Publikasi>() {
 
-            description.text =
-                abstractText
-                    ?.replace(
-                        Regex(
-                            "<br\\s*/?>",
-                            RegexOption.IGNORE_CASE
-                        ),
-                        "\n"
-                    )
-                    ?.replace(
-                        Regex(
-                            "<[^>]*>"
-                        ),
-                        ""
-                    )
-                    ?.trim()
-                    ?.takeIf {
-                        it.isNotEmpty()
+                    override fun areItemsTheSame(
+                        oldItem: Publikasi,
+                        newItem: Publikasi
+                    ): Boolean {
+
+                        val oldId = oldItem.pub_id
+                        val newId = newItem.pub_id
+
+                        return if (
+                            !oldId.isNullOrBlank() &&
+                            !newId.isNullOrBlank()
+                        ) {
+                            oldId == newId
+                        } else {
+                            oldItem == newItem
+                        }
                     }
-                    ?: "Deskripsi tidak tersedia"
+
+                    override fun areContentsTheSame(
+                        oldItem: Publikasi,
+                        newItem: Publikasi
+                    ): Boolean {
+                        return oldItem == newItem
+                    }
+                }
+        }
+
+        class PublikasiViewHolder(
+            itemView: View
+        ) : RecyclerView.ViewHolder(itemView) {
+
+            val image: ImageView =
+                itemView.findViewById(R.id.imgStatistik)
+
+            val imageLoading: ProgressBar =
+                itemView.findViewById(R.id.imageLoading)
+
+            val title: TextView =
+                itemView.findViewById(R.id.tvStatistikTitle)
+
+            val description: TextView =
+                itemView.findViewById(R.id.tvStatistikDescription)
+        }
+
+        override fun onCreateViewHolder(
+            parent: ViewGroup,
+            viewType: Int
+        ): PublikasiViewHolder {
+
+            val view = LayoutInflater.from(parent.context).inflate(
+                R.layout.item_home_panjang,
+                parent,
+                false
+            )
+
+            return PublikasiViewHolder(view)
+        }
+
+        override fun onBindViewHolder(
+            holder: PublikasiViewHolder,
+            position: Int
+        ) {
+
+            val publikasi = getItem(position)
+
+            holder.title.text =
+                publikasi.title ?: "Publikasi"
+
+            holder.description.text = ""
+
+            holder.image.setImageResource(
+                R.drawable.ic_bpslogo
+            )
+
+            holder.itemView.setOnClickListener {
+                onItemClick(publikasi)
+            }
+
+            val imageUrl = publikasi.cover
+
+            if (imageUrl.isNullOrBlank()) {
+
+                holder.imageLoading.visibility = View.GONE
+
+                Glide.with(holder.image).clear(holder.image)
+
+                return
+            }
+
+            holder.imageLoading.visibility = View.VISIBLE
+
+            Glide.with(holder.image)
+                .load(imageUrl)
+                .thumbnail(0.25f)
+                .placeholder(R.drawable.ic_bpslogo)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .skipMemoryCache(false)
+                .error(R.drawable.ic_bpslogo)
+                .listener(
+                    object : RequestListener<android.graphics.drawable.Drawable> {
+
+                        override fun onLoadFailed(
+                            e: GlideException?,
+                            model: Any?,
+                            target: Target<android.graphics.drawable.Drawable>,
+                            isFirstResource: Boolean
+                        ): Boolean {
+
+                            holder.imageLoading.visibility = View.GONE
+
+                            return false
+                        }
+
+                        override fun onResourceReady(
+                            resource: android.graphics.drawable.Drawable,
+                            model: Any,
+                            target: Target<android.graphics.drawable.Drawable>,
+                            dataSource: DataSource,
+                            isFirstResource: Boolean
+                        ): Boolean {
+
+                            holder.imageLoading.visibility = View.GONE
+
+                            return false
+                        }
+                    }
+                )
+                .into(holder.image)
+        }
+
+        override fun onViewRecycled(
+            holder: PublikasiViewHolder
+        ) {
+            super.onViewRecycled(holder)
+
+            Glide.with(holder.image).clear(holder.image)
+
+            holder.imageLoading.visibility = View.GONE
+
+            holder.image.setImageResource(
+                R.drawable.ic_bpslogo
+            )
         }
     }
 
@@ -1449,19 +1071,20 @@ class PublikasiFragment : Fragment(), RefreshableFragment {
 
     override fun onDestroyView() {
 
-        Log.d(
-            TAG,
-            "onDestroyView"
-        )
+        if (sedangRefresh) {
 
-        sedangRefresh = false
+            sedangRefresh = false
 
-        publikasiLoading.cancelAnimation()
+            (activity as? HomeActivity)?.finishSwipeRefresh()
+        }
 
-        verticalScrollView = null
+        if (::publikasiLoading.isInitialized) {
+            publikasiLoading.cancelAnimation()
+        }
 
-        (activity as? HomeActivity)
-            ?.finishSwipeRefresh()
+        if (::publikasiContainer.isInitialized) {
+            publikasiContainer.adapter = null
+        }
 
         super.onDestroyView()
     }

@@ -85,7 +85,7 @@ class HomeActivity : AppCompatActivity() {
         setupSwipeRefresh()
         setupSearch()
 
-        updateBottomNavigation(4)
+        updateBottomNavigation(startPage)
         startHomeAnimation()
     }
 
@@ -751,55 +751,69 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun showInformasiPanel() {
-
         if (informasiMenuVisible) {
-
             hideInformasiMenu()
-
             return
         }
 
-        positionInformasiMenu()
-
         informasiMenuVisible = true
 
-        informasiOverlay.apply {
+        // 1. Munculkan overlay background
+        informasiOverlay.visibility = View.VISIBLE
+        informasiOverlay.alpha = 0f
+        informasiOverlay.animate()
+            .alpha(1f)
+            .setDuration(200)
+            .start()
 
-            visibility =
-                View.VISIBLE
+        // 2. PENTING: Set menu ke INVISIBLE dulu agar Android bisa menghitung ukurannya (width) tanpa menampilkannya ke layar
+        informasiMenu.visibility = View.INVISIBLE
 
-            alpha = 0f
+        // 3. Gunakan post untuk menunggu sistem selesai menghitung ukuran layout
+        informasiMenu.post {
 
-            animate()
-                .alpha(1f)
-                .setDuration(200)
-                .start()
-        }
+            // Sekarang ukurannya sudah tidak 0, panggil fungsi untuk menghitung posisi
+            positionInformasiMenu()
 
-        informasiMenu.apply {
+            // Set ke VISIBLE dan mulai jalankan animasi masuknya
+            informasiMenu.visibility = View.VISIBLE
+            informasiMenu.alpha = 0f
+            informasiMenu.translationY = -(informasiMenu.height * 0.2f)
+            informasiMenu.scaleX = 0.8f
+            informasiMenu.scaleY = 0.8f
 
-            visibility =
-                View.VISIBLE
-
-            alpha = 0f
-
-            translationY =
-                height * 0.2f
-
-            scaleX = 0.8f
-            scaleY = 0.8f
-
-            animate()
+            informasiMenu.animate()
                 .alpha(1f)
                 .translationY(0f)
                 .scaleX(1f)
                 .scaleY(1f)
                 .setDuration(300)
-                .setInterpolator(
-                    OvershootInterpolator(1.2f)
-                )
+                .setInterpolator(OvershootInterpolator(1.2f))
                 .start()
         }
+    }
+
+    private fun positionInformasiMenu() {
+        // Hapus ".post" di fungsi ini karena kita sudah memanggilnya di dalam ".post" pada fungsi showInformasiPanel
+        val navInformasi = findViewById<View>(R.id.navInfografik)
+        val root = informasiMenu.parent as View
+
+        informasiMenu.translationX = 0f
+
+        val navLocation = IntArray(2)
+        val rootLocation = IntArray(2)
+
+        navInformasi.getLocationOnScreen(navLocation)
+        root.getLocationOnScreen(rootLocation)
+
+        // Cari titik tengah dari icon menu Navigasinya
+        val navCenterX = navLocation[0] - rootLocation[0] + navInformasi.width / 2f
+
+        // Kurangi dengan setengah dari lebar popup agar posisinya pas di tengah
+        val menuLeft = navCenterX - informasiMenu.width / 2f
+
+        // Terapkan ke popup
+        informasiMenu.translationX = menuLeft - informasiMenu.left
     }
 
     private fun hideInformasiMenu() {
@@ -857,49 +871,6 @@ class HomeActivity : AppCompatActivity() {
             .start()
     }
 
-    private fun positionInformasiMenu() {
-
-        val navInformasi =
-            findViewById<View>(
-                R.id.navInfografik
-            )
-
-        val root =
-            informasiMenu.parent as View
-
-        informasiMenu.translationX =
-            0f
-
-        informasiMenu.post {
-
-            val navLocation =
-                IntArray(2)
-
-            val rootLocation =
-                IntArray(2)
-
-            navInformasi.getLocationOnScreen(
-                navLocation
-            )
-
-            root.getLocationOnScreen(
-                rootLocation
-            )
-
-            val navCenterX =
-                navLocation[0] -
-                        rootLocation[0] +
-                        navInformasi.width / 2f
-
-            val menuLeft =
-                navCenterX -
-                        informasiMenu.width / 2f
-
-            informasiMenu.translationX =
-                menuLeft -
-                        informasiMenu.left
-        }
-    }
 
     // =========================================================
     // PAGE NAVIGATION

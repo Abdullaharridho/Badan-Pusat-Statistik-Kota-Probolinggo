@@ -29,6 +29,7 @@ import com.example.bpskota.R
 import com.example.bpskota.bpskp.api.BpskpRetrofitClient
 import com.example.bpskota.bpskp.model.SuratMasuk
 import com.example.bpskota.bpskp.model.SuratMasukActionResponse
+import com.example.bpskota.bpskp.model.Tim
 import com.example.bpskota.bpskp.repository.BpskpAuthSession
 import com.example.bpskota.bpskp.repository.BpskpRepository
 import com.example.bpskota.databinding.ActivitySasuratMasukBinding
@@ -89,6 +90,13 @@ class SASuratMasukActivity : AppCompatActivity() {
     private var etLokasi: EditText? = null
 
     private var spinnerStatus: Spinner? = null
+
+    // =========================================================
+    // TIM TUJUAN
+    // =========================================================
+
+    private var spinnerTim: Spinner? = null
+    private var daftarTimAktif: List<Tim> = emptyList()
 
     private var tvFileName: TextView? = null
     private var btnPilihFile: TextView? = null
@@ -152,11 +160,11 @@ class SASuratMasukActivity : AppCompatActivity() {
 
         updateFilterUI(binding.filterSemua)
         loadSuratMasuk()
+
         findViewById<ImageView>(R.id.btnBackSuratMasuk).setOnClickListener {
             finish()
         }
     }
-
 
     override fun onDestroy() {
         super.onDestroy()
@@ -400,6 +408,9 @@ class SASuratMasukActivity : AppCompatActivity() {
 
         setStatus("baru")
         setFormEditable(true)
+
+        // Muat daftar tim aktif untuk form tambah.
+        loadTimOptions()
     }
 
     private fun showEditForm(surat: SuratMasuk) {
@@ -417,6 +428,9 @@ class SASuratMasukActivity : AppCompatActivity() {
         fillForm(surat)
 
         setFormEditable(true)
+
+        // Pilih otomatis tim yang tersimpan pada surat.
+        loadTimOptions(surat.tim_id)
 
         /*
          * File lama tetap dapat dibuka dari mode edit.
@@ -440,10 +454,131 @@ class SASuratMasukActivity : AppCompatActivity() {
         fillForm(surat)
         setFormEditable(false)
 
+        // Tampilkan tim yang tersimpan tanpa mengizinkan perubahan.
+        loadTimOptions(surat.tim_id)
+
         btnPilihFile?.visibility = View.GONE
         btnSaveForm?.text = "Kembali"
 
         setupExistingFileClick(surat)
+    }
+
+    // =========================================================
+    // LOAD TIM OPTIONS
+    // =========================================================
+
+    private fun loadTimOptions(
+        selectedTimId: Int? = null
+    ) {
+
+        spinnerTim?.isEnabled = false
+
+        spinnerTim?.adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_dropdown_item,
+            listOf("Memuat daftar tim...")
+        )
+
+        repository.getTim(
+            session = authSession,
+            search = null,
+            status = "aktif"
+        ) { data, error ->
+
+            runOnUiThread {
+
+                // Hindari memperbarui Spinner yang sudah tidak digunakan.
+                if (
+                    isFinishing ||
+                    isDestroyed ||
+                    spinnerTim == null ||
+                    currentFormMode == null
+                ) {
+                    return@runOnUiThread
+                }
+
+                if (error != null) {
+
+                    daftarTimAktif = emptyList()
+
+                    spinnerTim?.adapter = ArrayAdapter(
+                        this@SASuratMasukActivity,
+                        android.R.layout.simple_spinner_dropdown_item,
+                        listOf("Gagal memuat daftar tim")
+                    )
+
+                    spinnerTim?.isEnabled = false
+
+                    Toast.makeText(
+                        this@SASuratMasukActivity,
+                        error,
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    return@runOnUiThread
+                }
+
+                daftarTimAktif = data ?: emptyList()
+
+                val labels = mutableListOf("Pilih tim")
+
+                labels.addAll(
+                    daftarTimAktif.map {
+                        it.namaTim.orEmpty()
+                    }
+                )
+
+                val spinnerAdapter = ArrayAdapter(
+                    this@SASuratMasukActivity,
+                    android.R.layout.simple_spinner_item,
+                    labels
+                ).apply {
+                    setDropDownViewResource(
+                        android.R.layout.simple_spinner_dropdown_item
+                    )
+                }
+
+                spinnerTim?.adapter = spinnerAdapter
+
+                val selectedPosition =
+                    daftarTimAktif.indexOfFirst {
+                        it.id == selectedTimId
+                    }
+
+                spinnerTim?.setSelection(
+                    if (selectedPosition >= 0) {
+                        selectedPosition + 1
+                    } else {
+                        0
+                    }
+                )
+
+                spinnerTim?.isEnabled =
+                    currentFormMode != FormMode.SHOW &&
+                            daftarTimAktif.isNotEmpty()
+
+                if (daftarTimAktif.isEmpty()) {
+
+                    Toast.makeText(
+                        this@SASuratMasukActivity,
+                        "Belum ada tim aktif yang tersedia.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun selectedTimId(): Int? {
+
+        val position =
+            spinnerTim?.selectedItemPosition ?: 0
+
+        if (position <= 0) return null
+
+        return daftarTimAktif
+            .getOrNull(position - 1)
+            ?.id
     }
 
     // =========================================================
@@ -624,6 +759,44 @@ class SASuratMasukActivity : AppCompatActivity() {
                 hint = "Masukkan perihal",
                 inputType = InputType.TYPE_CLASS_TEXT
             )
+
+        // =====================================================
+        // TIM TUJUAN
+        // =====================================================
+
+        addLabel("Tim Tujuan")
+
+        spinnerTim = Spinner(this).apply {
+
+            adapter = ArrayAdapter(
+                this@SASuratMasukActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                listOf("Memuat daftar tim...")
+            )
+
+            setPadding(
+                dp(10),
+                0,
+                dp(10),
+                0
+            )
+
+            background = createInputBackground()
+
+            isEnabled = false
+        }
+
+        formContainer!!.addView(
+            spinnerTim,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(50)
+            )
+        )
+
+        // =====================================================
+        // INPUT LANJUTAN
+        // =====================================================
 
         addLabel("Isi Ringkas")
 
@@ -1473,6 +1646,9 @@ class SASuratMasukActivity : AppCompatActivity() {
 
         spinnerStatus?.isEnabled = editable
 
+        spinnerTim?.isEnabled =
+            editable && daftarTimAktif.isNotEmpty()
+
         btnPilihFile?.isEnabled = editable
 
         if (!editable) {
@@ -1513,6 +1689,10 @@ class SASuratMasukActivity : AppCompatActivity() {
             tanggalDiterima = value(etTanggalDiterima),
             asalSurat = value(etAsalSurat),
             perihal = value(etPerihal),
+
+            // Tim tujuan yang dipilih.
+            timId = selectedTimId()!!,
+
             isiRingkas = nullableValue(etIsiRingkas),
             tanggalAcara = nullableValue(etTanggalAcara),
             waktuMulai = nullableValue(etWaktuMulai),
@@ -1610,6 +1790,12 @@ class SASuratMasukActivity : AppCompatActivity() {
 
             perihal =
             value(etPerihal)
+                .toTextRequestBody(),
+
+            // Tim tujuan yang dipilih.
+            timId =
+            selectedTimId()!!
+                .toString()
                 .toTextRequestBody(),
 
             isiRingkas =
@@ -1831,6 +2017,20 @@ class SASuratMasukActivity : AppCompatActivity() {
                 "Perihal wajib diisi"
 
             etPerihal?.requestFocus()
+
+            return false
+        }
+
+        // Tim tujuan wajib dipilih.
+        if (selectedTimId() == null) {
+
+            Toast.makeText(
+                this,
+                "Tim tujuan wajib dipilih.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            spinnerTim?.requestFocus()
 
             return false
         }
@@ -2865,6 +3065,10 @@ class SASuratMasukActivity : AppCompatActivity() {
 
         spinnerStatus = null
 
+        // Bersihkan referensi Spinner Tim.
+        spinnerTim = null
+        daftarTimAktif = emptyList()
+
         tvFileName = null
         btnPilihFile = null
 
@@ -2888,6 +3092,11 @@ class SASuratMasukActivity : AppCompatActivity() {
 
         btnPilihFile?.isEnabled =
             !loading
+
+        spinnerTim?.isEnabled =
+            !loading &&
+                    currentFormMode != FormMode.SHOW &&
+                    daftarTimAktif.isNotEmpty()
 
         if (loading) {
 

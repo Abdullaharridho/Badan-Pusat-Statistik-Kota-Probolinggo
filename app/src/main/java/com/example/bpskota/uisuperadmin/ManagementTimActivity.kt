@@ -1,10 +1,11 @@
-
 package com.example.bpskota.uisuperadmin
 
 import android.app.AlertDialog
+import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -22,7 +23,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.airbnb.lottie.LottieAnimationView
 import com.example.bpskota.R
 import com.example.bpskota.bpskp.model.Tim
 import com.example.bpskota.bpskp.model.UserManagementData
@@ -116,6 +116,36 @@ class ManagementTimActivity : AppCompatActivity() {
 
             override fun afterTextChanged(s: Editable?) = Unit
         })
+    }
+
+    // =========================================================
+    // CUSTOM SPINNER ADAPTER
+    // Memaksa agar teks spinner & dropdown berwarna hitam
+    // dengan background putih
+    // =========================================================
+
+    private fun createSpinnerAdapter(items: MutableList<String>): ArrayAdapter<String> {
+        return object : ArrayAdapter<String>(
+            this,
+            android.R.layout.simple_spinner_item,
+            items
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getView(position, convertView, parent) as TextView
+                view.setTextColor(Color.parseColor("#111827")) // Teks hitam
+                view.textSize = 14f
+                return view
+            }
+
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent) as TextView
+                view.setTextColor(Color.parseColor("#111827")) // Teks dropdown hitam
+                view.setBackgroundColor(Color.WHITE)           // Latar belakang putih bersih
+                return view
+            }
+        }.apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
     }
 
     // =========================================================
@@ -249,6 +279,7 @@ class ManagementTimActivity : AppCompatActivity() {
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(padding, dp(8), padding, dp(8))
+            setBackgroundColor(Color.WHITE) // Memaksa area input putih bersih
         }
 
         val inputNama = buatInput(
@@ -256,21 +287,10 @@ class ManagementTimActivity : AppCompatActivity() {
             nilai = tim?.namaTim.orEmpty()
         )
 
-        // Dropdown ketua tim dari API pengguna.
+        // Dropdown ketua tim menggunakan custom adapter
         val spinnerKetua = Spinner(this)
-
         val penggunaKetua = mutableListOf<UserManagementData>()
-
-        val adapterKetua = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_item,
-            mutableListOf("Memuat daftar pengguna...")
-        )
-
-        adapterKetua.setDropDownViewResource(
-            android.R.layout.simple_spinner_dropdown_item
-        )
-
+        val adapterKetua = createSpinnerAdapter(mutableListOf("Memuat daftar pengguna..."))
         spinnerKetua.adapter = adapterKetua
 
         val inputKeterangan = buatInput(
@@ -279,16 +299,9 @@ class ManagementTimActivity : AppCompatActivity() {
             multiline = true
         )
 
+        // Dropdown status menggunakan custom adapter
         val spinnerStatus = Spinner(this).apply {
-            adapter = ArrayAdapter(
-                this@ManagementTimActivity,
-                android.R.layout.simple_spinner_item,
-                listOf("aktif", "nonaktif")
-            ).also { adapter ->
-                adapter.setDropDownViewResource(
-                    android.R.layout.simple_spinner_dropdown_item
-                )
-            }
+            adapter = createSpinnerAdapter(mutableListOf("aktif", "nonaktif"))
 
             setSelection(
                 if (tim?.status.equals("nonaktif", ignoreCase = true)) 1
@@ -329,10 +342,17 @@ class ManagementTimActivity : AppCompatActivity() {
             addView(container)
         }
 
+        // Kustomisasi Title Dialog agar berwarna hitam
+        val customTitle = TextView(this).apply {
+            text = if (sedangEdit) "Edit Tim" else "Buat Tim Baru"
+            textSize = 20f
+            setTextColor(Color.parseColor("#111827"))
+            setPadding(dp(24), dp(20), dp(24), dp(10))
+            setTypeface(null, Typeface.BOLD)
+        }
+
         val dialog = AlertDialog.Builder(this)
-            .setTitle(
-                if (sedangEdit) "Edit Tim" else "Buat Tim Baru"
-            )
+            .setCustomTitle(customTitle)
             .setView(scrollView)
             .setNegativeButton("Batal", null)
             .setPositiveButton(
@@ -342,6 +362,13 @@ class ManagementTimActivity : AppCompatActivity() {
             .create()
 
         dialog.setOnShowListener {
+            // Mewarnai background dialog window menjadi putih rounded
+            val dialogBackground = GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(16).toFloat()
+            }
+            dialog.window?.setBackgroundDrawable(dialogBackground)
+
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).apply {
                 setTextColor(Color.rgb(249, 115, 22))
 
@@ -459,19 +486,23 @@ class ManagementTimActivity : AppCompatActivity() {
                     return@runOnUiThread
                 }
 
-                val penggunaValid = response.data.orEmpty().filter {
-                        pengguna ->
+                val penggunaValid = response.data.orEmpty().filter { pengguna ->
+
+                    val id = pengguna.id
                     val role = pengguna.role.orEmpty()
 
-                    pengguna.id != null &&
-                            !role.equals(
-                                "super_admin",
-                                ignoreCase = true
-                            ) &&
-                            !role.equals(
-                                "operator",
-                                ignoreCase = true
-                            )
+                    id != null &&
+                            id > 0 &&
+                            (
+                                    role.equals(
+                                        "pegawai",
+                                        ignoreCase = true
+                                    ) ||
+                                            (
+                                                    ketuaIdTerpilih != null &&
+                                                            id == ketuaIdTerpilih
+                                                    )
+                                    )
                 }
 
                 daftarPengguna.clear()
@@ -480,29 +511,21 @@ class ManagementTimActivity : AppCompatActivity() {
                 adapter.clear()
 
                 if (penggunaValid.isEmpty()) {
-                    adapter.add("Tidak ada pengguna yang bisa dipilih")
+                    adapter.add(
+                        "Tidak ada pegawai yang bisa dipilih"
+                    )
                 } else {
+                    // PERUBAHAN DISINI: Hanya menampilkan nama asli
                     adapter.addAll(
                         penggunaValid.map { pengguna ->
-                            val nama = pengguna.name
-                                ?.takeIf { it.isNotBlank() }
-                                ?: "Tanpa nama"
-
-                            val username = pengguna.username
-                                ?.takeIf { it.isNotBlank() }
-                                ?: "-"
-
-                            val role = pengguna.role
-                                ?.takeIf { it.isNotBlank() }
-                                ?: "user"
-
-                            "$nama (@$username) — $role"
+                            pengguna.name?.takeIf { it.isNotBlank() } ?: "Tanpa nama"
                         }
                     )
                 }
 
                 adapter.notifyDataSetChanged()
 
+                // Pertahankan ketua saat ini ketika form edit dibuka.
                 val posisiKetua = penggunaValid.indexOfFirst {
                     it.id == ketuaIdTerpilih
                 }
@@ -511,11 +534,10 @@ class ManagementTimActivity : AppCompatActivity() {
                     spinner.setSelection(posisiKetua)
                 }
 
+                // Tombol aktif jika terdapat minimal satu pilihan valid.
                 dialog.getButton(
                     AlertDialog.BUTTON_POSITIVE
-                ).isEnabled = penggunaValid.any {
-                    it.id != null && it.id > 0
-                }
+                ).isEnabled = penggunaValid.isNotEmpty()
             }
         }
     }
@@ -535,7 +557,7 @@ class ManagementTimActivity : AppCompatActivity() {
             setText(nilai)
 
             textSize = 14f
-            setTextColor(Color.rgb(41, 37, 36))
+            setTextColor(Color.parseColor("#111827")) // Memaksa teks input hitam
             setHintTextColor(Color.rgb(168, 162, 158))
             setPadding(dp(12), dp(10), dp(12), dp(10))
 
@@ -575,7 +597,7 @@ class ManagementTimActivity : AppCompatActivity() {
         return TextView(this).apply {
             text = teks
             textSize = 13f
-            setTextColor(Color.rgb(68, 64, 60))
+            setTextColor(Color.parseColor("#111827")) // Teks label hitam
             setTypeface(typeface, Typeface.BOLD)
         }
     }
@@ -692,8 +714,17 @@ class ManagementTimActivity : AppCompatActivity() {
     // =========================================================
 
     private fun konfirmasiHapusTim(tim: Tim) {
+        // Custom title dialog
+        val customTitle = TextView(this).apply {
+            text = "Hapus Tim"
+            textSize = 20f
+            setTextColor(Color.parseColor("#111827"))
+            setPadding(dp(24), dp(20), dp(24), dp(10))
+            setTypeface(null, Typeface.BOLD)
+        }
+
         val dialog = AlertDialog.Builder(this)
-            .setTitle("Hapus Tim")
+            .setCustomTitle(customTitle)
             .setMessage(
                 "Apakah kamu yakin ingin menghapus tim \"${tim.namaTim}\"?"
             )
@@ -702,6 +733,17 @@ class ManagementTimActivity : AppCompatActivity() {
             .create()
 
         dialog.setOnShowListener {
+            val dialogBackground = GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(16).toFloat()
+            }
+            dialog.window?.setBackgroundDrawable(dialogBackground)
+
+            // Mengubah warna pesan konfirmasi ke hitam
+            dialog.findViewById<TextView>(android.R.id.message)?.apply {
+                setTextColor(Color.parseColor("#4B5563"))
+            }
+
             dialog.getButton(
                 AlertDialog.BUTTON_POSITIVE
             ).apply {
@@ -786,6 +828,16 @@ class ManagementTimActivity : AppCompatActivity() {
             val status: TextView =
                 view.findViewById(R.id.tvUserRole)
 
+            // Deklarasi id yang tidak digunakan di halaman ini
+            val tvKegiatanTanggal: TextView =
+                view.findViewById(R.id.tvKegiatanTanggal)
+
+            val tvKegiatanJam: TextView =
+                view.findViewById(R.id.tvKegiatanJam)
+
+            val tvKegiatanLokasi: TextView =
+                view.findViewById(R.id.tvKegiatanLokasi)
+
             val edit: TextView =
                 view.findViewById(R.id.btnEditUser)
 
@@ -832,6 +884,11 @@ class ManagementTimActivity : AppCompatActivity() {
                     Color.rgb(220, 38, 38)
                 }
             )
+
+            // Menyembunyikan textview yang tidak digunakan untuk tim dengan GONE
+            holder.tvKegiatanTanggal.visibility = View.GONE
+            holder.tvKegiatanJam.visibility = View.GONE
+            holder.tvKegiatanLokasi.visibility = View.GONE
 
             holder.edit.setOnClickListener {
                 onEdit(tim)

@@ -18,6 +18,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.text.Html
 import android.text.Spanned
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -49,6 +50,7 @@ import java.io.FileOutputStream
 class StatistikDetailActivity : AppCompatActivity() {
 
     companion object {
+        private const val TAG = "StatistikDetailActivity"
 
         const val EXTRA_ID_TABEL = "id_tabel"
         const val EXTRA_TAHUN = "tahun"
@@ -480,7 +482,7 @@ class StatistikDetailActivity : AppCompatActivity() {
         tahun: Int,
         idTabel: String
     ) {
-
+        Log.d(TAG, "Memulai request loadDetail -> tahun: $tahun, idTabel: $idTabel, wilayah: $WILAYAH")
         tampilkanLoading()
 
         repository
@@ -507,6 +509,8 @@ class StatistikDetailActivity : AppCompatActivity() {
                         if (
                             !response.isSuccessful
                         ) {
+                            val errorBody = response.errorBody()?.string() ?: "Kosong"
+                            Log.e(TAG, "onResponse GAGAL -> Code: ${response.code()}, ErrorBody: $errorBody")
 
                             Toast.makeText(
                                 this@StatistikDetailActivity,
@@ -521,7 +525,7 @@ class StatistikDetailActivity : AppCompatActivity() {
                             response.body()
 
                         if (body == null) {
-
+                            Log.w(TAG, "onResponse -> Response body bernilai null")
                             Toast.makeText(
                                 this@StatistikDetailActivity,
                                 "Response kosong",
@@ -531,11 +535,13 @@ class StatistikDetailActivity : AppCompatActivity() {
                             return
                         }
 
+                        Log.d(TAG, "onResponse Sukses -> Status API: ${body.status}")
+
                         if (
                             body.status
                                 ?.uppercase() != "OK"
                         ) {
-
+                            Log.w(TAG, "Status API bukan OK: ${body.status}")
                             Toast.makeText(
                                 this@StatistikDetailActivity,
                                 "Status API: ${body.status}",
@@ -548,7 +554,7 @@ class StatistikDetailActivity : AppCompatActivity() {
                         if (
                             body.data.isNullOrEmpty()
                         ) {
-
+                            Log.w(TAG, "body.data kosong atau null")
                             Toast.makeText(
                                 this@StatistikDetailActivity,
                                 "Data detail tidak tersedia",
@@ -571,6 +577,7 @@ class StatistikDetailActivity : AppCompatActivity() {
                                     it.condition == "ERROR"
                                 }
 
+                            Log.e(TAG, "Detail data kosong, error message: ${errorObject?.message}")
                             Toast.makeText(
                                 this@StatistikDetailActivity,
                                 errorObject?.message
@@ -600,6 +607,7 @@ class StatistikDetailActivity : AppCompatActivity() {
                     ) {
 
                         sembunyikanLoading()
+                        Log.e(TAG, "onFailure terdeteksi -> Gagal mengambil data: ${t.localizedMessage}", t)
 
                         Toast.makeText(
                             this@StatistikDetailActivity,
@@ -905,7 +913,7 @@ class StatistikDetailActivity : AppCompatActivity() {
 
             Html.fromHtml(
                 text,
-                Html.FROM_HTML_MODE_LEGACY
+                HtmlCompat.FROM_HTML_MODE_LEGACY
             ).toString()
 
         } else {

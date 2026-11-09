@@ -1,16 +1,21 @@
+
 package com.example.bpskota.uisuperadmin
 
 import android.app.AlertDialog
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.bpskota.R
+import com.example.bpskota.bpskp.model.JabatanData
 import com.example.bpskota.bpskp.model.UserManagementData
 import com.example.bpskota.bpskp.repository.BpskpAuthSession
 import com.example.bpskota.bpskp.repository.BpskpRepository
@@ -26,6 +31,10 @@ class SuperadminUserManagementFragment : Fragment() {
     private lateinit var repository: BpskpRepository
 
     private var users: List<UserManagementData> = emptyList()
+
+    private var daftarJabatan: List<JabatanData> = emptyList()
+    private var jabatanLoaded = false
+    private var jabatanLoading = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -53,6 +62,7 @@ class SuperadminUserManagementFragment : Fragment() {
 
         setupAddButton()
         loadUsers()
+        loadJabatan()
     }
 
     // =========================================================
@@ -81,7 +91,6 @@ class SuperadminUserManagementFragment : Fragment() {
             if (response != null) {
 
                 users = response.data ?: emptyList()
-
                 displayUsers()
 
             } else {
@@ -92,6 +101,60 @@ class SuperadminUserManagementFragment : Fragment() {
                     Toast.LENGTH_SHORT
                 ).show()
             }
+        }
+    }
+
+    // =========================================================
+    // GET JABATAN
+    // =========================================================
+
+    private fun loadJabatan() {
+
+        if (jabatanLoaded || jabatanLoading) {
+            return
+        }
+
+        jabatanLoading = true
+
+        repository.getJabatan(authSession) { response, error ->
+
+            if (!isAdded || _binding == null) {
+                return@getJabatan
+            }
+
+            jabatanLoading = false
+
+            if (response != null) {
+
+                daftarJabatan = response.data ?: emptyList()
+                jabatanLoaded = true
+
+            } else {
+
+                Toast.makeText(
+                    requireContext(),
+                    error ?: "Gagal mengambil data jabatan.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    // =========================================================
+    // ATUR VISIBILITY VIEW BERDASARKAN DATA
+    // =========================================================
+
+    private fun aturVisibility(
+        view: View,
+        nilai: String?
+    ) {
+
+        view.visibility = if (
+            !nilai.isNullOrBlank() && nilai != "-"
+        ) {
+            View.VISIBLE
+        } else {
+            View.GONE
         }
     }
 
@@ -127,38 +190,84 @@ class SuperadminUserManagementFragment : Fragment() {
             val tvUserRole =
                 card.findViewById<TextView>(R.id.tvUserRole)
 
+            val tvKegiatanTanggal =
+                card.findViewById<TextView>(R.id.tvKegiatanTanggal)
+
+            val tvKegiatanJam =
+                card.findViewById<TextView>(R.id.tvKegiatanJam)
+
+            val tvKegiatanLokasi =
+                card.findViewById<TextView>(R.id.tvKegiatanLokasi)
+
             val btnEditUser =
                 card.findViewById<TextView>(R.id.btnEditUser)
 
             val btnDeleteUser =
                 card.findViewById<TextView>(R.id.btnDeleteUser)
 
-            tvUserName.text =
-                user.name?.takeIf { it.isNotBlank() } ?: "-"
+            // -------------------------------------------------
+            // NAMA
+            // -------------------------------------------------
 
-            tvUserUsername.text =
-                if (!user.username.isNullOrBlank()) {
-                    "@${user.username}"
-                } else {
-                    "@-"
-                }
+            tvUserName.text = user.name ?: ""
 
-            tvUserRole.text = formatRole(user.role)
+            aturVisibility(
+                tvUserName,
+                user.name
+            )
+
+            // -------------------------------------------------
+            // USERNAME
+            // -------------------------------------------------
+
+            tvUserUsername.text = user.username
+                ?.takeIf { it.isNotBlank() }
+                ?.let { "@$it" } ?: ""
+
+            aturVisibility(
+                tvUserUsername,
+                user.username
+            )
+
+            // -------------------------------------------------
+            // ROLE
+            // -------------------------------------------------
+
+            val roleText = formatRole(user.role)
+
+            tvUserRole.text = roleText
+
+            aturVisibility(
+                tvUserRole,
+                user.role
+            )
+
             tvUserRole.setTextColor(
                 when (user.role?.lowercase()) {
-                    "super_admin" -> android.graphics.Color.parseColor("#F97316")
-                    "pimpinan" -> android.graphics.Color.parseColor("#2563EB")
-                    "user" -> android.graphics.Color.parseColor("#16A34A")
-                    else -> android.graphics.Color.parseColor("#6B7280")
+                    "super_admin" -> Color.parseColor("#F97316")
+                    "pimpinan" -> Color.parseColor("#2563EB")
+                    "pegawai" -> Color.parseColor("#16A34A")
+                    "ketua_tim" -> Color.parseColor("#7C3AED")
+                    "operator" -> Color.parseColor("#0891B2")
+                    else -> Color.parseColor("#6B7280")
                 }
             )
+
+            // -------------------------------------------------
+            // INFORMASI KEGIATAN TIDAK DIGUNAKAN DI CARD USER
+            // -------------------------------------------------
+
+            tvKegiatanTanggal.visibility = View.GONE
+            tvKegiatanJam.visibility = View.GONE
+            tvKegiatanLokasi.visibility = View.GONE
 
             // -------------------------------------------------
             // EDIT
             // -------------------------------------------------
 
-            btnEditUser.setOnClickListener {
+            btnEditUser.visibility = View.VISIBLE
 
+            btnEditUser.setOnClickListener {
                 showUserForm(user)
             }
 
@@ -166,8 +275,9 @@ class SuperadminUserManagementFragment : Fragment() {
             // DELETE
             // -------------------------------------------------
 
-            btnDeleteUser.setOnClickListener {
+            btnDeleteUser.visibility = View.VISIBLE
 
+            btnDeleteUser.setOnClickListener {
                 confirmDeleteUser(user)
             }
 
@@ -184,11 +294,10 @@ class SuperadminUserManagementFragment : Fragment() {
         val textView = TextView(requireContext()).apply {
 
             text = "Belum ada pengguna."
-
             textSize = 13f
 
             setTextColor(
-                android.graphics.Color.parseColor("#6B7280")
+                Color.parseColor("#6B7280")
             )
 
             gravity = Gravity.CENTER
@@ -212,11 +321,48 @@ class SuperadminUserManagementFragment : Fragment() {
         user: UserManagementData?
     ) {
 
+        if (!jabatanLoaded) {
+
+            loadJabatan()
+
+            if (jabatanLoading) {
+                return
+            }
+
+            Toast.makeText(
+                requireContext(),
+                "Data jabatan belum tersedia. Silakan coba kembali.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            return
+        }
+
         val dialogBinding = DialogUserFormBinding.inflate(
             LayoutInflater.from(requireContext())
         )
 
         val isEdit = user != null
+
+        // -----------------------------------------------------
+        // PASTIKAN SEMUA TEKS INPUT HITAM
+        // -----------------------------------------------------
+
+        val editTexts = listOf(
+            dialogBinding.etUserName,
+            dialogBinding.etUserUsername,
+            dialogBinding.etUserPassword,
+            dialogBinding.etUserNip,
+            dialogBinding.etUserNoHp
+        )
+
+        editTexts.forEach { editText ->
+
+            editText.setTextColor(Color.BLACK)
+            editText.setHintTextColor(Color.BLACK)
+        }
+
+        dialogBinding.tvUserPasswordHint.setTextColor(Color.BLACK)
 
         // -----------------------------------------------------
         // TITLE
@@ -235,23 +381,17 @@ class SuperadminUserManagementFragment : Fragment() {
 
         if (isEdit) {
 
-            dialogBinding.etUserName.setText(
-                user?.name ?: ""
-            )
-
-            dialogBinding.etUserUsername.setText(
-                user?.username ?: ""
-            )
-
+            dialogBinding.etUserName.setText(user?.name ?: "")
+            dialogBinding.etUserUsername.setText(user?.username ?: "")
             dialogBinding.etUserPassword.setText("")
+            dialogBinding.etUserNip.setText(user?.nip ?: "")
+            dialogBinding.etUserNoHp.setText(user?.no_hp ?: "")
 
-            dialogBinding.tvUserPasswordHint.visibility =
-                View.VISIBLE
+            dialogBinding.tvUserPasswordHint.visibility = View.VISIBLE
 
         } else {
 
-            dialogBinding.tvUserPasswordHint.visibility =
-                View.GONE
+            dialogBinding.tvUserPasswordHint.visibility = View.GONE
         }
 
         // -----------------------------------------------------
@@ -260,86 +400,140 @@ class SuperadminUserManagementFragment : Fragment() {
 
         val availableRoles = getAvailableRoles(user)
 
-        val roleAdapter = object : ArrayAdapter<String>(
-            requireContext(),
-            android.R.layout.simple_spinner_item,
+        setupSpinner(
+            dialogBinding.spinnerUserRole,
             availableRoles.map { formatRole(it) }
+        )
+
+        val currentRoleIndex = availableRoles.indexOf(
+            user?.role?.lowercase()
+        )
+
+        if (currentRoleIndex >= 0) {
+            dialogBinding.spinnerUserRole.setSelection(currentRoleIndex)
+        }
+
+        // -----------------------------------------------------
+        // JENIS KELAMIN
+        // -----------------------------------------------------
+
+        val jenisKelaminOptions = listOf(
+            "Pilih jenis kelamin",
+            "Laki-laki",
+            "Perempuan"
+        )
+
+        setupSpinner(
+            dialogBinding.spinnerUserJenisKelamin,
+            jenisKelaminOptions
+        )
+
+        val jenisKelaminIndex = when (user?.jenis_kelamin?.lowercase()) {
+            "laki-laki" -> 1
+            "perempuan" -> 2
+            else -> 0
+        }
+
+        dialogBinding.spinnerUserJenisKelamin.setSelection(
+            jenisKelaminIndex
+        )
+
+        // -----------------------------------------------------
+        // JABATAN
+        // -----------------------------------------------------
+
+        val jabatanOptions = daftarJabatan.toMutableList()
+
+        if (
+            user?.id_jabatan != null &&
+            jabatanOptions.none { it.id == user.id_jabatan }
         ) {
 
-            override fun getView(
-                position: Int,
-                convertView: View?,
-                parent: ViewGroup
-            ): View {
-                val view = super.getView(position, convertView, parent)
-
-                val textView = view.findViewById<TextView>(
-                    android.R.id.text1
+            jabatanOptions.add(
+                JabatanData(
+                    id = user.id_jabatan,
+                    nama_jabatan = user.nama_jabatan
                 )
-
-                textView.setTextColor(
-                    android.graphics.Color.parseColor("#111827")
-                )
-
-                textView.textSize = 14f
-
-                return view
-            }
-
-            override fun getDropDownView(
-                position: Int,
-                convertView: View?,
-                parent: ViewGroup
-            ): View {
-                val view = super.getDropDownView(
-                    position,
-                    convertView,
-                    parent
-                )
-
-                val textView = view.findViewById<TextView>(
-                    android.R.id.text1
-                )
-
-                textView.setTextColor(
-                    android.graphics.Color.parseColor("#111827")
-                )
-
-                textView.textSize = 14f
-
-                return view
-            }
+            )
         }
 
-        roleAdapter.setDropDownViewResource(
-            android.R.layout.simple_spinner_dropdown_item
-        )
+        val jabatanNames = mutableListOf("Pilih jabatan")
 
-        dialogBinding.spinnerUserRole.adapter = roleAdapter
-        roleAdapter.setDropDownViewResource(
-            android.R.layout.simple_spinner_dropdown_item
-        )
-
-        dialogBinding.spinnerUserRole.adapter = roleAdapter
-
-        // -----------------------------------------------------
-        // PILIH ROLE SAAT EDIT
-        // -----------------------------------------------------
-
-        if (isEdit) {
-
-            val currentRole =
-                user?.role?.lowercase()
-
-            val currentIndex =
-                availableRoles.indexOf(currentRole)
-
-            if (currentIndex >= 0) {
-                dialogBinding.spinnerUserRole.setSelection(
-                    currentIndex
-                )
+        jabatanNames.addAll(
+            jabatanOptions.map {
+                it.nama_jabatan ?: "-"
             }
+        )
+
+        setupSpinner(
+            dialogBinding.spinnerUserJabatan,
+            jabatanNames
+        )
+
+        val jabatanIndex = jabatanOptions.indexOfFirst {
+            it.id == user?.id_jabatan
         }
+
+        dialogBinding.spinnerUserJabatan.setSelection(
+            if (jabatanIndex >= 0) jabatanIndex + 1 else 0
+        )
+
+        // -----------------------------------------------------
+        // GOLONGAN
+        // -----------------------------------------------------
+
+        val golonganOptions = listOf(
+            "Pilih golongan",
+            "I/a",
+            "I/b",
+            "I/c",
+            "I/d",
+            "II/a",
+            "II/b",
+            "II/c",
+            "II/d",
+            "III/a",
+            "III/b",
+            "III/c",
+            "III/d",
+            "IV/a",
+            "IV/b",
+            "IV/c",
+            "IV/d",
+            "IV/e"
+        )
+
+        setupSpinner(
+            dialogBinding.spinnerUserGolongan,
+            golonganOptions
+        )
+
+        val golonganIndex = golonganOptions.indexOf(user?.golongan)
+
+        dialogBinding.spinnerUserGolongan.setSelection(
+            if (golonganIndex >= 0) golonganIndex else 0
+        )
+
+        // -----------------------------------------------------
+        // STATUS
+        // -----------------------------------------------------
+
+        val statusOptions = listOf(
+            "Aktif",
+            "Nonaktif"
+        )
+
+        setupSpinner(
+            dialogBinding.spinnerUserStatus,
+            statusOptions
+        )
+
+        val statusIndex = when (user?.status?.lowercase()) {
+            "nonaktif" -> 1
+            else -> 0
+        }
+
+        dialogBinding.spinnerUserStatus.setSelection(statusIndex)
 
         // -----------------------------------------------------
         // BUAT DIALOG
@@ -358,7 +552,6 @@ class SuperadminUserManagementFragment : Fragment() {
         // -----------------------------------------------------
 
         dialogBinding.btnCancelUser.setOnClickListener {
-
             dialog.dismiss()
         }
 
@@ -371,7 +564,9 @@ class SuperadminUserManagementFragment : Fragment() {
             saveUser(
                 dialogBinding = dialogBinding,
                 user = user,
-                dialog = dialog
+                dialog = dialog,
+                jabatanOptions = jabatanOptions,
+                availableRoles = availableRoles
             )
         }
 
@@ -379,23 +574,104 @@ class SuperadminUserManagementFragment : Fragment() {
     }
 
     // =========================================================
-    // ROLE YANG TERSEDIA
+    // SPINNER ADAPTER
+    // BACKGROUND PUTIH + BORDER ORANGE
     // =========================================================
 
+    private fun setupSpinner(
+        spinner: Spinner,
+        items: List<String>
+    ) {
+
+        val adapter = object : ArrayAdapter<String>(
+            requireContext(),
+            android.R.layout.simple_spinner_item,
+            items
+        ) {
+
+            override fun getView(
+                position: Int,
+                convertView: View?,
+                parent: ViewGroup
+            ): View {
+
+                val view = super.getView(
+                    position,
+                    convertView,
+                    parent
+                )
+
+                val textView = view.findViewById<TextView>(
+                    android.R.id.text1
+                )
+
+                textView.setTextColor(Color.BLACK)
+                textView.textSize = 14f
+
+                return view
+            }
+
+            override fun getDropDownView(
+                position: Int,
+                convertView: View?,
+                parent: ViewGroup
+            ): View {
+
+                val view = super.getDropDownView(
+                    position,
+                    convertView,
+                    parent
+                )
+
+                val textView = view.findViewById<TextView>(
+                    android.R.id.text1
+                )
+
+                textView.setTextColor(Color.BLACK)
+                textView.textSize = 14f
+                textView.setBackgroundColor(Color.WHITE)
+
+                return view
+            }
+        }
+
+        adapter.setDropDownViewResource(
+            android.R.layout.simple_spinner_dropdown_item
+        )
+
+        spinner.adapter = adapter
+
+        val popupBackground = GradientDrawable().apply {
+
+            shape = GradientDrawable.RECTANGLE
+
+            setColor(Color.WHITE)
+
+            setStroke(
+                2,
+                Color.parseColor("#F97316")
+            )
+
+            cornerRadius = 12f * resources.displayMetrics.density
+        }
+
+        spinner.setPopupBackgroundDrawable(popupBackground)
+    }
+
+    // =========================================================
+    // ROLE YANG TERSEDIA
+    // =========================================================
 
     private fun getAvailableRoles(
         editingUser: UserManagementData?
     ): List<String> {
 
-        // Role yang tersedia untuk penambahan pengguna baru.
         val roles = mutableListOf(
             "pegawai",
             "ketua_tim",
             "operator"
         )
 
-        // Saat edit, pertahankan role akun yang sedang diedit
-        // agar role lama tidak hilang dari pilihan.
         val currentRole = editingUser?.role?.lowercase()
 
         if (
@@ -415,32 +691,84 @@ class SuperadminUserManagementFragment : Fragment() {
     private fun saveUser(
         dialogBinding: DialogUserFormBinding,
         user: UserManagementData?,
-        dialog: AlertDialog
+        dialog: AlertDialog,
+        jabatanOptions: List<JabatanData>,
+        availableRoles: List<String>
     ) {
 
-        val name =
-            dialogBinding.etUserName.text
-                .toString()
-                .trim()
+        val name = dialogBinding.etUserName.text
+            .toString()
+            .trim()
 
-        val username =
-            dialogBinding.etUserUsername.text
-                .toString()
-                .trim()
+        val username = dialogBinding.etUserUsername.text
+            .toString()
+            .trim()
 
-        val password =
-            dialogBinding.etUserPassword.text
-                .toString()
+        val password = dialogBinding.etUserPassword.text
+            .toString()
 
-        val selectedRoleIndex =
+        val nip = dialogBinding.etUserNip.text
+            .toString()
+            .trim()
+            .ifBlank { null }
+
+        val noHp = dialogBinding.etUserNoHp.text
+            .toString()
+            .trim()
+            .ifBlank { null }
+
+        // -----------------------------------------------------
+        // ROLE
+        // -----------------------------------------------------
+
+        val role = availableRoles.getOrNull(
             dialogBinding.spinnerUserRole.selectedItemPosition
+        ) ?: "pegawai"
 
-        val availableRoles =
-            getAvailableRoles(user)
+        // -----------------------------------------------------
+        // JENIS KELAMIN
+        // -----------------------------------------------------
 
-        val role =
-            availableRoles.getOrNull(selectedRoleIndex)
-                ?: "user"
+        val jenisKelamin = when (
+            dialogBinding.spinnerUserJenisKelamin.selectedItemPosition
+        ) {
+            1 -> "laki-laki"
+            2 -> "perempuan"
+            else -> null
+        }
+
+        // -----------------------------------------------------
+        // JABATAN
+        // -----------------------------------------------------
+
+        val selectedJabatanIndex =
+            dialogBinding.spinnerUserJabatan.selectedItemPosition - 1
+
+        val idJabatan = jabatanOptions
+            .getOrNull(selectedJabatanIndex)
+            ?.id
+
+        // -----------------------------------------------------
+        // GOLONGAN
+        // -----------------------------------------------------
+
+        val golongan = dialogBinding.spinnerUserGolongan
+            .selectedItem
+            ?.toString()
+            ?.takeIf {
+                it != "Pilih golongan"
+            }
+
+        // -----------------------------------------------------
+        // STATUS
+        // -----------------------------------------------------
+
+        val status = when (
+            dialogBinding.spinnerUserStatus.selectedItemPosition
+        ) {
+            1 -> "nonaktif"
+            else -> "aktif"
+        }
 
         // -----------------------------------------------------
         // VALIDASI NAMA
@@ -485,7 +813,7 @@ class SuperadminUserManagementFragment : Fragment() {
         }
 
         // -----------------------------------------------------
-        // VALIDASI ROLE EXCLUSIVE DI SISI ANDROID
+        // VALIDASI ROLE EXCLUSIVE
         // -----------------------------------------------------
 
         if (
@@ -515,7 +843,7 @@ class SuperadminUserManagementFragment : Fragment() {
         }
 
         // -----------------------------------------------------
-        // TAMBAH
+        // TAMBAH USER
         // -----------------------------------------------------
 
         if (user == null) {
@@ -525,7 +853,13 @@ class SuperadminUserManagementFragment : Fragment() {
                 name = name,
                 username = username,
                 password = password,
-                role = role
+                role = role,
+                jenisKelamin = jenisKelamin,
+                idJabatan = idJabatan,
+                nip = nip,
+                noHp = noHp,
+                golongan = golongan,
+                status = status
             ) { response, error ->
 
                 if (!isAdded || _binding == null) {
@@ -549,8 +883,7 @@ class SuperadminUserManagementFragment : Fragment() {
 
                     Toast.makeText(
                         requireContext(),
-                        error
-                            ?: "Gagal menambahkan pengguna.",
+                        error ?: "Gagal menambahkan pengguna.",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -559,7 +892,7 @@ class SuperadminUserManagementFragment : Fragment() {
         } else {
 
             // -------------------------------------------------
-            // EDIT
+            // EDIT USER
             // -------------------------------------------------
 
             val userId = user.id
@@ -581,7 +914,13 @@ class SuperadminUserManagementFragment : Fragment() {
                 name = name,
                 username = username,
                 password = password.ifBlank { null },
-                role = role
+                role = role,
+                jenisKelamin = jenisKelamin,
+                idJabatan = idJabatan,
+                nip = nip,
+                noHp = noHp,
+                golongan = golongan,
+                status = status
             ) { response, error ->
 
                 if (!isAdded || _binding == null) {
@@ -605,8 +944,7 @@ class SuperadminUserManagementFragment : Fragment() {
 
                     Toast.makeText(
                         requireContext(),
-                        error
-                            ?: "Gagal memperbarui pengguna.",
+                        error ?: "Gagal memperbarui pengguna.",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -635,12 +973,7 @@ class SuperadminUserManagementFragment : Fragment() {
             return
         }
 
-        // -----------------------------------------------------
-        // CEGAH HAPUS AKUN SENDIRI
-        // -----------------------------------------------------
-
-        val currentUserId =
-            authSession.getUserId()
+        val currentUserId = authSession.getUserId()
 
         if (
             currentUserId != null &&
@@ -656,23 +989,18 @@ class SuperadminUserManagementFragment : Fragment() {
             return
         }
 
-        val userName =
-            user.name?.takeIf { it.isNotBlank() }
-                ?: user.username
-                ?: "pengguna ini"
+        val userName = user.name
+            ?.takeIf { it.isNotBlank() }
+            ?: user.username
+            ?: "pengguna ini"
 
         AlertDialog.Builder(requireContext())
             .setTitle("Hapus Pengguna")
             .setMessage(
                 "Apakah kamu yakin ingin menghapus akun \"$userName\"?"
             )
-            .setNegativeButton(
-                "Batal",
-                null
-            )
-            .setPositiveButton(
-                "Hapus"
-            ) { _, _ ->
+            .setNegativeButton("Batal", null)
+            .setPositiveButton("Hapus") { _, _ ->
 
                 deleteUser(
                     userId = userId,
@@ -715,8 +1043,7 @@ class SuperadminUserManagementFragment : Fragment() {
 
                 Toast.makeText(
                     requireContext(),
-                    error
-                        ?: "Gagal menghapus pengguna.",
+                    error ?: "Gagal menghapus pengguna.",
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -727,14 +1054,15 @@ class SuperadminUserManagementFragment : Fragment() {
     // FORMAT ROLE
     // =========================================================
 
-
     private fun formatRole(role: String?): String {
+
         return when (role?.lowercase()) {
             "super_admin" -> "SUPER ADMIN"
             "pimpinan" -> "PIMPINAN"
             "ketua_tim" -> "KETUA TIM"
             "pegawai" -> "PEGAWAI"
             "operator" -> "OPERATOR"
+            "mitra" -> "MITRA"
             else -> role?.uppercase() ?: "-"
         }
     }
@@ -745,7 +1073,6 @@ class SuperadminUserManagementFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-
         _binding = null
     }
 }

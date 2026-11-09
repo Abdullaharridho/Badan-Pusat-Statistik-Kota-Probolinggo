@@ -11,10 +11,7 @@
 
     tools:context=".TempattinggalActivity">
 
-
-    <!-- ========================================================= -->
     <!-- HEADER -->
-    <!-- ========================================================= -->
 
     <androidx.cardview.widget.CardView
         android:id="@+id/headerTempatTinggal"
@@ -34,11 +31,9 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
-
 
             <!-- BACK -->
 
@@ -58,13 +53,11 @@
                 android:padding="10dp"
 
                 android:src="@drawable/ic_arrow_back"
-
                 android:contentDescription="Kembali"
 
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent" />
-
 
             <!-- JUDUL -->
 
@@ -75,7 +68,7 @@
                 android:layout_height="wrap_content"
 
                 android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="12dp"
 
                 android:text="Kondisi Tempat Tinggal, Kemiskinan, dan Permasalahan Sosial"
 
@@ -87,30 +80,6 @@
                 android:ellipsize="end"
 
                 app:layout_constraintStart_toEndOf="@id/btnBack"
-                app:layout_constraintEnd_toStartOf="@id/btnFilter"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent" />
-
-
-            <!-- FILTER -->
-
-            <ImageView
-                android:id="@+id/btnFilter"
-
-                android:layout_width="42dp"
-                android:layout_height="42dp"
-
-                android:layout_marginEnd="8dp"
-
-                android:clickable="true"
-                android:focusable="true"
-
-                android:padding="10dp"
-
-                android:src="@drawable/ic_filter"
-
-                android:contentDescription="Filter"
-
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent" />
@@ -119,10 +88,88 @@
 
     </androidx.cardview.widget.CardView>
 
+    <!-- FILTER TAHUN -->
 
-    <!-- ========================================================= -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardFilterTahun"
+
+        android:layout_width="0dp"
+        android:layout_height="54dp"
+
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="16dp"
+
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="2dp"
+
+        app:layout_constraintTop_toBottomOf="@id/headerTempatTinggal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:id="@+id/btnFilter"
+
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="19dp"
+                android:layout_height="19dp"
+
+                android:src="@drawable/ic_filter"
+                android:contentDescription="Filter tahun" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+
+                android:text="Filter Tahun"
+                android:textColor="#374151"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvFilterTahun"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+
+                android:text="Tahun"
+                android:textColor="#F97316"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
+
+            <ImageView
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+
+                android:layout_marginStart="8dp"
+
+                android:src="@drawable/ic_bottom"
+                android:contentDescription="Pilih tahun"
+                app:tint="#F97316" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
     <!-- CONTENT -->
-    <!-- ========================================================= -->
 
     <ScrollView
         android:id="@+id/contentScroll"
@@ -134,13 +181,12 @@
         android:scrollbars="none"
         android:overScrollMode="never"
 
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="8dp"
 
-        app:layout_constraintTop_toBottomOf="@id/headerTempatTinggal"
+        app:layout_constraintTop_toBottomOf="@id/cardFilterTahun"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
-
 
         <LinearLayout
             android:id="@+id/cardContainer"
@@ -157,10 +203,7 @@
 
     </ScrollView>
 
-
-    <!-- ========================================================= -->
     <!-- LOTTIE LOADING -->
-    <!-- ========================================================= -->
 
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/progressLoading"
@@ -177,6 +220,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

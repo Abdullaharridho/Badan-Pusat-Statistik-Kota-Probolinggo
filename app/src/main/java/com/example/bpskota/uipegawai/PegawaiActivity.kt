@@ -279,28 +279,8 @@ class PegawaiActivity : AppCompatActivity() {
     // =========================================================
 
     private fun setupAccountMenu() {
-        binding.btnPegawaiMenu.setOnClickListener { view ->
-            val popupMenu = PopupMenu(this@PegawaiActivity, view)
-
-            popupMenu.menu.add(
-                Menu.NONE,
-                1,
-                Menu.NONE,
-                "Keluar"
-            )
-
-            popupMenu.setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    1 -> {
-                        confirmLogout()
-                        true
-                    }
-
-                    else -> false
-                }
-            }
-
-            popupMenu.show()
+        binding.btnPegawaiMenu.setOnClickListener {
+            confirmLogout()
         }
     }
 

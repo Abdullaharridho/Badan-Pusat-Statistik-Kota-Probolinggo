@@ -1,15 +1,23 @@
 package com.example.bpskota
 
 import android.app.AlertDialog
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.Toast
+import android.widget.ScrollView
 import android.widget.TextView
-import com.airbnb.lottie.LottieAnimationView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.airbnb.lottie.LottieAnimationView
 import com.example.bpskota.bps.model.TenagaKerjaResponse
 import com.example.bpskota.bps.repository.BpsRepository
 import com.example.bpskota.bpskp.api.BpskpRetrofitClient
@@ -22,38 +30,25 @@ import java.util.Locale
 class GenderActivity : AppCompatActivity() {
 
     companion object {
-
         private const val DOMAIN = "3574"
-
-        private const val API_KEY =
-            "008edaaae5d450b1913b31a2cef618c3"
-
-        private val VARIABLE_LIST = listOf(
-            134,
-            49,
-            47,
-            121
-        )
-
+        private const val API_KEY = "008edaaae5d450b1913b31a2cef618c3"
+        private val VARIABLE_LIST = listOf(134, 49, 47, 121)
         private val TAHUN_LIST = (2010..2026).toList()
     }
 
-    private val repository =
-        BpsRepository()
-
+    private val repository = BpsRepository()
     private lateinit var activityTracker: ActivityTracker
 
     private lateinit var cardContainer: LinearLayout
     private lateinit var progressLoading: LottieAnimationView
     private lateinit var btnBack: ImageView
-    private lateinit var btnFilter: ImageView
+    private lateinit var btnFilter: LinearLayout
 
     private var tahunDipilih = 2025
-
     private var jumlahRequestSelesai = 0
+    private lateinit var tvFilterTahun: TextView
 
-    private val dataGender =
-        mutableListOf<GenderData>()
+    private val dataGender = mutableListOf<GenderData>()
 
     data class GenderData(
         val variableId: Int,
@@ -66,157 +61,291 @@ class GenderActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_gender)
 
-        setContentView(
-            R.layout.activity_gender
-        )
-
-        activityTracker = ActivityTracker(
-            this,
-            BpskpRetrofitClient.api
-        )
-
+        activityTracker = ActivityTracker(this, BpskpRetrofitClient.api)
         activityTracker.trackScreen(
             screen = "Gender",
-            metadata = mapOf(
-                "tahun" to tahunDipilih
-            )
+            metadata = mapOf("tahun" to tahunDipilih)
         )
 
         initView()
-
         setupButton()
-
         loadSemuaGender()
     }
 
     private fun initView() {
+        cardContainer = findViewById(R.id.cardContainer)
 
-        cardContainer =
-            findViewById(
-                R.id.cardContainer
-            )
-
-        progressLoading =
-            findViewById(
-                R.id.progressLoading
-            )
-
-        progressLoading.setAnimation(
-            "Loading_Animation.json"
-        )
-
+        progressLoading = findViewById(R.id.progressLoading)
+        progressLoading.setAnimation("Loading_Animation.json")
         progressLoading.repeatCount = -1
 
-        btnBack =
-            findViewById(
-                R.id.btnBack
-            )
+        btnBack = findViewById(R.id.btnBack)
+        btnFilter = findViewById(R.id.btnFilter)
 
-        btnFilter =
-            findViewById(
-                R.id.btnFilter
-            )
+        tvFilterTahun = findViewById(R.id.tvFilterTahun)
+        tvFilterTahun.text = tahunDipilih.toString()
     }
 
     private fun setupButton() {
+        btnBack.setOnClickListener { finish() }
+        btnFilter.setOnClickListener { tampilkanFilterTahun() }
+    }
 
-        btnBack.setOnClickListener {
-            finish()
-        }
-
-        btnFilter.setOnClickListener {
-
-            tampilkanFilterTahun()
-        }
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).toInt()
     }
 
     private fun tampilkanFilterTahun() {
+        val tahunArray = TAHUN_LIST.reversed().map { it.toString() }
 
-        val tahunArray =
-            TAHUN_LIST
-                .reversed()
-                .map {
-                    it.toString()
-                }
-                .toTypedArray()
+        val rootContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
 
-        var posisiTerpilih =
-            tahunArray.indexOf(
-                tahunDipilih.toString()
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(Color.WHITE)
+                setStroke(
+                    dpToPx(2),
+                    Color.parseColor("#F97316")
+                )
+                cornerRadius = dpToPx(24).toFloat()
+            }
+
+            setPadding(
+                0,
+                dpToPx(20),
+                0,
+                dpToPx(16)
             )
-
-        if (posisiTerpilih < 0) {
-            posisiTerpilih = 0
         }
 
-        AlertDialog.Builder(this)
-            .setTitle("Pilih Tahun")
-            .setSingleChoiceItems(
-                tahunArray,
-                posisiTerpilih
-            ) { dialog, which ->
+        val titleText = TextView(this).apply {
+            text = "Pilih Tahun Data"
+            setTextColor(Color.parseColor("#F97316"))
+            textSize = 16f
+            setTypeface(null, Typeface.BOLD)
+            gravity = Gravity.CENTER
 
-                val tahunBaru =
-                    tahunArray[which].toInt()
+            setPadding(
+                0,
+                0,
+                0,
+                dpToPx(16)
+            )
+        }
 
-                dialog.dismiss()
+        rootContainer.addView(titleText)
 
-                if (
-                    tahunBaru != tahunDipilih
-                ) {
+        val scrollView = ScrollView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
 
-                    tahunDipilih =
-                        tahunBaru
+            isScrollbarFadingEnabled = false
+        }
 
-                    activityTracker.trackScreen(
-                        screen = "Gender",
-                        metadata = mapOf(
-                            "tahun" to tahunDipilih
+        val listContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+
+            setPadding(
+                dpToPx(20),
+                0,
+                dpToPx(20),
+                dpToPx(8)
+            )
+        }
+
+        var dialogInstance: AlertDialog? = null
+
+        tahunArray.forEach { tahunStr ->
+
+            val isSelected = tahunStr.toInt() == tahunDipilih
+
+            val itemText = TextView(this).apply {
+                text = tahunStr
+                textSize = 14f
+                gravity = Gravity.CENTER
+
+                setPadding(
+                    0,
+                    dpToPx(12),
+                    0,
+                    dpToPx(12)
+                )
+
+                val params = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+
+                params.setMargins(
+                    0,
+                    0,
+                    0,
+                    dpToPx(8)
+                )
+
+                layoutParams = params
+
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = dpToPx(12).toFloat()
+
+                    if (isSelected) {
+                        setColor(Color.parseColor("#F97316"))
+                    } else {
+                        setColor(Color.parseColor("#FFF7ED"))
+                    }
+                }
+
+                setTextColor(
+                    if (isSelected) {
+                        Color.WHITE
+                    } else {
+                        Color.parseColor("#C2410C")
+                    }
+                )
+
+                setTypeface(
+                    null,
+                    if (isSelected) {
+                        Typeface.BOLD
+                    } else {
+                        Typeface.NORMAL
+                    }
+                )
+
+                setOnClickListener {
+                    dialogInstance?.dismiss()
+
+                    val tahunBaru = tahunStr.toInt()
+
+                    if (tahunBaru != tahunDipilih) {
+                        tahunDipilih = tahunBaru
+                        tvFilterTahun.text = tahunDipilih.toString()
+
+                        activityTracker.trackScreen(
+                            screen = "Gender",
+                            metadata = mapOf("tahun" to tahunDipilih)
                         )
-                    )
 
-                    loadSemuaGender()
+                        loadSemuaGender()
+                    }
                 }
             }
-            .setNegativeButton(
-                "Batal",
-                null
+
+            listContainer.addView(itemText)
+        }
+
+        scrollView.addView(listContainer)
+        rootContainer.addView(scrollView)
+
+        val btnClose = TextView(this).apply {
+            text = "Tutup"
+            setTextColor(Color.parseColor("#9CA3AF"))
+            textSize = 14f
+            setTypeface(null, Typeface.BOLD)
+            gravity = Gravity.CENTER
+
+            setPadding(
+                0,
+                dpToPx(12),
+                0,
+                0
             )
-            .show()
+
+            setOnClickListener {
+                dialogInstance?.dismiss()
+            }
+        }
+
+        rootContainer.addView(btnClose)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(rootContainer)
+            .create()
+
+        dialogInstance = dialog
+
+        dialog.window?.setBackgroundDrawable(
+            ColorDrawable(Color.TRANSPARENT)
+        )
+
+        // TAMPILKAN DIALOG
+        dialog.show()
+
+        // ATUR POSISI DAN ANIMASI DIALOG
+        dialog.window?.let { window ->
+
+            val displayMetrics = resources.displayMetrics
+
+            val width = (displayMetrics.widthPixels * 0.70f).toInt()
+            val height = (displayMetrics.heightPixels * 0.50f).toInt()
+
+            // Atur posisi dan ukuran Window
+            val params = window.attributes
+
+            params.gravity = Gravity.CENTER
+            params.x = 0
+            params.y = 0
+            params.width = width
+            params.height = height
+
+            // Matikan animasi bawaan Window
+            params.windowAnimations = 0
+
+            window.attributes = params
+
+            window.setBackgroundDrawable(
+                ColorDrawable(Color.TRANSPARENT)
+            )
+
+            // Tunggu sampai Window selesai ditampilkan
+            window.decorView.post {
+
+                val decorView = window.decorView
+
+                // Titik pusat animasi berada di tengah Window
+                decorView.pivotX = decorView.width / 2f
+                decorView.pivotY = decorView.height / 2f
+
+                // Kondisi awal
+                decorView.alpha = 0f
+                decorView.scaleX = 0.85f
+                decorView.scaleY = 0.85f
+
+                // Animasi muncul dari tengah
+                decorView.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(300)
+                    .setInterpolator(DecelerateInterpolator(2f))
+                    .start()
+            }
+        }
     }
 
-    private fun getKodeTahun(
-        tahun: Int
-    ): Int {
-
+    private fun getKodeTahun(tahun: Int): Int {
         return tahun - 1900
     }
 
     private fun loadSemuaGender() {
-
-        progressLoading.visibility =
-            View.VISIBLE
-
+        progressLoading.visibility = View.VISIBLE
         progressLoading.playAnimation()
 
         cardContainer.removeAllViews()
-
         dataGender.clear()
-
         jumlahRequestSelesai = 0
 
-        val kodeTahun =
-            getKodeTahun(
-                tahunDipilih
-            )
+        val kodeTahun = getKodeTahun(tahunDipilih)
 
         VARIABLE_LIST.forEach { variableId ->
-
-            loadGenderVariable(
-                variableId,
-                kodeTahun
-            )
+            loadGenderVariable(variableId, kodeTahun)
         }
     }
 
@@ -224,65 +353,35 @@ class GenderActivity : AppCompatActivity() {
         variableId: Int,
         kodeTahun: Int
     ) {
-
         repository.getTenagaKerja(
             domain = DOMAIN,
             variable = variableId,
             tahun = kodeTahun,
             apiKey = API_KEY
         ).enqueue(
-            object :
-                Callback<TenagaKerjaResponse> {
+            object : Callback<TenagaKerjaResponse> {
 
                 override fun onResponse(
                     call: Call<TenagaKerjaResponse>,
                     response: Response<TenagaKerjaResponse>
                 ) {
-
                     if (!response.isSuccessful) {
-
                         requestSelesai()
-
                         return
                     }
 
-                    val body =
-                        response.body()
-
-                    if (body == null) {
-
-                        requestSelesai()
-
-                        return
-                    }
+                    val body = response.body()
 
                     if (
-                        body.status
-                            ?.uppercase(Locale.ROOT) !=
-                        "OK"
+                        body == null ||
+                        body.status?.uppercase(Locale.ROOT) != "OK" ||
+                        body.dataAvailability?.lowercase(Locale.ROOT) != "available"
                     ) {
-
                         requestSelesai()
-
                         return
                     }
 
-                    if (
-                        body.dataAvailability
-                            ?.lowercase(Locale.ROOT) !=
-                        "available"
-                    ) {
-
-                        requestSelesai()
-
-                        return
-                    }
-
-                    prosesDataGender(
-                        variableId,
-                        body
-                    )
-
+                    prosesDataGender(variableId, body)
                     requestSelesai()
                 }
 
@@ -290,7 +389,6 @@ class GenderActivity : AppCompatActivity() {
                     call: Call<TenagaKerjaResponse>,
                     t: Throwable
                 ) {
-
                     requestSelesai()
                 }
             }
@@ -301,173 +399,90 @@ class GenderActivity : AppCompatActivity() {
         variableId: Int,
         body: TenagaKerjaResponse
     ) {
+        val dataContent = body.dataContent ?: emptyMap()
 
-        val dataContent =
-            body.dataContent
-                ?: emptyMap()
+        if (dataContent.isEmpty()) return
 
-        if (dataContent.isEmpty()) {
-            return
-        }
+        val tahunApi = body.tahun?.firstOrNull()
+        val tahunLabel = tahunApi?.label ?: tahunDipilih.toString()
 
-        val tahunApi =
-            body.tahun?.firstOrNull()
+        val variable = body.variable?.firstOrNull()
+        val judul = variable?.label ?: getJudulVariable(variableId)
+        val satuan = variable?.unit ?: ""
+        val decimal = variable?.decimal ?: 2
 
-        val tahunLabel =
-            tahunApi?.label
-                ?: tahunDipilih.toString()
+        val nilai = dataContent.values.firstOrNull() ?: return
 
-        val variable =
-            body.variable?.firstOrNull()
-
-        val judul =
-            variable?.label
-                ?: getJudulVariable(
-                    variableId
-                )
-
-        val satuan =
-            variable?.unit
-                ?: ""
-
-        val decimal =
-            variable?.decimal
-                ?: 2
-
-        val nilai =
-            dataContent.values.firstOrNull()
-
-        if (nilai == null) {
-            return
-        }
-
-        val nilaiFormat =
-            String.format(
-                Locale.US,
-                "%.${decimal}f",
-                nilai
-            )
+        val nilaiFormat = String.format(
+            Locale.US,
+            "%.${decimal}f",
+            nilai
+        )
 
         dataGender.add(
             GenderData(
-                variableId = variableId,
-                tahun = tahunLabel,
-                kategori = "Gender",
-                judul = judul,
-                nilai = nilaiFormat,
-                satuan = satuan
+                variableId,
+                tahunLabel,
+                "Gender",
+                judul,
+                nilaiFormat,
+                satuan
             )
         )
     }
 
-    private fun getJudulVariable(
-        variableId: Int
-    ): String {
-
+    private fun getJudulVariable(variableId: Int): String {
         return when (variableId) {
-
-            134 ->
-                "Indeks Ketimpangan Gender (IKG)"
-
-            49 ->
-                "Indeks Pembangunan Gender (IPG) Kota Probolinggo"
-
-            47 ->
-                "Indeks Pemberdayaan Gender (IDG) Kota Probolinggo"
-
-            121 ->
-                "Indeks Pembangunan Gender (menggunakan UHH hasil SP2020 LF)"
-
-            else ->
-                "Statistik Gender"
+            134 -> "Indeks Ketimpangan Gender (IKG)"
+            49 -> "Indeks Pembangunan Gender (IPG) Kota Probolinggo"
+            47 -> "Indeks Pemberdayaan Gender (IDG) Kota Probolinggo"
+            121 -> "Indeks Pembangunan Gender (menggunakan UHH hasil SP2020 LF)"
+            else -> "Statistik Gender"
         }
     }
 
     private fun requestSelesai() {
-
         jumlahRequestSelesai++
 
-        if (
-            jumlahRequestSelesai >=
-            VARIABLE_LIST.size
-        ) {
-
+        if (jumlahRequestSelesai >= VARIABLE_LIST.size) {
             runOnUiThread {
-
                 tampilkanSemuaData()
             }
         }
     }
 
     private fun tampilkanSemuaData() {
-
         cardContainer.removeAllViews()
 
-        val dataUrut =
-            VARIABLE_LIST.mapNotNull { id ->
+        val dataUrut = VARIABLE_LIST.mapNotNull { id ->
+            dataGender.firstOrNull { it.variableId == id }
+        }
 
-                dataGender.firstOrNull {
-                    it.variableId == id
-                }
+        dataUrut.forEach { data ->
+
+            val card = LayoutInflater.from(this)
+                .inflate(
+                    R.layout.item_statistik,
+                    cardContainer,
+                    false
+                )
+
+            val tvTahun = card.findViewById<TextView>(R.id.tvTahun)
+            val tvKategori = card.findViewById<TextView>(R.id.tvKategori)
+            val tvJudul = card.findViewById<TextView>(R.id.tvJudul)
+            val tvNilai = card.findViewById<TextView>(R.id.tvNilai)
+
+            tvTahun.text = data.tahun
+            tvKategori.text = data.kategori
+            tvJudul.text = data.judul
+
+            tvNilai.text = if (data.satuan.isNotBlank()) {
+                "${data.nilai} ${data.satuan}"
+            } else {
+                data.nilai
             }
 
-        dataUrut.forEachIndexed { index, data ->
-
-            val card =
-                LayoutInflater
-                    .from(this)
-                    .inflate(
-                        R.layout.item_statistik,
-                        cardContainer,
-                        false
-                    )
-
-            val tvKode =
-                card.findViewById<TextView>(
-                    R.id.tvKode
-                )
-
-            val tvTahun =
-                card.findViewById<TextView>(
-                    R.id.tvTahun
-                )
-
-            val tvKategori =
-                card.findViewById<TextView>(
-                    R.id.tvKategori
-                )
-
-            val tvJudul =
-                card.findViewById<TextView>(
-                    R.id.tvJudul
-                )
-
-            val tvNilai =
-                card.findViewById<TextView>(
-                    R.id.tvNilai
-                )
-
-            tvTahun.text =
-                data.tahun
-
-            tvKategori.text =
-                data.kategori
-
-            tvJudul.text =
-                data.judul
-
-            tvNilai.text =
-                if (data.satuan.isNotBlank()) {
-
-                    "${data.nilai} ${data.satuan}"
-
-                } else {
-
-                    data.nilai
-                }
-
             card.setOnClickListener {
-
                 Toast.makeText(
                     this,
                     "${data.judul}\nTahun: ${data.tahun}\nNilai: ${data.nilai}",
@@ -475,16 +490,12 @@ class GenderActivity : AppCompatActivity() {
                 ).show()
             }
 
-            cardContainer.addView(
-                card
-            )
+            cardContainer.addView(card)
         }
 
-        progressLoading.visibility =
-            View.GONE
+        progressLoading.visibility = View.GONE
 
         if (dataUrut.isEmpty()) {
-
             Toast.makeText(
                 this,
                 "Tidak ada data Gender untuk tahun $tahunDipilih",
@@ -494,15 +505,9 @@ class GenderActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-
-        if (
-            ::progressLoading.isInitialized
-        ) {
-
+        if (::progressLoading.isInitialized) {
             progressLoading.cancelAnimation()
-
-            progressLoading.visibility =
-                View.GONE
+            progressLoading.visibility = View.GONE
         }
 
         super.onDestroy()

@@ -5,6 +5,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,739 +17,236 @@ import androidx.appcompat.app.AlertDialog
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
 import com.example.bpskota.bpskp.repository.BpskpRepository
+import java.util.Locale
 
 class MoreFragment : Fragment() {
 
-    // =========================================================
-    // REPOSITORY
-    // =========================================================
-
     private val bpskpRepository = BpskpRepository()
 
-
-    // =========================================================
-    // LIFECYCLE
-    // =========================================================
-
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
-
-        return inflater.inflate(
-            R.layout.fragment_more,
-            container,
-            false
-        )
+        return inflater.inflate(R.layout.fragment_more, container, false)
     }
 
-
-    override fun onViewCreated(
-        view: View,
-        savedInstanceState: Bundle?
-    ) {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-
-        // =====================================================
-        // CARD TENTANG KAMI
-        // =====================================================
-
-        val cardTentangKami =
-            view.findViewById<CardView>(R.id.cardTentangKami)
-
-        cardTentangKami?.setOnClickListener {
-
-            showTentangKamiDialog()
-
-        }
-
-
-        // =====================================================
-        // CARD PENGADUAN
-        // =====================================================
-
-        val cardPengaduan =
-            view.findViewById<CardView>(R.id.cardPengaduan)
-
-        cardPengaduan?.setOnClickListener {
-
-            Toast.makeText(
-                requireContext(),
-                "Menu Pengaduan",
-                Toast.LENGTH_SHORT
-            ).show()
-
-        }
-
-
-        // =====================================================
-        // CARD BANTUAN
-        // =====================================================
-
-        val cardBantuan =
-            view.findViewById<CardView>(R.id.cardBantuan)
-
-        cardBantuan?.setOnClickListener {
-
-            Toast.makeText(
-                requireContext(),
-                "Menu Pusat Bantuan",
-                Toast.LENGTH_SHORT
-            ).show()
-
-        }
-
-
-        // =====================================================
-        // CARD PENGGUNAAN APLIKASI
-        // =====================================================
-
+        setupClickListeners(view)
         setupUsageCard(view)
-
-
-        // =====================================================
-        // CARD DEVELOPER
-        // =====================================================
-
-        val cardDeveloper =
-            view.findViewById<CardView>(R.id.cardDeveloper)
-
-        cardDeveloper?.setOnClickListener {
-
-            showDeveloperDialog()
-
-        }
-
-
-        // =====================================================
-        // LOAD STATISTIK PENGGUNAAN
-        // =====================================================
-
         loadActivityStatistics()
-
     }
 
+    /**
+     * Mendaftarkan semua event klik untuk menu-menu yang ada di halaman Lainnya (More).
+     */
+    private fun setupClickListeners(view: View) {
+        // Menu Bantuan
+        view.findViewById<CardView>(R.id.cardBantuan)?.setOnClickListener {
+            val intent = Intent(requireContext(),PusatBantuanActivity::class.java)
+            startActivity(intent)
+        }
 
-    // =========================================================
-    // SETUP CARD PENGGUNAAN APLIKASI
-    // =========================================================
+        // Menu Tentang Developer
+        view.findViewById<LinearLayout>(R.id.cardDeveloper)?.setOnClickListener {
+            showDeveloperDialog()
+        }
 
+        // Menu Tentang Kami
+        view.findViewById<LinearLayout>(R.id.cardTentangKami)?.setOnClickListener {
+            showTentangKamiDialog()
+        }
+    }
+
+    /**
+     * Mengatur logika buka-tutup (expand/collapse) pada kartu Statistik Penggunaan
+     * beserta rotasi ikon panah secara mulus.
+     */
     private fun setupUsageCard(view: View) {
+        val cardUsage = view.findViewById<CardView>(R.id.cardUsage)
+        val layoutUsageHeader = view.findViewById<LinearLayout>(R.id.layoutUsageHeader)
+        val layoutUsageDetail = view.findViewById<LinearLayout>(R.id.layoutUsageDetail)
+        val ivUsageArrow = view.findViewById<ImageView>(R.id.ivUsageArrow)
 
-        val cardUsage =
-            view.findViewById<CardView>(R.id.cardUsage)
-
-        val layoutUsageHeader =
-            view.findViewById<LinearLayout>(R.id.layoutUsageHeader)
-
-        val layoutUsageDetail =
-            view.findViewById<LinearLayout>(R.id.layoutUsageDetail)
-
-        val ivUsageArrow =
-            view.findViewById<ImageView>(R.id.ivUsageArrow)
-
-
-        // =====================================================
-        // KONDISI AWAL
-        // =====================================================
-
+        // Kondisi awal ditutup
         layoutUsageDetail.visibility = View.GONE
-
         ivUsageArrow.rotation = 0f
 
-
-        // =====================================================
-        // ANIMASI LAYOUT
-        // =====================================================
-
-        (layoutUsageDetail.parent as? ViewGroup)?.layoutTransition =
-            LayoutTransition().apply {
-
-                enableTransitionType(
-                    LayoutTransition.CHANGING
-                )
-
-            }
-
-
-        // =====================================================
-        // CLICK CARD
-        // =====================================================
+        // Memberikan transisi halus saat tata letak berubah ukuran
+        (layoutUsageDetail.parent as? ViewGroup)?.layoutTransition = LayoutTransition().apply {
+            enableTransitionType(LayoutTransition.CHANGING)
+        }
 
         val toggleUsage = {
-
             if (layoutUsageDetail.visibility == View.GONE) {
-
+                // Buka panel detail grid
                 layoutUsageDetail.visibility = View.VISIBLE
-
-                ivUsageArrow.animate()
-                    .rotation(180f)
-                    .setDuration(200)
-                    .start()
-
+                ivUsageArrow.animate().rotation(90f).setDuration(250).start()
             } else {
-
+                // Tutup panel detail grid
                 layoutUsageDetail.visibility = View.GONE
-
-                ivUsageArrow.animate()
-                    .rotation(0f)
-                    .setDuration(200)
-                    .start()
-
+                ivUsageArrow.animate().rotation(0f).setDuration(250).start()
             }
-
         }
 
-
-        cardUsage?.setOnClickListener {
-
-            toggleUsage()
-
-        }
-
-        layoutUsageHeader?.setOnClickListener {
-
-            toggleUsage()
-
-        }
-
+        cardUsage?.setOnClickListener { toggleUsage() }
+        layoutUsageHeader?.setOnClickListener { toggleUsage() }
     }
 
-
-    // =========================================================
-    // LOAD STATISTIK AKTIVITAS
-    // =========================================================
-
+    /**
+     * Memanggil API melalui repository untuk mengambil data statistik penggunaan aplikasi.
+     */
     private fun loadActivityStatistics() {
-
-        if (!isAdded) {
-            return
-        }
-
+        if (!isAdded) return
 
         bpskpRepository.getActivityStatistics { response, error ->
-
-            if (!isAdded) {
-                return@getActivityStatistics
-            }
+            if (!isAdded) return@getActivityStatistics
 
             requireActivity().runOnUiThread {
-
-                if (!isAdded) {
-                    return@runOnUiThread
-                }
-
+                if (!isAdded) return@runOnUiThread
 
                 if (response != null) {
-
-                    val users =
-                        response.summary?.users_accessing ?: 0
-
-                    val totalAccess =
-                        response.summary?.total_access ?: 0
-
-
-                    updateUsageStatistics(
-                        users,
-                        totalAccess
-                    )
-
+                    val users = response.summary?.users_accessing ?: 0
+                    val totalAccess = response.summary?.total_access ?: 0
+                    updateUsageStatistics(users, totalAccess)
                 } else {
-
-                    showUsageStatisticsError(
-                        error
-                    )
-
+                    showUsageStatisticsError(error)
                 }
-
             }
-
         }
-
     }
 
+    /**
+     * Memperbarui teks UI dashboard grid dengan data terbaru dari server.
+     */
+    private fun updateUsageStatistics(users: Int, totalAccess: Int) {
+        val tvTotalPengguna = view?.findViewById<TextView>(R.id.tvTotalPengguna)
+        val tvTotalAkses = view?.findViewById<TextView>(R.id.tvTotalAkses)
 
-    // =========================================================
-    // UPDATE STATISTIK
-    // =========================================================
-
-    private fun updateUsageStatistics(
-        users: Int,
-        totalAccess: Int
-    ) {
-
-        val tvTotalPengguna =
-            view?.findViewById<TextView>(
-                R.id.tvTotalPengguna
-            )
-
-        val tvTotalAkses =
-            view?.findViewById<TextView>(
-                R.id.tvTotalAkses
-            )
-
-
-        tvTotalPengguna?.text =
-            formatNumber(users)
-
-        tvTotalAkses?.text =
-            formatNumber(totalAccess)
-
+        tvTotalPengguna?.text = formatNumber(users)
+        tvTotalAkses?.text = formatNumber(totalAccess)
     }
 
-
-    // =========================================================
-    // ERROR STATISTIK
-    // =========================================================
-
-    private fun showUsageStatisticsError(
-        error: String?
-    ) {
-
-        val tvTotalPengguna =
-            view?.findViewById<TextView>(
-                R.id.tvTotalPengguna
-            )
-
-        val tvTotalAkses =
-            view?.findViewById<TextView>(
-                R.id.tvTotalAkses
-            )
-
-
-        tvTotalPengguna?.text = "-"
-
-        tvTotalAkses?.text = "-"
+    /**
+     * Menampilkan status error jika pengambilan data statistik gagal.
+     */
+    private fun showUsageStatisticsError(error: String?) {
+        view?.findViewById<TextView>(R.id.tvTotalPengguna)?.text = "-"
+        view?.findViewById<TextView>(R.id.tvTotalAkses)?.text = "-"
 
         if (!error.isNullOrBlank()) {
-
-            android.util.Log.e(
-                "MoreFragment",
-                "Gagal mengambil statistik: $error"
-            )
-
+            Log.e("MoreFragment", "Gagal mengambil statistik: $error")
         }
-
     }
 
-
-    // =========================================================
-    // FORMAT ANGKA
-    // =========================================================
-
-    private fun formatNumber(
-        value: Int
-    ): String {
-
-        return String.format(
-            java.util.Locale("id", "ID"),
-            "%,d",
-            value
-        ).replace(",", ".")
-
+    /**
+     * Memformat angka ribuan bergaya Indonesia (misal: 1.500.000).
+     */
+    private fun formatNumber(value: Int): String {
+        return String.format(Locale("id", "ID"), "%,d", value).replace(",", ".")
     }
 
-
     // =========================================================
-    // POPUP TENTANG KAMI
+    // POPUP DIALOGS & INTENTS
     // =========================================================
 
+    /**
+     * Menampilkan dialog popup Tentang Kami beserta link ke sosial media.
+     */
     private fun showTentangKamiDialog() {
-
-        val dialogView = layoutInflater.inflate(
-            R.layout.dialog_tentang_kami,
-            null
-        )
-
+        val dialogView = layoutInflater.inflate(R.layout.dialog_tentang_kami, null)
         val dialog = AlertDialog.Builder(requireContext())
             .setView(dialogView)
             .create()
 
+        dialogView.findViewById<LinearLayout>(R.id.socialInstagram)?.setOnClickListener { openInstagram() }
+        dialogView.findViewById<LinearLayout>(R.id.socialTiktok)?.setOnClickListener { openTikTok() }
+        dialogView.findViewById<LinearLayout>(R.id.socialWhatsapp)?.setOnClickListener { openWhatsApp() }
+        dialogView.findViewById<LinearLayout>(R.id.socialAlamat)?.setOnClickListener { openGoogleMaps() }
+        dialogView.findViewById<LinearLayout>(R.id.socialEmail)?.setOnClickListener { openEmail() }
 
-        // =====================================================
-        // INSTAGRAM
-        // =====================================================
+        dialogView.findViewById<TextView>(R.id.btnTutupTentangKami)?.setOnClickListener { dialog.dismiss() }
 
-        val socialInstagram =
-            dialogView.findViewById<LinearLayout>(
-                R.id.socialInstagram
-            )
-
-        socialInstagram?.setOnClickListener {
-
-            openInstagram()
-
-        }
-
-
-        // =====================================================
-        // TIKTOK
-        // =====================================================
-
-        val socialTiktok =
-            dialogView.findViewById<LinearLayout>(
-                R.id.socialTiktok
-            )
-
-        socialTiktok?.setOnClickListener {
-
-            openTikTok()
-
-        }
-
-
-        // =====================================================
-        // WHATSAPP
-        // =====================================================
-
-        val socialWhatsapp =
-            dialogView.findViewById<LinearLayout>(
-                R.id.socialWhatsapp
-            )
-
-        socialWhatsapp?.setOnClickListener {
-
-            openWhatsApp()
-
-        }
-
-
-        // =====================================================
-        // ALAMAT
-        // =====================================================
-
-        val socialAlamat =
-            dialogView.findViewById<LinearLayout>(
-                R.id.socialAlamat
-            )
-
-        socialAlamat?.setOnClickListener {
-
-            openGoogleMaps()
-
-        }
-
-
-        // =====================================================
-        // EMAIL
-        // =====================================================
-
-        val socialEmail =
-            dialogView.findViewById<LinearLayout>(
-                R.id.socialEmail
-            )
-
-        socialEmail?.setOnClickListener {
-
-            openEmail()
-
-        }
-
-
-        // =====================================================
-        // TOMBOL TUTUP
-        // =====================================================
-
-        val btnTutup =
-            dialogView.findViewById<TextView>(
-                R.id.btnTutupTentangKami
-            )
-
-        btnTutup?.setOnClickListener {
-
-            dialog.dismiss()
-
-        }
-
-
-        // =====================================================
-        // BACKGROUND TRANSPARAN
-        // =====================================================
-
-        dialog.window?.setBackgroundDrawableResource(
-            android.R.color.transparent
-        )
-
-
-        // =====================================================
-        // TAMPILKAN DIALOG
-        // =====================================================
-
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         dialog.show()
-
     }
 
+    /**
+     * Menampilkan dialog popup informasi Tentang Developer.
+     */
+    private fun showDeveloperDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_developer, null)
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .create()
 
-    // =========================================================
-    // INSTAGRAM
-    // =========================================================
+        dialogView.findViewById<TextView>(R.id.btnCloseDeveloper)?.setOnClickListener { dialog.dismiss() }
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.show()
+    }
 
     private fun openInstagram() {
-
         val username = "bpskotaprobolinggo"
-
         try {
-
-            val instagramIntent = Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse(
-                    "instagram://user?username=$username"
-                )
-            )
-
-            startActivity(instagramIntent)
-
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("instagram://user?username=$username")))
         } catch (e: ActivityNotFoundException) {
-
             try {
-
-                val browserIntent = Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse(
-                        "https://www.instagram.com/$username/"
-                    )
-                )
-
-                startActivity(browserIntent)
-
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.instagram.com/$username/")))
             } catch (e2: ActivityNotFoundException) {
-
-                Toast.makeText(
-                    requireContext(),
-                    "Tidak dapat membuka Instagram",
-                    Toast.LENGTH_SHORT
-                ).show()
-
+                Toast.makeText(requireContext(), "Tidak dapat membuka Instagram", Toast.LENGTH_SHORT).show()
             }
-
         }
-
     }
-
-
-    // =========================================================
-    // TIKTOK
-    // =========================================================
 
     private fun openTikTok() {
-
         val username = "bpskotaprobolinggo"
-
         try {
-
-            val tiktokIntent = Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse(
-                    "snssdk1233://user/profile/$username"
-                )
-            )
-
-            startActivity(tiktokIntent)
-
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("snssdk1233://user/profile/$username")))
         } catch (e: ActivityNotFoundException) {
-
             try {
-
-                val browserIntent = Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse(
-                        "https://www.tiktok.com/@$username"
-                    )
-                )
-
-                startActivity(browserIntent)
-
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.tiktok.com/@$username")))
             } catch (e2: ActivityNotFoundException) {
-
-                Toast.makeText(
-                    requireContext(),
-                    "Tidak dapat membuka TikTok",
-                    Toast.LENGTH_SHORT
-                ).show()
-
+                Toast.makeText(requireContext(), "Tidak dapat membuka TikTok", Toast.LENGTH_SHORT).show()
             }
-
         }
-
     }
-
-
-    // =========================================================
-    // WHATSAPP
-    // =========================================================
 
     private fun openWhatsApp() {
-
         val nomorWhatsApp = "628xxxxxxxxxx"
-
-        val pesan = Uri.encode(
-            "Halo BPS Kota Probolinggo"
-        )
-
+        val pesan = Uri.encode("Halo BPS Kota Probolinggo")
         try {
-
-            val whatsappIntent = Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse(
-                    "https://wa.me/$nomorWhatsApp?text=$pesan"
-                )
-            )
-
-            startActivity(whatsappIntent)
-
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$nomorWhatsApp?text=$pesan")))
         } catch (e: ActivityNotFoundException) {
-
-            Toast.makeText(
-                requireContext(),
-                "Tidak dapat membuka WhatsApp",
-                Toast.LENGTH_SHORT
-            ).show()
-
+            Toast.makeText(requireContext(), "Tidak dapat membuka WhatsApp", Toast.LENGTH_SHORT).show()
         }
-
     }
-
-
-    // =========================================================
-    // GOOGLE MAPS
-    // =========================================================
 
     private fun openGoogleMaps() {
-
-        val alamat = Uri.encode(
-            "Jl. Bromo No. 32, Kota Probolinggo, Jawa Timur 67222"
-        )
-
+        val alamat = Uri.encode("Jl. Bromo No. 32, Kota Probolinggo, Jawa Timur 67222")
         try {
-
-            val mapsIntent = Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse(
-                    "geo:0,0?q=$alamat"
-                )
-            )
-
-            mapsIntent.setPackage(
-                "com.google.android.apps.maps"
-            )
-
+            val mapsIntent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=$alamat"))
+            mapsIntent.setPackage("com.google.android.apps.maps")
             startActivity(mapsIntent)
-
         } catch (e: ActivityNotFoundException) {
-
             try {
-
-                val browserIntent = Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse(
-                        "https://www.google.com/maps/search/?api=1&query=$alamat"
-                    )
-                )
-
-                startActivity(browserIntent)
-
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=$alamat")))
             } catch (e2: ActivityNotFoundException) {
-
-                Toast.makeText(
-                    requireContext(),
-                    "Tidak dapat membuka Google Maps",
-                    Toast.LENGTH_SHORT
-                ).show()
-
+                Toast.makeText(requireContext(), "Tidak dapat membuka Google Maps", Toast.LENGTH_SHORT).show()
             }
-
         }
-
     }
-
-
-    // =========================================================
-    // EMAIL
-    // =========================================================
 
     private fun openEmail() {
-
         val email = "bps3574@bps.go.id"
-
         try {
-
-            val emailIntent = Intent(
-                Intent.ACTION_SENDTO
-            )
-
-            emailIntent.data = Uri.parse(
-                "mailto:$email"
-            )
-
-            emailIntent.putExtra(
-                Intent.EXTRA_SUBJECT,
-                "Pertanyaan - BPS Kota Probolinggo"
-            )
-
+            val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+                data = Uri.parse("mailto:$email")
+                putExtra(Intent.EXTRA_SUBJECT, "Pertanyaan - BPS Kota Probolinggo")
+            }
             startActivity(emailIntent)
-
         } catch (e: ActivityNotFoundException) {
-
-            Toast.makeText(
-                requireContext(),
-                "Tidak ada aplikasi email yang tersedia",
-                Toast.LENGTH_SHORT
-            ).show()
-
+            Toast.makeText(requireContext(), "Tidak ada aplikasi email yang tersedia", Toast.LENGTH_SHORT).show()
         }
-
     }
-
-
-    // =========================================================
-    // POPUP TENTANG DEVELOPER
-    // =========================================================
-
-    private fun showDeveloperDialog() {
-
-        val dialogView = layoutInflater.inflate(
-            R.layout.dialog_developer,
-            null
-        )
-
-        val dialog = AlertDialog.Builder(requireContext())
-            .setView(dialogView)
-            .create()
-
-
-        // =====================================================
-        // TOMBOL TUTUP
-        // =====================================================
-
-        val btnTutup =
-            dialogView.findViewById<TextView>(
-                R.id.btnCloseDeveloper
-            )
-
-        btnTutup?.setOnClickListener {
-
-            dialog.dismiss()
-
-        }
-
-
-        // =====================================================
-        // BACKGROUND TRANSPARAN
-        // =====================================================
-
-        dialog.window?.setBackgroundDrawableResource(
-            android.R.color.transparent
-        )
-
-
-        // =====================================================
-        // TAMPILKAN DIALOG
-        // =====================================================
-
-        dialog.show()
-
-    }
-
 }

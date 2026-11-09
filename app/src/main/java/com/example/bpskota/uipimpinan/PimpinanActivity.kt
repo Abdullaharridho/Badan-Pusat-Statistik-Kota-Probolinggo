@@ -171,28 +171,8 @@ class PimpinanActivity : AppCompatActivity() {
     }
 
     private fun setupAccountMenu() {
-        binding.btnPimpinanMenu.setOnClickListener { view ->
-            val popupMenu = PopupMenu(this, view)
-
-            popupMenu.menu.add(
-                Menu.NONE,
-                1,
-                Menu.NONE,
-                "Keluar"
-            )
-
-            popupMenu.setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    1 -> {
-                        confirmLogout()
-                        true
-                    }
-
-                    else -> false
-                }
-            }
-
-            popupMenu.show()
+        binding.btnPimpinanMenu.setOnClickListener {
+            confirmLogout()
         }
     }
 

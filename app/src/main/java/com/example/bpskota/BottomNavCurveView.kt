@@ -39,12 +39,7 @@ class BottomNavCurveView @JvmOverloads constructor(
     private val glassPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         color = glassColor
-        setShadowLayer(
-            dpToPx(4f),
-            0f,
-            dpToPx(1f),
-            glowColor
-        )
+        setShadowLayer(dpToPx(4f), 0f, dpToPx(1f), glowColor)
     }
 
     private val glassStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -70,10 +65,8 @@ class BottomNavCurveView @JvmOverloads constructor(
 
     fun setActiveCenterX(centerX: Float) {
         val maxX = width.toFloat().coerceAtLeast(0f)
-
         activeCenterX = centerX.coerceIn(0f, maxX)
         targetCenterX = activeCenterX
-
         invalidate()
     }
 
@@ -83,16 +76,8 @@ class BottomNavCurveView @JvmOverloads constructor(
             return
         }
 
-        val targetX = newCenterX.coerceIn(
-            0f,
-            width.toFloat()
-        )
-
-        val startX = if (activeCenterX >= 0f) {
-            activeCenterX
-        } else {
-            targetX
-        }
+        val targetX = newCenterX.coerceIn(0f, width.toFloat())
+        val startX = if (activeCenterX >= 0f) activeCenterX else targetX
 
         targetCenterX = targetX
 
@@ -105,10 +90,7 @@ class BottomNavCurveView @JvmOverloads constructor(
         glitchLineAlpha = 0f
 
         // Gerakan utama highlight
-        moveAnimator = ValueAnimator.ofFloat(
-            startX,
-            targetX
-        ).apply {
+        moveAnimator = ValueAnimator.ofFloat(startX, targetX).apply {
             duration = 380L
             interpolator = OvershootInterpolator(1.08f)
 
@@ -116,11 +98,10 @@ class BottomNavCurveView @JvmOverloads constructor(
                 activeCenterX = animator.animatedValue as Float
                 invalidate()
             }
-
             start()
         }
 
-        // Efek glitch singkat saat berpindah menu
+        // Efek glitch RGB (Cyan & Orange) saat berpindah menu
         glitchAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 260L
             interpolator = DecelerateInterpolator()
@@ -134,48 +115,42 @@ class BottomNavCurveView @JvmOverloads constructor(
                         glitchAlpha = 0.55f
                         glitchLineAlpha = 1f
                     }
-
                     progress < 0.36f -> {
                         glitchOffsetX = -dpToPx(4f)
                         glitchAlpha = 0.8f
                         glitchLineAlpha = 0.25f
                     }
-
                     progress < 0.55f -> {
                         glitchOffsetX = dpToPx(3f)
                         glitchAlpha = 0.6f
                         glitchLineAlpha = 0.85f
                     }
-
                     else -> {
                         glitchOffsetX = 0f
                         glitchAlpha = 1f
-                        glitchLineAlpha =
-                            (1f - progress) * 0.45f
+                        glitchLineAlpha = (1f - progress) * 0.45f
                     }
                 }
-
                 invalidate()
             }
 
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
-                    glitchOffsetX = 0f
-                    glitchAlpha = 1f
-                    glitchLineAlpha = 0f
-                    invalidate()
+                    resetGlitchState()
                 }
-
                 override fun onAnimationCancel(animation: Animator) {
-                    glitchOffsetX = 0f
-                    glitchAlpha = 1f
-                    glitchLineAlpha = 0f
-                    invalidate()
+                    resetGlitchState()
                 }
             })
-
             start()
         }
+    }
+
+    private fun resetGlitchState() {
+        glitchOffsetX = 0f
+        glitchAlpha = 1f
+        glitchLineAlpha = 0f
+        invalidate()
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -186,30 +161,15 @@ class BottomNavCurveView @JvmOverloads constructor(
 
         if (w <= 0f || h <= 0f) return
 
-        val centerX = if (activeCenterX >= 0f) {
-            activeCenterX
-        } else {
-            w / 2f
-        }
+        val centerX = if (activeCenterX >= 0f) activeCenterX else (w / 2f)
 
-        // Ukuran highlight agar bentuk kotak memanjang lebih jelas
-        // Ukuran highlight navigasi yang lebih besar
-        val highlightWidth = min(
-            dpToPx(68f),
-            w * 0.24f
-        )
-
-        val highlightHeight = min(
-            dpToPx(56f),
-            h - dpToPx(4f)
-
-        )
+        val highlightWidth = min(dpToPx(68f), w * 0.24f)
+        val highlightHeight = min(dpToPx(56f), h - dpToPx(4f))
 
         if (highlightHeight <= 0f) return
 
         val top = (h - highlightHeight) / 2f
         val bottom = top + highlightHeight
-
         val cornerRadius = dpToPx(14f)
 
         val normalRect = RectF(
@@ -227,32 +187,26 @@ class BottomNavCurveView @JvmOverloads constructor(
         val oldGlassAlpha = glassPaint.alpha
         val oldStrokeAlpha = glassStrokePaint.alpha
 
-        glassPaint.alpha = (255 * glitchAlpha).toInt()
-        glassStrokePaint.alpha = (255 * glitchAlpha).toInt()
+        // Set opacity berdasarkan animasi glitch
+        glassPaint.alpha = (255 * glitchAlpha).toInt().coerceIn(0, 255)
+        glassStrokePaint.alpha = (255 * glitchAlpha).toInt().coerceIn(0, 255)
 
         // Lapisan kaca utama
-        canvas.drawRoundRect(
-            glitchRect,
-            cornerRadius,
-            cornerRadius,
-            glassPaint
-        )
+        canvas.drawRoundRect(glitchRect, cornerRadius, cornerRadius, glassPaint)
+        // Outline putih
+        canvas.drawRoundRect(glitchRect, cornerRadius, cornerRadius, glassStrokePaint)
 
-        // Outline putih agar bentuk navigasi lebih tegas
-        canvas.drawRoundRect(
-            glitchRect,
-            cornerRadius,
-            cornerRadius,
-            glassStrokePaint
-        )
-
+        // Kembalikan alpha awal
         glassPaint.alpha = oldGlassAlpha
         glassStrokePaint.alpha = oldStrokeAlpha
 
-        // Garis glitch cyan singkat
+        // Garis glitch cyan & oranye
         if (glitchLineAlpha > 0f) {
+            val glitchAlphaInt = (255 * glitchLineAlpha).toInt().coerceIn(0, 255)
+
+            // Glitch Cyan di bagian atas
             glitchPaint.color = glitchCyan
-            glitchPaint.alpha = (255 * glitchLineAlpha).toInt()
+            glitchPaint.alpha = glitchAlphaInt
 
             val lineRect = RectF(
                 glitchRect.left + dpToPx(5f),
@@ -260,17 +214,11 @@ class BottomNavCurveView @JvmOverloads constructor(
                 glitchRect.right - dpToPx(5f),
                 glitchRect.top + dpToPx(5f)
             )
+            canvas.drawRoundRect(lineRect, dpToPx(1f), dpToPx(1f), glitchPaint)
 
-            canvas.drawRoundRect(
-                lineRect,
-                dpToPx(1f),
-                dpToPx(1f),
-                glitchPaint
-            )
-
-            // Aksen oranye di bagian bawah highlight
+            // Glitch Oranye di bagian bawah
             accentPaint.color = orange
-            accentPaint.alpha = (210 * glitchLineAlpha).toInt()
+            accentPaint.alpha = (210 * glitchLineAlpha).toInt().coerceIn(0, 255)
 
             canvas.drawLine(
                 glitchRect.left + dpToPx(8f),
@@ -289,10 +237,8 @@ class BottomNavCurveView @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         moveAnimator?.cancel()
         glitchAnimator?.cancel()
-
         moveAnimator = null
         glitchAnimator = null
-
         super.onDetachedFromWindow()
     }
 }

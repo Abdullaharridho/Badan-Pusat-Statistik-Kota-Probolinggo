@@ -24,13 +24,13 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bpskota.R
 import com.example.bpskota.bpskp.model.SuratMasuk
 import com.example.bpskota.bpskp.model.SuratMasukActionResponse
+import com.example.bpskota.bpskp.model.Tim
 import com.example.bpskota.bpskp.repository.BpskpAuthSession
 import com.example.bpskota.bpskp.repository.BpskpRepository
 import com.example.bpskota.bpskp.api.BpskpRetrofitClient
@@ -79,6 +79,9 @@ class OperatorSuratMasukFragment : Fragment() {
     private var etLokasi: EditText? = null
 
     private var spinnerStatus: Spinner? = null
+    private var spinnerTim: Spinner? = null
+    private var daftarTimAktif: List<Tim> = emptyList()
+
     private var tvFileName: TextView? = null
     private var btnPilihFile: TextView? = null
     private var btnSimpanForm: TextView? = null
@@ -286,8 +289,36 @@ class OperatorSuratMasukFragment : Fragment() {
     }
 
     // =========================================================
+    // CUSTOM SPINNER ADAPTER
+    // Memaksa agar teks spinner dan dropdown menjadi hitam
+    // =========================================================
+
+    private fun createSpinnerAdapter(items: List<String>): ArrayAdapter<String> {
+        return object : ArrayAdapter<String>(
+            requireContext(),
+            android.R.layout.simple_spinner_item,
+            items
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getView(position, convertView, parent) as TextView
+                view.setTextColor(Color.parseColor("#111827")) // Teks hitam
+                view.textSize = 14f
+                return view
+            }
+
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent) as TextView
+                view.setTextColor(Color.parseColor("#111827")) // Teks dropdown hitam
+                view.setBackgroundColor(Color.WHITE)           // Latar belakang putih bersih
+                return view
+            }
+        }.apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+    }
+
+    // =========================================================
     // FORM TAMBAH / EDIT / DETAIL
-    // Semua form tampil dalam AlertDialog.
     // =========================================================
 
     private fun showCreateForm() {
@@ -306,9 +337,10 @@ class OperatorSuratMasukFragment : Fragment() {
         etTanggalSurat?.setText(today)
         etTanggalDiterima?.setText(today)
 
-        // Status awal otomatis "baru" dan tidak dapat diedit.
         setStatus("baru")
         setFormEditable(true)
+
+        loadTimOptions()
     }
 
     private fun showEditForm(surat: SuratMasuk) {
@@ -324,6 +356,8 @@ class OperatorSuratMasukFragment : Fragment() {
 
         fillForm(surat)
         setFormEditable(true)
+
+        loadTimOptions(surat.tim_id)
     }
 
     private fun showDetailForm(surat: SuratMasuk) {
@@ -339,6 +373,8 @@ class OperatorSuratMasukFragment : Fragment() {
 
         fillForm(surat)
         setFormEditable(false)
+
+        loadTimOptions(surat.tim_id)
 
         btnPilihFile?.visibility = View.GONE
         btnBatalForm?.visibility = View.GONE
@@ -396,6 +432,16 @@ class OperatorSuratMasukFragment : Fragment() {
         addLabel("Perihal")
         etPerihal = createTextInput("Masukkan perihal")
 
+        addLabel("Tim Tujuan")
+
+        spinnerTim = Spinner(context).apply {
+            adapter = createSpinnerAdapter(listOf("Memuat daftar tim..."))
+            background = inputBackground()
+            isEnabled = false
+        }
+
+        addInputView(spinnerTim!!)
+
         addLabel("Isi Ringkas")
         etIsiRingkas = createTextInput(
             "Masukkan isi ringkas surat",
@@ -421,15 +467,8 @@ class OperatorSuratMasukFragment : Fragment() {
         addLabel("Status")
 
         spinnerStatus = Spinner(context).apply {
-            adapter = ArrayAdapter(
-                context,
-                android.R.layout.simple_spinner_dropdown_item,
-                listOf("baru", "diproses", "selesai")
-            )
-
+            adapter = createSpinnerAdapter(listOf("baru", "diproses", "selesai"))
             background = inputBackground()
-
-            // Tidak dapat diubah, baik pada tambah maupun edit.
             isEnabled = false
             isClickable = false
             alpha = 0.7f
@@ -621,6 +660,7 @@ class OperatorSuratMasukFragment : Fragment() {
         return createTextInput(hintText).apply {
             isFocusable = false
             isClickable = true
+            setTextColor(Color.parseColor("#111827")) // Pastikan teks hitam
 
             setOnClickListener {
                 if (formMode != FormMode.DETAIL) {
@@ -634,6 +674,7 @@ class OperatorSuratMasukFragment : Fragment() {
         return createTextInput(hintText).apply {
             isFocusable = false
             isClickable = true
+            setTextColor(Color.parseColor("#111827")) // Pastikan teks hitam
 
             setOnClickListener {
                 if (formMode != FormMode.DETAIL) {
@@ -827,6 +868,69 @@ class OperatorSuratMasukFragment : Fragment() {
         }
     }
 
+    // =========================================================
+    // TIM TUJUAN
+    // =========================================================
+
+    private fun loadTimOptions(selectedTimId: Int? = null) {
+        spinnerTim?.isEnabled = false
+
+        repository.getTim(
+            session = authSession,
+            search = null,
+            status = "aktif"
+        ) { data, error ->
+
+            activity?.runOnUiThread {
+                if (_binding == null || spinnerTim == null || formMode == null) {
+                    return@runOnUiThread
+                }
+
+                if (error != null) {
+                    daftarTimAktif = emptyList()
+                    spinnerTim?.adapter = createSpinnerAdapter(listOf("Gagal memuat daftar tim"))
+                    spinnerTim?.isEnabled = false
+                    toast(error)
+                    return@runOnUiThread
+                }
+
+                daftarTimAktif = data ?: emptyList()
+
+                val labels = mutableListOf("Pilih tim")
+                labels.addAll(
+                    daftarTimAktif.map { it.namaTim.orEmpty() }
+                )
+
+                // Gunakan custom adapter agar dropdown selalu berwarna hitam di atas putih
+                spinnerTim?.adapter = createSpinnerAdapter(labels)
+
+                val selectedPosition = daftarTimAktif.indexOfFirst {
+                    it.id == selectedTimId
+                }
+
+                spinnerTim?.setSelection(
+                    if (selectedPosition >= 0) selectedPosition + 1 else 0
+                )
+
+                spinnerTim?.isEnabled =
+                    formMode != FormMode.DETAIL &&
+                            daftarTimAktif.isNotEmpty()
+
+                if (daftarTimAktif.isEmpty()) {
+                    toast("Belum ada tim aktif yang tersedia.")
+                }
+            }
+        }
+    }
+
+    private fun selectedTimId(): Int? {
+        val position = spinnerTim?.selectedItemPosition ?: 0
+
+        if (position <= 0) return null
+
+        return daftarTimAktif.getOrNull(position - 1)?.id
+    }
+
     private fun setFormEditable(editable: Boolean) {
         listOf(
             etNomorSurat,
@@ -843,10 +947,12 @@ class OperatorSuratMasukFragment : Fragment() {
             field?.isEnabled = editable
         }
 
-        // Status tetap nonaktif meskipun form sedang dalam mode edit.
         spinnerStatus?.isEnabled = false
         spinnerStatus?.isClickable = false
         spinnerStatus?.alpha = 0.7f
+
+        spinnerTim?.isEnabled =
+            editable && daftarTimAktif.isNotEmpty()
 
         btnPilihFile?.isEnabled = editable
     }
@@ -867,8 +973,6 @@ class OperatorSuratMasukFragment : Fragment() {
 
         val filePart = createMultipartFile()
 
-        // Jika pengguna memilih file tetapi file gagal dibaca,
-        // jangan lanjutkan penyimpanan tanpa file yang dipilih.
         if (selectedFileUri != null && filePart == null) {
             return
         }
@@ -882,6 +986,7 @@ class OperatorSuratMasukFragment : Fragment() {
             tanggalDiterima = value(etTanggalDiterima),
             asalSurat = value(etAsalSurat),
             perihal = value(etPerihal),
+            timId = selectedTimId()!!,
             isiRingkas = nullableValue(etIsiRingkas),
             tanggalAcara = nullableValue(etTanggalAcara),
             waktuMulai = nullableValue(etWaktuMulai),
@@ -937,14 +1042,6 @@ class OperatorSuratMasukFragment : Fragment() {
 
         setFormLoading(true)
 
-        /*
-         * Status menggunakan status lama dari server, bukan nilai
-         * yang dipilih dari spinner.
-         *
-         * Dengan begitu, edit surat tidak mengubah status.
-         * Parameter status tetap dikirim untuk menjaga kompatibilitas
-         * jika endpoint Laravel saat ini masih mewajibkannya.
-         */
         val statusTetap = (surat.status ?: "baru").toTextRequestBody()
 
         BpskpRetrofitClient.api.updateSuratMasuk(
@@ -955,6 +1052,7 @@ class OperatorSuratMasukFragment : Fragment() {
             tanggalDiterima = value(etTanggalDiterima).toTextRequestBody(),
             asalSurat = value(etAsalSurat).toTextRequestBody(),
             perihal = value(etPerihal).toTextRequestBody(),
+            timId = selectedTimId()!!.toString().toTextRequestBody(),
             isiRingkas = nullableValue(etIsiRingkas)?.toTextRequestBody(),
             tanggalAcara = nullableValue(etTanggalAcara)?.toTextRequestBody(),
             waktuMulai = nullableValue(etWaktuMulai)?.toTextRequestBody(),
@@ -1075,6 +1173,12 @@ class OperatorSuratMasukFragment : Fragment() {
                 toast(message)
                 return false
             }
+        }
+
+        if (selectedTimId() == null) {
+            toast("Tim tujuan wajib dipilih.")
+            spinnerTim?.requestFocus()
+            return false
         }
 
         return true
@@ -1199,6 +1303,7 @@ class OperatorSuratMasukFragment : Fragment() {
         etLokasi = null
 
         spinnerStatus = null
+        spinnerTim = null
         tvFileName = null
         btnPilihFile = null
         btnSimpanForm = null
@@ -1235,8 +1340,12 @@ class OperatorSuratMasukFragment : Fragment() {
         btnBatalForm?.isEnabled = !loading
         btnPilihFile?.isEnabled = !loading
 
-        // Status tetap tidak dapat diubah.
         spinnerStatus?.isEnabled = false
+
+        spinnerTim?.isEnabled =
+            !loading &&
+                    formMode != FormMode.DETAIL &&
+                    daftarTimAktif.isNotEmpty()
 
         showLoading(loading)
     }

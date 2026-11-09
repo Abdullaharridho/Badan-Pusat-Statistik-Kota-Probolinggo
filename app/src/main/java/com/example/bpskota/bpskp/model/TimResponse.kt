@@ -20,6 +20,9 @@ data class Tim(
     @SerializedName("nama_ketua")
     val namaKetua: String? = null,
 
+    @SerializedName("role_ketua_sebelumnya")
+    val roleKetuaSebelumnya: String? = null,
+
     @SerializedName("keterangan")
     val keterangan: String? = null,
 
@@ -95,6 +98,10 @@ data class TimMutationResponse(
     @SerializedName("data")
     val data: Tim? = null
 )
+
+/**
+ * Request untuk membuat tim.
+ */
 data class TimRequest(
     @SerializedName("nama_tim")
     val namaTim: String,
@@ -109,6 +116,9 @@ data class TimRequest(
     val status: String = "aktif"
 )
 
+/**
+ * Request untuk memperbarui tim.
+ */
 data class TimUpdateRequest(
     @SerializedName("nama_tim")
     val namaTim: String? = null,
@@ -123,10 +133,17 @@ data class TimUpdateRequest(
     val status: String? = null
 )
 
+/**
+ * Request untuk menambahkan anggota tim.
+ */
 data class TambahAnggotaRequest(
     @SerializedName("pegawai_id")
     val pegawaiId: Int
 )
+
+/**
+ * Response untuk GET /tim/pegawai-tersedia.
+ */
 data class PegawaiTersediaResponse(
     @SerializedName("success")
     val success: Boolean,
@@ -138,6 +155,9 @@ data class PegawaiTersediaResponse(
     val data: List<PegawaiTersedia> = emptyList()
 )
 
+/**
+ * Model pegawai yang tersedia untuk menjadi anggota tim.
+ */
 data class PegawaiTersedia(
     @SerializedName("id")
     val id: Int,

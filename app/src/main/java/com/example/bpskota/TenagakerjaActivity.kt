@@ -1,12 +1,16 @@
 package com.example.bpskota
 
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.ArrayAdapter
+import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.Spinner
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -27,56 +31,43 @@ class TenagakerjaActivity : AppCompatActivity() {
     companion object {
 
         private const val DOMAIN = "3574"
-
         private const val VARIABLE = 88
 
         private const val API_KEY =
             "008edaaae5d450b1913b31a2cef618c3"
 
         private const val TAHUN_AWAL = 2010
-
         private const val TAHUN_AKHIR = 2025
 
         private const val KODE_TAHUN_AWAL = 110
-
         private const val KODE_TAHUN_AKHIR = 125
     }
 
-    private val repository =
-        BpsRepository()
+    private val repository = BpsRepository()
 
     private lateinit var activityTracker: ActivityTracker
 
     private lateinit var cardContainer: LinearLayout
     private lateinit var progressLoading: LottieAnimationView
     private lateinit var btnBack: ImageView
-    private lateinit var btnFilter: ImageView
+    private lateinit var btnFilter: LinearLayout
+    private lateinit var tvFilterPeriode: TextView
 
     private var tahunTerpilih = 2025
 
-    override fun onCreate(
-        savedInstanceState: Bundle?
-    ) {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-        super.onCreate(
-            savedInstanceState
-        )
-
-        setContentView(
-            R.layout.activity_tenagakerja
-        )
+        setContentView(R.layout.activity_tenagakerja)
 
         initView()
-
         setupLoading()
-
         setupButton()
 
-        activityTracker =
-            ActivityTracker(
-                this,
-                BpskpRetrofitClient.api
-            )
+        activityTracker = ActivityTracker(
+            this,
+            BpskpRetrofitClient.api
+        )
 
         activityTracker.trackScreen(
             screen = "Tenagakerja",
@@ -87,33 +78,23 @@ class TenagakerjaActivity : AppCompatActivity() {
 
         ambilDataTahun(
             tahun = tahunTerpilih,
-            kodeTahun = getKodeTahun(
-                tahunTerpilih
-            )!!
+            kodeTahun = getKodeTahun(tahunTerpilih)!!
         )
     }
 
     private fun initView() {
 
-        cardContainer =
-            findViewById(
-                R.id.cardContainer
-            )
+        cardContainer = findViewById(R.id.cardContainer)
 
-        progressLoading =
-            findViewById(
-                R.id.progressLoading
-            )
+        progressLoading = findViewById(R.id.progressLoading)
 
-        btnBack =
-            findViewById(
-                R.id.btnBack
-            )
+        btnBack = findViewById(R.id.btnBack)
 
-        btnFilter =
-            findViewById(
-                R.id.btnFilter
-            )
+        btnFilter = findViewById(R.id.btnFilter)
+
+        tvFilterPeriode = findViewById(R.id.tvFilterPeriode)
+
+        tvFilterPeriode.text = tahunTerpilih.toString()
     }
 
     private fun setupLoading() {
@@ -122,169 +103,409 @@ class TenagakerjaActivity : AppCompatActivity() {
             "Loading_Animation.json"
         )
 
-        progressLoading.repeatCount =
-            LottieDrawable.INFINITE
+        progressLoading.repeatCount = LottieDrawable.INFINITE
 
-        progressLoading.visibility =
-            View.GONE
+        progressLoading.visibility = View.GONE
     }
 
     private fun mulaiLoading() {
 
-        progressLoading.visibility =
-            View.VISIBLE
-
+        progressLoading.visibility = View.VISIBLE
         progressLoading.playAnimation()
     }
 
     private fun selesaiLoading() {
 
         progressLoading.cancelAnimation()
-
-        progressLoading.visibility =
-            View.GONE
+        progressLoading.visibility = View.GONE
     }
 
     private fun setupButton() {
 
         btnBack.setOnClickListener {
-
             finish()
         }
 
         btnFilter.setOnClickListener {
-
             tampilkanFilterTahun()
         }
     }
 
+    // =====================================================
+    // FILTER TAHUN - DESAIN DAN ANIMASI GENDERACTIVITY
+    // =====================================================
+
     private fun tampilkanFilterTahun() {
 
-        val daftarTahun =
-            (TAHUN_AWAL..TAHUN_AKHIR)
-                .reversed()
-                .map {
-                    it.toString()
-                }
-                .toTypedArray()
+        val daftarTahun = (TAHUN_AWAL..TAHUN_AKHIR)
+            .reversed()
+            .map {
+                it.toString()
+            }
 
-        val spinner =
-            Spinner(this)
+        // Container utama dialog
+        val root =
+            LinearLayout(this).apply {
 
-        spinner.setPadding(
-            32,
-            0,
-            32,
-            0
-        )
+                orientation = LinearLayout.VERTICAL
 
-        val spinnerAdapter =
-            ArrayAdapter(
-                this,
-                android.R.layout.simple_spinner_item,
-                daftarTahun
-            )
+                setPadding(
+                    dp(18),
+                    dp(18),
+                    dp(18),
+                    dp(14)
+                )
 
-        spinnerAdapter.setDropDownViewResource(
-            android.R.layout.simple_spinner_dropdown_item
-        )
+                background =
+                    GradientDrawable().apply {
 
-        spinner.adapter =
-            spinnerAdapter
+                        setColor(Color.WHITE)
 
-        val posisiTerpilih =
-            daftarTahun.indexOf(
-                tahunTerpilih.toString()
-            )
+                        cornerRadius = dp(24).toFloat()
 
-        if (
-            posisiTerpilih >= 0
-        ) {
+                        setStroke(
+                            dp(2),
+                            Color.parseColor("#F97316")
+                        )
+                    }
+            }
 
-            spinner.setSelection(
-                posisiTerpilih
-            )
-        }
+        // Judul dialog
+        val tvJudul =
+            TextView(this).apply {
 
-        AlertDialog.Builder(this)
+                text = "Pilih Tahun Data"
 
-            .setTitle(
-                "Pilih Tahun"
-            )
+                textSize = 19f
 
-            .setView(
-                spinner
-            )
+                setTextColor(
+                    Color.parseColor("#F97316")
+                )
 
-            .setNegativeButton(
-                "Batal",
-                null
-            )
+                setTypeface(
+                    null,
+                    android.graphics.Typeface.BOLD
+                )
 
-            .setPositiveButton(
-                "Tampilkan"
-            ) { _, _ ->
+                gravity = Gravity.CENTER
 
-                val posisi =
-                    spinner.selectedItemPosition
-
-                if (
-                    posisi < 0 ||
-                    posisi >= daftarTahun.size
-                ) {
-                    return@setPositiveButton
-                }
-
-                val tahunBaru =
-                    daftarTahun[posisi]
-                        .toIntOrNull()
-
-                if (
-                    tahunBaru == null
-                ) {
-                    return@setPositiveButton
-                }
-
-                if (
-                    tahunBaru ==
-                    tahunTerpilih
-                ) {
-                    return@setPositiveButton
-                }
-
-                val kodeTahun =
-                    getKodeTahun(
-                        tahunBaru
-                    )
-
-                if (
-                    kodeTahun == null
-                ) {
-
-                    Toast.makeText(
-                        this,
-                        "Kode tahun $tahunBaru tidak tersedia",
-                        Toast.LENGTH_LONG
-                    ).show()
-
-                    return@setPositiveButton
-                }
-
-                tahunTerpilih =
-                    tahunBaru
-
-                ambilDataTahun(
-                    tahun = tahunBaru,
-                    kodeTahun = kodeTahun
+                setPadding(
+                    dp(8),
+                    dp(4),
+                    dp(8),
+                    dp(16)
                 )
             }
 
-            .show()
+        root.addView(
+            tvJudul,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        // ScrollView daftar tahun
+        val scrollView =
+            ScrollView(this).apply {
+
+                isFillViewport = false
+
+                clipToPadding = false
+
+                setPadding(
+                    0,
+                    dp(2),
+                    0,
+                    dp(4)
+                )
+            }
+
+        val listContainer =
+            LinearLayout(this).apply {
+
+                orientation = LinearLayout.VERTICAL
+            }
+
+        scrollView.addView(
+            listContainer,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        root.addView(
+            scrollView,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        )
+
+        // Dialog dibuat sebelum listener item tahun
+        val dialog = AlertDialog.Builder(this)
+            .setView(root)
+            .create()
+
+        // Fungsi memperbarui tampilan pilihan tahun
+        fun perbaruiPilihanTahun() {
+
+            listContainer.removeAllViews()
+
+            daftarTahun.forEach { teks ->
+
+                val tahunItem = teks.toInt()
+
+                val terpilih = tahunItem == tahunTerpilih
+
+                val item =
+                    TextView(this).apply {
+
+                        text = teks
+
+                        textSize = 14f
+
+                        gravity = Gravity.CENTER_VERTICAL
+
+                        setPadding(
+                            dp(16),
+                            dp(13),
+                            dp(16),
+                            dp(13)
+                        )
+
+                        setTypeface(
+                            null,
+                            if (terpilih) {
+                                android.graphics.Typeface.BOLD
+                            } else {
+                                android.graphics.Typeface.NORMAL
+                            }
+                        )
+
+                        setTextColor(
+                            if (terpilih) {
+                                Color.WHITE
+                            } else {
+                                Color.parseColor("#C2410C")
+                            }
+                        )
+
+                        background =
+                            GradientDrawable().apply {
+
+                                cornerRadius = dp(12).toFloat()
+
+                                setColor(
+                                    if (terpilih) {
+                                        Color.parseColor("#F97316")
+                                    } else {
+                                        Color.parseColor("#FFF7ED")
+                                    }
+                                )
+                            }
+
+                        setOnClickListener {
+
+                            // Jika tahun sama, cukup tutup dialog
+                            if (tahunItem == tahunTerpilih) {
+
+                                dialog.dismiss()
+
+                                return@setOnClickListener
+                            }
+
+                            // Ambil kode tahun BPS
+                            val kodeTahun = getKodeTahun(tahunItem)
+
+                            if (kodeTahun == null) {
+
+                                Toast.makeText(
+                                    this@TenagakerjaActivity,
+                                    "Kode tahun $tahunItem tidak tersedia",
+                                    Toast.LENGTH_LONG
+                                ).show()
+
+                                return@setOnClickListener
+                            }
+
+                            // Simpan tahun yang dipilih
+                            tahunTerpilih = tahunItem
+
+                            // Perbarui label tahun
+                            tvFilterPeriode.text =
+                                tahunTerpilih.toString()
+
+                            // Tutup dialog
+                            dialog.dismiss()
+
+                            // Langsung ambil data tanpa tombol Tampilkan
+                            ambilDataTahun(
+                                tahun = tahunItem,
+                                kodeTahun = kodeTahun
+                            )
+                        }
+                    }
+
+                val itemParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+
+                        bottomMargin = dp(8)
+                    }
+
+                listContainer.addView(
+                    item,
+                    itemParams
+                )
+            }
+        }
+
+        perbaruiPilihanTahun()
+
+        // Footer tombol Tutup
+        val footer =
+            LinearLayout(this).apply {
+
+                orientation = LinearLayout.HORIZONTAL
+
+                gravity = Gravity.CENTER
+
+                setPadding(
+                    0,
+                    dp(10),
+                    0,
+                    0
+                )
+            }
+
+        val btnTutup =
+            TextView(this).apply {
+
+                text = "Tutup"
+
+                textSize = 14f
+
+                gravity = Gravity.CENTER
+
+                setTextColor(
+                    Color.parseColor("#9CA3AF")
+                )
+
+                setTypeface(
+                    null,
+                    android.graphics.Typeface.BOLD
+                )
+
+                setPadding(
+                    dp(18),
+                    dp(12),
+                    dp(18),
+                    dp(12)
+                )
+
+                setOnClickListener {
+                    dialog.dismiss()
+                }
+            }
+
+        footer.addView(
+            btnTutup,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        root.addView(
+            footer,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        // Tampilkan dialog terlebih dahulu
+        dialog.show()
+
+        // ATUR POSISI DAN ANIMASI DIALOG
+        dialog.window?.let { window ->
+
+            val displayMetrics =
+                resources.displayMetrics
+
+            val width =
+                (displayMetrics.widthPixels * 0.70f).toInt()
+
+            val height =
+                (displayMetrics.heightPixels * 0.50f).toInt()
+
+            // Atur posisi dan ukuran Window
+            val params =
+                window.attributes
+
+            params.gravity = Gravity.CENTER
+
+            params.x = 0
+
+            params.y = 0
+
+            params.width = width
+
+            params.height = height
+
+            // Matikan animasi bawaan Window
+            params.windowAnimations = 0
+
+            window.attributes = params
+
+            window.setBackgroundDrawable(
+                ColorDrawable(Color.TRANSPARENT)
+            )
+
+            // Tunggu sampai Window selesai ditampilkan
+            window.decorView.post {
+
+                val decorView =
+                    window.decorView
+
+                // Titik pusat animasi berada di tengah Window
+                decorView.pivotX =
+                    decorView.width / 2f
+
+                decorView.pivotY =
+                    decorView.height / 2f
+
+                // Kondisi awal
+                decorView.alpha = 0f
+
+                decorView.scaleX = 0.85f
+
+                decorView.scaleY = 0.85f
+
+                // Animasi muncul dari tengah
+                decorView.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(300)
+                    .setInterpolator(
+                        DecelerateInterpolator(2f)
+                    )
+                    .start()
+            }
+        }
     }
 
-    private fun getKodeTahun(
-        tahun: Int
-    ): Int? {
+    // =====================================================
+    // KODE TAHUN BPS
+    // =====================================================
+
+    private fun getKodeTahun(tahun: Int): Int? {
 
         if (
             tahun < TAHUN_AWAL ||
@@ -293,8 +514,7 @@ class TenagakerjaActivity : AppCompatActivity() {
             return null
         }
 
-        val kode =
-            tahun - 1900
+        val kode = tahun - 1900
 
         if (
             kode < KODE_TAHUN_AWAL ||
@@ -305,6 +525,10 @@ class TenagakerjaActivity : AppCompatActivity() {
 
         return kode
     }
+
+    // =====================================================
+    // AMBIL DATA TENAGA KERJA
+    // =====================================================
 
     private fun ambilDataTahun(
         tahun: Int,
@@ -321,17 +545,14 @@ class TenagakerjaActivity : AppCompatActivity() {
             tahun = kodeTahun,
             apiKey = API_KEY
         ).enqueue(
-            object :
-                Callback<TenagaKerjaResponse> {
+            object : Callback<TenagaKerjaResponse> {
 
                 override fun onResponse(
                     call: Call<TenagaKerjaResponse>,
                     response: Response<TenagaKerjaResponse>
                 ) {
 
-                    if (
-                        !response.isSuccessful
-                    ) {
+                    if (!response.isSuccessful) {
 
                         selesaiLoading()
 
@@ -344,12 +565,9 @@ class TenagakerjaActivity : AppCompatActivity() {
                         return
                     }
 
-                    val body =
-                        response.body()
+                    val body = response.body()
 
-                    if (
-                        body == null
-                    ) {
+                    if (body == null) {
 
                         selesaiLoading()
 
@@ -363,10 +581,7 @@ class TenagakerjaActivity : AppCompatActivity() {
                     }
 
                     if (
-                        body.status
-                            ?.uppercase(
-                                Locale.ROOT
-                            ) != "OK"
+                        body.status?.uppercase(Locale.ROOT) != "OK"
                     ) {
 
                         selesaiLoading()
@@ -381,10 +596,7 @@ class TenagakerjaActivity : AppCompatActivity() {
                     }
 
                     if (
-                        body.dataAvailability
-                            ?.lowercase(
-                                Locale.ROOT
-                            ) != "available"
+                        body.dataAvailability?.lowercase(Locale.ROOT) != "available"
                     ) {
 
                         selesaiLoading()
@@ -422,61 +634,43 @@ class TenagakerjaActivity : AppCompatActivity() {
         )
     }
 
+    // =====================================================
+    // TAMPILKAN DATA
+    // =====================================================
+
     private fun tampilkanData(
         body: TenagaKerjaResponse,
         tahun: Int,
         kodeTahun: Int
     ) {
 
-        val dataContent =
-            body.dataContent
-                ?: emptyMap()
+        val dataContent = body.dataContent ?: emptyMap()
 
-        val prefix =
-            "$DOMAIN$VARIABLE"
+        val prefix = "$DOMAIN$VARIABLE"
 
-        var nilai: Double? =
-            null
+        var nilai: Double? = null
 
-        val entryUtama =
-            dataContent.entries
-                .firstOrNull { entry ->
+        val entryUtama = dataContent.entries
+            .firstOrNull { entry ->
 
-                    entry.key.startsWith(
-                        prefix
-                    ) &&
-                            entry.key.contains(
-                                kodeTahun.toString()
-                            )
-                }
+                entry.key.startsWith(prefix) &&
+                        entry.key.contains(kodeTahun.toString())
+            }
 
-        if (
-            entryUtama != null
-        ) {
-
-            nilai =
-                entryUtama.value
+        if (entryUtama != null) {
+            nilai = entryUtama.value
         }
 
-        if (
-            nilai == null
-        ) {
+        if (nilai == null) {
 
-            val entryFallback =
-                dataContent.entries
-                    .firstOrNull { entry ->
+            val entryFallback = dataContent.entries
+                .firstOrNull { entry ->
 
-                        entry.key.endsWith(
-                            kodeTahun.toString()
-                        )
-                    }
+                    entry.key.endsWith(kodeTahun.toString())
+                }
 
-            if (
-                entryFallback != null
-            ) {
-
-                nilai =
-                    entryFallback.value
+            if (entryFallback != null) {
+                nilai = entryFallback.value
             }
         }
 
@@ -485,16 +679,12 @@ class TenagakerjaActivity : AppCompatActivity() {
             dataContent.size == 1
         ) {
 
-            val entry =
-                dataContent.entries.first()
+            val entry = dataContent.entries.first()
 
-            nilai =
-                entry.value
+            nilai = entry.value
         }
 
-        if (
-            nilai == null
-        ) {
+        if (nilai == null) {
 
             selesaiLoading()
 
@@ -507,75 +697,58 @@ class TenagakerjaActivity : AppCompatActivity() {
             return
         }
 
-        val variable =
-            body.variable
-                ?.firstOrNull()
+        val variable = body.variable?.firstOrNull()
 
-        val judul =
-            variable?.label
-                ?: "Tingkat Pengangguran Terbuka (TPT)"
+        val judul = variable?.label
+            ?: "Tingkat Pengangguran Terbuka (TPT)"
 
-        val satuan =
-            variable?.unit
-                ?: "Persen"
+        val satuan = variable?.unit
+            ?: "Persen"
 
-        val decimal =
-            variable?.decimal
-                ?: 2
+        val decimal = variable?.decimal
+            ?: 2
 
-        val nilaiFormat =
-            String.format(
-                Locale.US,
-                "%.${decimal}f",
-                nilai
+        val nilaiFormat = String.format(
+            Locale.US,
+            "%.${decimal}f",
+            nilai
+        )
+
+        val card = LayoutInflater
+            .from(this)
+            .inflate(
+                R.layout.item_statistik,
+                cardContainer,
+                false
             )
 
-        val card =
-            LayoutInflater
-                .from(this)
-                .inflate(
-                    R.layout.item_statistik,
-                    cardContainer,
-                    false
-                )
+        val tvTahun = card.findViewById<TextView>(
+            R.id.tvTahun
+        )
 
-        val tvTahun =
-            card.findViewById<TextView>(
-                R.id.tvTahun
-            )
+        val tvKategori = card.findViewById<TextView>(
+            R.id.tvKategori
+        )
 
-        val tvKategori =
-            card.findViewById<TextView>(
-                R.id.tvKategori
-            )
+        val tvJudul = card.findViewById<TextView>(
+            R.id.tvJudul
+        )
 
-        val tvJudul =
-            card.findViewById<TextView>(
-                R.id.tvJudul
-            )
+        val tvNilai = card.findViewById<TextView>(
+            R.id.tvNilai
+        )
 
-        val tvNilai =
-            card.findViewById<TextView>(
-                R.id.tvNilai
-            )
+        tvTahun.text = tahun.toString()
 
-        tvTahun.text =
-            tahun.toString()
+        tvKategori.text = "Tenaga Kerja"
 
-        tvKategori.text =
-            "Tenaga Kerja"
+        tvJudul.text = judul
 
-        tvJudul.text =
-            judul
-
-        tvNilai.text =
-            if (
-                satuan.isNotBlank()
-            ) {
-                "$nilaiFormat $satuan"
-            } else {
-                nilaiFormat
-            }
+        tvNilai.text = if (satuan.isNotBlank()) {
+            "$nilaiFormat $satuan"
+        } else {
+            nilaiFormat
+        }
 
         card.setOnClickListener {
 
@@ -586,23 +759,29 @@ class TenagakerjaActivity : AppCompatActivity() {
             ).show()
         }
 
-        cardContainer.addView(
-            card
-        )
+        cardContainer.addView(card)
 
         selesaiLoading()
     }
 
+    // =====================================================
+    // KONVERSI DP
+    // =====================================================
+
+    private fun dp(value: Int): Int {
+
+        return (
+                value * resources.displayMetrics.density
+                ).toInt()
+    }
+
     override fun onDestroy() {
 
-        if (
-            ::progressLoading.isInitialized
-        ) {
+        if (::progressLoading.isInitialized) {
 
             progressLoading.cancelAnimation()
 
-            progressLoading.visibility =
-                View.GONE
+            progressLoading.visibility = View.GONE
         }
 
         super.onDestroy()

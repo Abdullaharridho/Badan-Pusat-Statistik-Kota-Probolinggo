@@ -1,200 +1,426 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F6F2EE"
+    android:background="#F9FAFB"
     tools:context=".MasterwilayahActivity">
 
-
-    <!-- ========================= -->
-    <!-- HEADER -->
-    <!-- ========================= -->
-
+    <!-- HEADER (Full Width) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/headerMasterWilayah"
-        android:layout_width="0dp"
-        android:layout_height="72dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
         app:cardBackgroundColor="#FFFFFF"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="3dp"
-
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:cardElevation="4dp"
+        app:cardCornerRadius="0dp"
+        app:layout_constraintTop_toTopOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <!-- BACK -->
             <ImageView
                 android:id="@+id/btnBack"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:layout_marginStart="8dp"
-
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="4dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-
                 android:clickable="true"
                 android:focusable="true"
-
-                android:padding="10dp"
+                android:padding="12dp"
                 android:src="@drawable/ic_arrow_back"
-                android:contentDescription="Kembali"
-
+                app:tint="#111827"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent" />
 
-
-            <!-- JUDUL -->
             <TextView
                 android:id="@+id/tvHeaderTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-
                 android:layout_marginStart="8dp"
                 android:layout_marginEnd="16dp"
-
-                android:text="Master Wilayah Kota Probolinggo"
-
+                android:text="Master Wilayah"
                 android:textColor="#111827"
                 android:textSize="18sp"
                 android:textStyle="bold"
-
                 android:maxLines="1"
                 android:ellipsize="end"
-
                 app:layout_constraintStart_toEndOf="@id/btnBack"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
-
     </androidx.cardview.widget.CardView>
 
-
-    <!-- ========================= -->
-    <!-- CONTENT -->
-    <!-- ========================= -->
-
+    <!-- CONTENT SCROLL -->
     <ScrollView
         android:id="@+id/contentScroll"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
-
         android:fillViewport="true"
         android:scrollbars="none"
         android:overScrollMode="never"
-
-        android:layout_marginTop="12dp"
-
         app:layout_constraintTop_toBottomOf="@id/headerMasterWilayah"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintBottom_toBottomOf="parent">
 
         <LinearLayout
             android:id="@+id/cardContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-
             android:orientation="vertical"
+            android:padding="16dp">
 
-            android:paddingStart="24dp"
-            android:paddingTop="8dp"
-            android:paddingEnd="24dp"
-            android:paddingBottom="32dp">
-
-
-            <!-- ========================= -->
-            <!-- RINGKASAN WILAYAH -->
-            <!-- ========================= -->
-
+            <!-- KARTU TOTAL -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardTotalKecamatan"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                app:cardBackgroundColor="#FDF1E1"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp">
 
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="20dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvLabelTotalWilayah"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Total Kecamatan"
+                            android:textColor="#F97316"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvTotalKecamatan"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Memuat..."
+                            android:textColor="#111827"
+                            android:textSize="24sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:src="@drawable/ic_world"
+                        app:tint="#000000"
+                        android:alpha="0.6"/>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- PANEL PENCARIAN & FILTER (Sangat Kompak & Kecil) -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 app:cardBackgroundColor="#FFFFFF"
-                app:cardCornerRadius="18dp"
+                app:cardCornerRadius="16dp"
                 app:cardElevation="2dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
-                    android:orientation="vertical"
+                    <!-- Search Bar Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="46dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="12dp">
 
-                    android:padding="18dp">
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:src="@android:drawable/ic_menu_search"
+                            app:tint="#9CA3AF" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        <EditText
+                            android:id="@+id/etCariWilayah"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:layout_marginStart="10dp"
+                            android:background="@null"
+                            android:hint="Cari wilayah..."
+                            android:inputType="text"
+                            android:singleLine="true"
+                            android:imeOptions="actionSearch"
+                            android:textColor="#111827"
+                            android:textColorHint="#9CA3AF"
+                            android:textSize="14sp" />
 
-                        android:text="Total Kecamatan"
+                        <ImageView
+                            android:id="@+id/btnResetCari"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:padding="7dp"
+                            android:src="@android:drawable/ic_menu_close_clear_cancel"
+                            app:tint="#9CA3AF"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
 
-                        android:textColor="#6B7280"
-                        android:textSize="14sp" />
+                    <!-- Garis Pembatas Tipis -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#F3F4F6" />
 
-                    <TextView
-                        android:id="@+id/tvTotalKecamatan"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                    <!-- Filter Row (2 Dropdown Saja) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="42dp"
+                        android:orientation="horizontal"
+                        android:baselineAligned="false">
 
-                        android:layout_marginTop="4dp"
+                        <!-- Filter Status -->
+                        <RelativeLayout
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1">
 
-                        android:text="Memuat..."
-                        android:textColor="#111827"
-                        android:textSize="24sp"
-                        android:textStyle="bold" />
+                            <Spinner
+                                android:id="@+id/spinnerStatusWilayah"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@null"
 
+                                android:paddingStart="12dp"
+                                android:paddingEnd="32dp"/>
+
+                            <ImageView
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:layout_marginEnd="12dp"
+                                android:src="@drawable/ic_bottom"
+                                app:tint="#000000"/>
+                        </RelativeLayout>
+
+                        <!-- Pembatas Vertikal Antar Filter -->
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="match_parent"
+                            android:layout_marginVertical="8dp"
+                            android:background="#F3F4F6" />
+
+                        <!-- Filter Urutkan -->
+                        <RelativeLayout
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1">
+
+                            <Spinner
+                                android:id="@+id/spinnerSortWilayah"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@null"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="32dp"/>
+
+                            <ImageView
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:layout_marginEnd="12dp"
+                                android:src="@drawable/ic_bottom"
+                                app:tint="#000000"/>
+                        </RelativeLayout>
+                    </LinearLayout>
                 </LinearLayout>
-
             </androidx.cardview.widget.CardView>
 
+            <!-- ELEMEN DISEMBUNYIKAN (Agar Kotlin Tidak Error Crash) -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone">
+                <Spinner android:id="@+id/spinnerOrderWilayah" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                <TextView android:id="@+id/btnResetFilter" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
 
-            <!-- ========================= -->
-            <!-- JUDUL LIST -->
-            <!-- ========================= -->
+            <!-- NAVIGASI HIERARKI -->
+            <LinearLayout
+                android:id="@+id/layoutBreadcrumb"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:visibility="gone">
 
+                <TextView
+                    android:id="@+id/tvBreadcrumb"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#6B7280"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/btnKembaliLevel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center_vertical"
+                    android:text="← Kembali ke tingkat sebelumnya"
+                    android:textColor="#F97316"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <!-- JUDUL DAFTAR -->
             <TextView
                 android:id="@+id/tvLabelKecamatan"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-
                 android:layout_marginTop="20dp"
-                android:layout_marginBottom="10dp"
-
-                android:text="Kecamatan"
-
+                android:layout_marginBottom="2dp"
+                android:text="Daftar Wilayah"
                 android:textColor="#111827"
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
+            <TextView
+                android:id="@+id/tvDeskripsiWilayah"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:text="Pilih wilayah untuk melihat detail dibawahnya."
+                android:textColor="#6B7280"
+                android:textSize="12sp" />
 
-            <!-- ========================= -->
-            <!-- CARD KECAMATAN -->
-            <!-- ========================= -->
-
+            <!-- LIST ITEM WILAYAH -->
             <LinearLayout
                 android:id="@+id/listKecamatan"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-
                 android:orientation="vertical" />
 
-        </LinearLayout>
+            <!-- DATA KOSONG -->
+            <LinearLayout
+                android:id="@+id/layoutEmptyWilayah"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginTop="40dp"
+                android:layout_marginBottom="40dp"
+                android:visibility="gone">
 
+                <ImageView
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:src="@android:drawable/ic_menu_info_details"
+                    app:tint="#D1D5DB"
+                    android:layout_marginBottom="10dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Wilayah tidak ditemukan"
+                    android:textColor="#111827"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center"
+                    android:text="Coba ubah kata kunci yang Anda gunakan."
+                    android:textColor="#6B7280"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- PAGINATION -->
+            <LinearLayout
+                android:id="@+id/layoutPaginationWilayah"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvInfoPagination"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Halaman 1 dari 5\n100 data"
+                    android:textColor="#6B7280"
+                    android:textSize="12sp"
+                    android:lineSpacingExtra="2dp"/>
+
+                <!-- Tombol Prev -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/btnHalamanSebelumnya"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="8dp"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="2dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@android:drawable/ic_media_previous"
+                        app:tint="#F97316"/>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Tombol Next -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/btnHalamanBerikutnya"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="2dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@android:drawable/ic_media_next"
+                        app:tint="#F97316"/>
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+
+        </LinearLayout>
     </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

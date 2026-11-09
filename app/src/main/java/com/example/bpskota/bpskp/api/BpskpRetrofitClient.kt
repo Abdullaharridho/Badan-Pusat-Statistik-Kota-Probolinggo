@@ -7,7 +7,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object BpskpRetrofitClient {
 
-    private const val SERVER_URL = "http://172.16.16.16:8000"
+    private const val SERVER_URL = "http://192.168.8.159:8000"
 
     private const val BASE_URL = "$SERVER_URL/api/"
 

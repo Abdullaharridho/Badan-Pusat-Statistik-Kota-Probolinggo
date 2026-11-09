@@ -176,20 +176,113 @@ class BpskpRepository {
     }
 
     /** Membuat pengguna baru (Admin role) */
-    fun createUser(session: BpskpAuthSession, name: String, username: String, password: String, role: String, callback: (UserActionResponse?, String?) -> Unit) {
-        val auth = getAuthorizationHeader(session) ?: return callback(null, "Sesi login tidak ditemukan.")
-        val request = UserRequest(name, username, password, role)
-        api.createUser(auth, request).enqueueRequest { body, _, errorMsg ->
-            if (body?.success == true) callback(body, null) else callback(null, errorMsg ?: body?.message ?: "Gagal membuat user.")
+    /**
+     * Membuat pengguna baru.
+     */
+    fun createUser(
+        session: BpskpAuthSession,
+        name: String,
+        username: String,
+        password: String,
+        role: String,
+        jenisKelamin: String? = null,
+        idJabatan: Int? = null,
+        nip: String? = null,
+        noHp: String? = null,
+        golongan: String? = null,
+        status: String? = null,
+        callback: (UserActionResponse?, String?) -> Unit
+    ) {
+        val auth = getAuthorizationHeader(session)
+            ?: return callback(null, "Sesi login tidak ditemukan.")
+
+        val request = UserRequest(
+            name = name,
+            username = username,
+            password = password,
+            jenis_kelamin = jenisKelamin,
+            id_jabatan = idJabatan,
+            role = role,
+            nip = nip,
+            no_hp = noHp,
+            golongan = golongan,
+            status = status
+        )
+
+        api.createUser(auth, request).enqueueRequest {
+                body, _, errorMsg ->
+            if (body?.success == true) {
+                callback(body, null)
+            } else {
+                callback(
+                    null,
+                    errorMsg ?: body?.message ?: "Gagal membuat user."
+                )
+            }
         }
     }
+    fun getJabatan(
+        session: BpskpAuthSession,
+        callback: (JabatanResponse?, String?) -> Unit
+    ) {
+        val auth = getAuthorizationHeader(session)
+            ?: return callback(null, "Sesi login tidak ditemukan.")
 
-    /** Memperbarui data pengguna yang sudah ada */
-    fun updateUser(session: BpskpAuthSession, id: Int, name: String, username: String, password: String?, role: String, callback: (UserActionResponse?, String?) -> Unit) {
-        val auth = getAuthorizationHeader(session) ?: return callback(null, "Sesi login tidak ditemukan.")
-        val request = UserRequest(name, username, password, role)
-        api.updateUser(auth, id, request).enqueueRequest { body, _, errorMsg ->
-            if (body?.success == true) callback(body, null) else callback(null, errorMsg ?: body?.message ?: "Gagal update user.")
+        BpskpRetrofitClient.api.getJabatan(auth).enqueueRequest { body, _, errorMsg ->
+            if (body?.success == true) {
+                callback(body, null)
+            } else {
+                callback(
+                    null,
+                    errorMsg ?: body?.message ?: "Gagal mengambil data jabatan."
+                )
+            }
+        }
+    }
+    /**
+     * Memperbarui data pengguna.
+     */
+    fun updateUser(
+        session: BpskpAuthSession,
+        id: Int,
+        name: String,
+        username: String,
+        password: String? = null,
+        role: String,
+        jenisKelamin: String? = null,
+        idJabatan: Int? = null,
+        nip: String? = null,
+        noHp: String? = null,
+        golongan: String? = null,
+        status: String? = null,
+        callback: (UserActionResponse?, String?) -> Unit
+    ) {
+        val auth = getAuthorizationHeader(session)
+            ?: return callback(null, "Sesi login tidak ditemukan.")
+
+        val request = UserRequest(
+            name = name,
+            username = username,
+            password = password,
+            jenis_kelamin = jenisKelamin,
+            id_jabatan = idJabatan,
+            role = role,
+            nip = nip,
+            no_hp = noHp,
+            golongan = golongan,
+            status = status
+        )
+
+        api.updateUser(auth, id, request).enqueueRequest {
+                body, _, errorMsg ->
+            if (body?.success == true) {
+                callback(body, null)
+            } else {
+                callback(
+                    null,
+                    errorMsg ?: body?.message ?: "Gagal memperbarui user."
+                )
+            }
         }
     }
 
@@ -257,18 +350,42 @@ class BpskpRepository {
 
     /** Membuat entri baru untuk surat masuk, mendukung lampiran file */
     fun createSuratMasuk(
-        authorization: String, nomorSurat: String, tanggalSurat: String, tanggalDiterima: String,
-        asalSurat: String, perihal: String, isiRingkas: String?, tanggalAcara: String?,
-        waktuMulai: String?, waktuSelesai: String?, lokasi: String?, fileSurat: MultipartBody.Part?,
+        authorization: String,
+        nomorSurat: String,
+        tanggalSurat: String,
+        tanggalDiterima: String,
+        asalSurat: String,
+        perihal: String,
+        timId: Int,
+        isiRingkas: String?,
+        tanggalAcara: String?,
+        waktuMulai: String?,
+        waktuSelesai: String?,
+        lokasi: String?,
+        fileSurat: MultipartBody.Part?,
         callback: (SuratMasuk?, String?) -> Unit
     ) {
         api.createSuratMasuk(
-            authorization, nomorSurat.toTextRequestBody(), tanggalSurat.toTextRequestBody(),
-            tanggalDiterima.toTextRequestBody(), asalSurat.toTextRequestBody(), perihal.toTextRequestBody(),
-            isiRingkas?.toTextRequestBody(), tanggalAcara?.toTextRequestBody(), waktuMulai?.toTextRequestBody(),
-            waktuSelesai?.toTextRequestBody(), lokasi?.toTextRequestBody(), null, fileSurat
+            authorization,
+            nomorSurat.toTextRequestBody(),
+            tanggalSurat.toTextRequestBody(),
+            tanggalDiterima.toTextRequestBody(),
+            asalSurat.toTextRequestBody(),
+            perihal.toTextRequestBody(),
+            timId.toString().toTextRequestBody(),
+            isiRingkas?.toTextRequestBody(),
+            tanggalAcara?.toTextRequestBody(),
+            waktuMulai?.toTextRequestBody(),
+            waktuSelesai?.toTextRequestBody(),
+            lokasi?.toTextRequestBody(),
+            null,
+            fileSurat
         ).enqueueRequest { body, _, errorMsg ->
-            if (body != null) callback(body.data, null) else callback(null, errorMsg ?: "Gagal menambahkan surat.")
+            if (body != null) {
+                callback(body.data, null)
+            } else {
+                callback(null, errorMsg ?: "Gagal menambahkan surat.")
+            }
         }
     }
 
@@ -1110,6 +1227,317 @@ class BpskpRepository {
             id
         ).enqueueRequest { body, code, errorMsg ->
             onResult(body, code, errorMsg)
+        }
+    }
+    fun getMasterWilayah(
+        level: String,
+        q: String? = null,
+        status: String? = null,
+        sort: String? = null,
+        order: String? = null,
+        perPage: Int = 10,
+        page: Int = 1,
+        kecamatanId: Int? = null,
+        kelurahanId: Int? = null,
+        callback: (MasterWilayahResponse?, String?) -> Unit
+    ) {
+        api.getMasterWilayah(
+            level = level,
+            q = q?.takeIf { it.isNotBlank() },
+            status = status,
+            sort = sort,
+            order = order,
+            perPage = perPage,
+            page = page,
+            kecamatanId = kecamatanId,
+            kelurahanId = kelurahanId
+        ).enqueue(object : Callback<MasterWilayahResponse> {
+
+            override fun onResponse(
+                call: Call<MasterWilayahResponse>,
+                response: Response<MasterWilayahResponse>
+            ) {
+                val body = response.body()
+
+                if (response.isSuccessful && body?.success == true) {
+                    callback(body, null)
+                } else {
+                    callback(
+                        null,
+                        getErrorMessage(
+                            response,
+                            "Gagal mengambil data wilayah."
+                        )
+                    )
+                }
+            }
+
+            override fun onFailure(
+                call: Call<MasterWilayahResponse>,
+                t: Throwable
+            ) {
+                callback(
+                    null,
+                    t.localizedMessage
+                        ?: "Tidak dapat terhubung ke server."
+                )
+            }
+        })
+    }
+
+    // =====================================================
+    // GET DETAIL WILAYAH
+    // =====================================================
+
+    fun getDetailMasterWilayah(
+        level: String,
+        id: Int,
+        callback: (MasterWilayah?, String?) -> Unit
+    ) {
+        api.getDetailMasterWilayah(
+            level = level,
+            id = id
+        ).enqueue(object : Callback<MasterWilayahDetailResponse> {
+
+            override fun onResponse(
+                call: Call<MasterWilayahDetailResponse>,
+                response: Response<MasterWilayahDetailResponse>
+            ) {
+                val body = response.body()
+
+                if (
+                    response.isSuccessful &&
+                    body?.success == true &&
+                    body.data != null
+                ) {
+                    callback(body.data, null)
+                } else {
+                    callback(
+                        null,
+                        getErrorMessage(
+                            response,
+                            "Detail wilayah tidak ditemukan."
+                        )
+                    )
+                }
+            }
+
+            override fun onFailure(
+                call: Call<MasterWilayahDetailResponse>,
+                t: Throwable
+            ) {
+                callback(
+                    null,
+                    t.localizedMessage
+                        ?: "Tidak dapat terhubung ke server."
+                )
+            }
+        })
+    }
+
+    // =====================================================
+    // POST TAMBAH WILAYAH
+    // =====================================================
+
+    fun tambahMasterWilayah(
+        context: Context,
+        level: String,
+        request: MasterWilayahRequest,
+        callback: (MasterWilayah?, String?) -> Unit
+    ) {
+        val token = BpskpAuthSession(context).getToken()
+
+        if (token.isNullOrBlank()) {
+            callback(null, "Token login tidak ditemukan. Silakan login kembali.")
+            return
+        }
+
+        api.tambahMasterWilayah(
+            level = level,
+            request = request,
+            authorization = "Bearer $token"
+        ).enqueue(object : Callback<MasterWilayahDetailResponse> {
+
+            override fun onResponse(
+                call: Call<MasterWilayahDetailResponse>,
+                response: Response<MasterWilayahDetailResponse>
+            ) {
+                val body = response.body()
+
+                if (response.isSuccessful && body?.success == true) {
+                    callback(body.data, null)
+                } else {
+                    callback(
+                        null,
+                        getErrorMessage(
+                            response,
+                            "Gagal menambahkan wilayah."
+                        )
+                    )
+                }
+            }
+
+            override fun onFailure(
+                call: Call<MasterWilayahDetailResponse>,
+                t: Throwable
+            ) {
+                callback(
+                    null,
+                    t.localizedMessage ?: "Tidak dapat terhubung ke server."
+                )
+            }
+        })
+    }
+    fun ubahMasterWilayah(
+        context: Context,
+        level: String,
+        id: Int,
+        request: MasterWilayahRequest,
+        callback: (MasterWilayah?, String?) -> Unit
+    ) {
+        val token = BpskpAuthSession(context).getToken()
+
+        if (token.isNullOrBlank()) {
+            callback(null, "Token login tidak ditemukan. Silakan login kembali.")
+            return
+        }
+
+        api.ubahMasterWilayah(
+            level = level,
+            id = id,
+            request = request,
+            authorization = "Bearer $token"
+        ).enqueue(object : Callback<MasterWilayahDetailResponse> {
+
+            override fun onResponse(
+                call: Call<MasterWilayahDetailResponse>,
+                response: Response<MasterWilayahDetailResponse>
+            ) {
+                val body = response.body()
+
+                if (response.isSuccessful && body?.success == true) {
+                    callback(body.data, null)
+                } else {
+                    callback(
+                        null,
+                        getErrorMessage(
+                            response,
+                            "Gagal mengubah wilayah."
+                        )
+                    )
+                }
+            }
+
+            override fun onFailure(
+                call: Call<MasterWilayahDetailResponse>,
+                t: Throwable
+            ) {
+                callback(
+                    null,
+                    t.localizedMessage ?: "Tidak dapat terhubung ke server."
+                )
+            }
+        })
+    }
+
+    // =====================================================
+    // DELETE HAPUS WILAYAH
+    // =====================================================
+
+    fun hapusMasterWilayah(
+        context: Context,
+        level: String,
+        id: Int,
+        callback: (Boolean, String?) -> Unit
+    ) {
+        val token = BpskpAuthSession(context).getToken()
+
+        if (token.isNullOrBlank()) {
+            callback(false, "Token login tidak ditemukan. Silakan login kembali.")
+            return
+        }
+
+        api.hapusMasterWilayah(
+            level = level,
+            id = id,
+            authorization = "Bearer $token"
+        ).enqueue(object : Callback<MasterWilayahDeleteResponse> {
+
+            override fun onResponse(
+                call: Call<MasterWilayahDeleteResponse>,
+                response: Response<MasterWilayahDeleteResponse>
+            ) {
+                val body = response.body()
+
+                if (response.isSuccessful && body?.success == true) {
+                    callback(true, body.message ?: "Wilayah berhasil dihapus.")
+                } else {
+                    callback(
+                        false,
+                        getErrorMessage(response, "Gagal menghapus wilayah.")
+                    )
+                }
+            }
+
+            override fun onFailure(
+                call: Call<MasterWilayahDeleteResponse>,
+                t: Throwable
+            ) {
+                callback(
+                    false,
+                    t.localizedMessage ?: "Tidak dapat terhubung ke server."
+                )
+            }
+        })
+    }
+
+    // =====================================================
+    // PARSING ERROR API
+    // =====================================================
+
+    private fun getErrorMessage(
+        response: Response<*>,
+        defaultMessage: String
+    ): String {
+        val errorText = try {
+            response.errorBody()?.string()
+        } catch (_: Exception) {
+            null
+        }
+
+        if (errorText.isNullOrBlank()) {
+            return "$defaultMessage HTTP ${response.code()}."
+        }
+
+        return try {
+            val json = JSONObject(errorText)
+
+            // Pesan utama Laravel.
+            val message = json.optString("message")
+
+            // Jika validasi gagal, ambil pesan validasi pertama.
+            val errors = json.optJSONObject("errors")
+
+            if (errors != null) {
+                val keys = errors.keys()
+
+                if (keys.hasNext()) {
+                    val firstKey = keys.next()
+                    val messages = errors.optJSONArray(firstKey)
+
+                    if (messages != null && messages.length() > 0) {
+                        return messages.optString(0)
+                    }
+                }
+            }
+
+            if (message.isNotBlank() && message != "null") {
+                message
+            } else {
+                "$defaultMessage HTTP ${response.code()}."
+            }
+        } catch (_: Exception) {
+            "$defaultMessage HTTP ${response.code()}."
         }
     }
 }

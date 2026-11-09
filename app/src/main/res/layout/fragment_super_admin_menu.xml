@@ -93,7 +93,7 @@
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:layout_gravity="center"
-                        android:src="@drawable/ic_menu1"
+                        android:src="@drawable/ic_mail"
                         android:contentDescription="Surat Masuk"
                         app:tint="#F97316" />
 
@@ -133,7 +133,7 @@
                 <ImageView
                     android:layout_width="22dp"
                     android:layout_height="22dp"
-                    android:src="@drawable/ic_arrow_back"
+                    android:src="@drawable/ic_kanan"
                     android:contentDescription="Buka Surat Masuk"
                     app:tint="#9CA3AF" />
 
@@ -218,8 +218,91 @@
                 <ImageView
                     android:layout_width="22dp"
                     android:layout_height="22dp"
-                    android:src="@drawable/ic_arrow_back"
+                    android:src="@drawable/ic_kanan"
                     android:contentDescription="Buka Management Tim"
+                    app:tint="#9CA3AF" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+        <!-- ===================================================== -->
+        <!-- MANAGEMENT MASTER WILAYAH                            -->
+        <!-- ===================================================== -->
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardManagementMasterWilayah"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="3dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:minHeight="92dp"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingTop="14dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="14dp">
+
+                <!-- ICON -->
+
+                <FrameLayout
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:background="#FFF1E8">
+
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_world"
+                        android:contentDescription="Management Master Wilayah"
+                        app:tint="#F97316" />
+
+                </FrameLayout>
+
+                <!-- TEXT -->
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Management Master Wilayah"
+                        android:textColor="#111827"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Kelola kecamatan, kelurahan, dan RT/RW"
+                        android:textColor="#6B7280"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+                <!-- ARROW -->
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_kanan"
+                    android:contentDescription="Buka Management Master Wilayah"
                     app:tint="#9CA3AF" />
 
             </LinearLayout>

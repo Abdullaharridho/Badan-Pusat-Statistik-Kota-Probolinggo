@@ -26,12 +26,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Card-card -->
+                <!-- CARD-CARD -->
+
                 <HorizontalScrollView
                     android:id="@+id/statistikTerkiniScrollView"
                     android:layout_width="match_parent"
@@ -51,6 +53,7 @@
                 </HorizontalScrollView>
 
                 <!-- DOT INDICATOR -->
+
                 <LinearLayout
                     android:id="@+id/statistikIndicator"
                     android:layout_width="wrap_content"
@@ -61,6 +64,8 @@
                     android:orientation="horizontal" />
 
             </LinearLayout>
+
+            <!-- SECTION STATISTIK -->
 
             <LinearLayout
                 android:id="@+id/sectionStatistik"
@@ -96,11 +101,15 @@
                     android:paddingStart="24dp"
                     android:paddingEnd="24dp">
 
+                    <!-- BARIS PERTAMA -->
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:baselineAligned="false">
+
+                        <!-- STATISTIK 1 -->
 
                         <androidx.cardview.widget.CardView
                             android:id="@+id/statistik1"
@@ -144,6 +153,8 @@
                             </LinearLayout>
 
                         </androidx.cardview.widget.CardView>
+
+                        <!-- STATISTIK 2 -->
 
                         <androidx.cardview.widget.CardView
                             android:id="@+id/statistik2"
@@ -189,6 +200,8 @@
 
                         </androidx.cardview.widget.CardView>
 
+                        <!-- STATISTIK 3 -->
+
                         <androidx.cardview.widget.CardView
                             android:id="@+id/statistik3"
                             android:layout_width="0dp"
@@ -232,6 +245,8 @@
                             </LinearLayout>
 
                         </androidx.cardview.widget.CardView>
+
+                        <!-- STATISTIK 4 -->
 
                         <androidx.cardview.widget.CardView
                             android:id="@+id/statistik4"
@@ -278,12 +293,16 @@
 
                     </LinearLayout>
 
+                    <!-- BARIS KEDUA -->
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:layout_marginBottom="10dp"
                         android:baselineAligned="false">
+
+                        <!-- STATISTIK 5 -->
 
                         <androidx.cardview.widget.CardView
                             android:id="@+id/statistik5"
@@ -326,6 +345,8 @@
                             </LinearLayout>
 
                         </androidx.cardview.widget.CardView>
+
+                        <!-- STATISTIK 6 -->
 
                         <androidx.cardview.widget.CardView
                             android:id="@+id/statistik6"
@@ -370,6 +391,8 @@
 
                         </androidx.cardview.widget.CardView>
 
+                        <!-- STATISTIK 7 -->
+
                         <androidx.cardview.widget.CardView
                             android:id="@+id/statistik7"
                             android:layout_width="0dp"
@@ -412,6 +435,8 @@
                             </LinearLayout>
 
                         </androidx.cardview.widget.CardView>
+
+                        <!-- STATISTIK 8 -->
 
                         <androidx.cardview.widget.CardView
                             android:id="@+id/statistik8"
@@ -458,11 +483,15 @@
 
                     </LinearLayout>
 
+                    <!-- BARIS KETIGA: MASTER WILAYAH DAN PPID -->
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:baselineAligned="false">
+
+                        <!-- STATISTIK 9: MASTER WILAYAH -->
 
                         <androidx.cardview.widget.CardView
                             android:id="@+id/statistik9"
@@ -505,6 +534,54 @@
                                     android:textStyle="bold" />
 
                             </LinearLayout>
+
+                        </androidx.cardview.widget.CardView>
+
+                        <!-- STATISTIK 10: PPID -->
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/statistik10"
+                            android:layout_width="0dp"
+                            android:layout_height="100dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginBottom="6dp"
+                            app:cardBackgroundColor="#FFFFFF"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="1dp">
+
+                            <LinearLayout
+                                android:id="@+id/ppid"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:translationY="6dp"
+                                android:padding="8dp">
+
+                                <ImageView
+                                    android:layout_width="32dp"
+                                    android:layout_height="32dp"
+                                    android:contentDescription="PPID"
+                                    android:src="@drawable/ic_ppid" />
+
+                                <TextView
+                                    android:id="@+id/tvStat10"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:ellipsize="marquee"
+                                    android:gravity="center"
+                                    android:marqueeRepeatLimit="marquee_forever"
+                                    android:scrollHorizontally="true"
+                                    android:singleLine="true"
+                                    android:text="PPID"
+                                    android:textColor="#374151"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+
+                            </LinearLayout>
+
                         </androidx.cardview.widget.CardView>
 
                     </LinearLayout>
@@ -512,6 +589,8 @@
                 </LinearLayout>
 
             </LinearLayout>
+
+            <!-- SECTION INFOGRAFIK -->
 
             <LinearLayout
                 android:id="@+id/sectionInfografik"
@@ -570,7 +649,10 @@
                     </LinearLayout>
 
                 </HorizontalScrollView>
+
             </LinearLayout>
+
+            <!-- SECTION BERITA -->
 
             <LinearLayout
                 android:id="@+id/sectionBerita"
@@ -631,6 +713,8 @@
                 </HorizontalScrollView>
 
             </LinearLayout>
+
+            <!-- SECTION PUBLIKASI -->
 
             <LinearLayout
                 android:id="@+id/sectionPublikasi"
@@ -696,6 +780,7 @@
                         </LinearLayout>
 
                     </ScrollView>
+
                 </LinearLayout>
 
             </LinearLayout>

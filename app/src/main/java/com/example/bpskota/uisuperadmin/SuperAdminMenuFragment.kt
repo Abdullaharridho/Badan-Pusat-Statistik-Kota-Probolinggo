@@ -55,6 +55,11 @@ class SuperAdminMenuFragment : Fragment() {
 
             startActivity(intent)
         }
+        binding.cardManagementMasterWilayah.setOnClickListener {
+            val intent = Intent(requireContext(),ManagementMasterWilayahActivity::class.java)
+            startActivity(intent)
+
+        }
     }
 
     override fun onDestroyView() {

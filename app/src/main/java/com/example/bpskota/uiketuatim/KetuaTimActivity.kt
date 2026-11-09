@@ -5,11 +5,9 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
-import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
@@ -126,29 +124,13 @@ class KetuaTimActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Klik ikon langsung menampilkan konfirmasi logout.
+     * Tidak menggunakan PopupMenu.
+     */
     private fun setupAccountMenu() {
-        binding.btnKetuaTimMenu.setOnClickListener { view ->
-            val popupMenu = PopupMenu(this, view)
-
-            popupMenu.menu.add(
-                Menu.NONE,
-                1,
-                Menu.NONE,
-                "Keluar"
-            )
-
-            popupMenu.setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    1 -> {
-                        confirmLogout()
-                        true
-                    }
-
-                    else -> false
-                }
-            }
-
-            popupMenu.show()
+        binding.btnKetuaTimMenu.setOnClickListener {
+            confirmLogout()
         }
     }
 

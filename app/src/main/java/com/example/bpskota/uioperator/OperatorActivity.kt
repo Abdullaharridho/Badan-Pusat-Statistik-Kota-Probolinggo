@@ -671,28 +671,8 @@ class OperatorActivity : AppCompatActivity() {
     // =========================================================
 
     private fun setupAccountMenu() {
-        binding.btnOperatorAccount.setOnClickListener { view ->
-            val popupMenu = android.widget.PopupMenu(this, view)
-
-            popupMenu.menu.add(
-                Menu.NONE,
-                1,
-                Menu.NONE,
-                "Keluar"
-            )
-
-            popupMenu.setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    1 -> {
-                        confirmLogout()
-                        true
-                    }
-
-                    else -> false
-                }
-            }
-
-            popupMenu.show()
+        binding.btnOperatorAccount.setOnClickListener {
+            confirmLogout()
         }
     }
 

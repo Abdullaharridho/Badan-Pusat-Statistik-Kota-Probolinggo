@@ -109,6 +109,11 @@ interface BpskpApiService {
         @Path("id") id: Int
     ): Call<UserActionResponse>
 
+    @GET("jabatan")
+    fun getJabatan(
+        @Header("Authorization") authorization: String
+    ): Call<JabatanResponse>
+
 
     /** Mengambil daftar surat masuk (mendukung pencarian dan status). */
     @GET("surat-masuk")
@@ -126,6 +131,7 @@ interface BpskpApiService {
     ): Call<SuratMasukResponse>
 
     /** Menyimpan surat masuk baru beserta dokumen lampiran. */
+    /** Menyimpan surat masuk baru beserta dokumen lampiran. */
     @Multipart
     @POST("surat-masuk/simpan")
     fun createSuratMasuk(
@@ -135,6 +141,7 @@ interface BpskpApiService {
         @Part("tanggal_diterima") tanggalDiterima: RequestBody,
         @Part("asal_surat") asalSurat: RequestBody,
         @Part("perihal") perihal: RequestBody,
+        @Part("tim_id") timId: RequestBody,
         @Part("isi_ringkas") isiRingkas: RequestBody?,
         @Part("tanggal_acara") tanggalAcara: RequestBody?,
         @Part("waktu_mulai") waktuMulai: RequestBody?,
@@ -155,6 +162,7 @@ interface BpskpApiService {
         @Part("tanggal_diterima") tanggalDiterima: RequestBody?,
         @Part("asal_surat") asalSurat: RequestBody?,
         @Part("perihal") perihal: RequestBody?,
+        @Part("tim_id") timId: RequestBody,
         @Part("isi_ringkas") isiRingkas: RequestBody?,
         @Part("tanggal_acara") tanggalAcara: RequestBody?,
         @Part("waktu_mulai") waktuMulai: RequestBody?,
@@ -537,4 +545,69 @@ interface BpskpApiService {
         @Header("Authorization") authorization: String,
         @Path("id") id: Int
     ): Call<KodeRumahLogDetailResponse>
+
+    // =====================================================
+// MASTER WILAYAH
+// Level: kecamatan, kelurahan, rtrw
+// =====================================================
+
+    /**
+     * GET daftar wilayah beserta pencarian, filter, dan pagination.
+     *
+     * GET bersifat publik, tidak memerlukan login.
+     */
+    @GET("master-wilayah/{level}")
+    fun getMasterWilayah(
+        @Path("level") level: String,
+        @Query("q") q: String? = null,
+        @Query("status") status: String? = null,
+        @Query("sort") sort: String? = null,
+        @Query("order") order: String? = null,
+        @Query("per_page") perPage: Int? = null,
+        @Query("page") page: Int? = null,
+        @Query("kecamatan_id") kecamatanId: Int? = null,
+        @Query("kelurahan_id") kelurahanId: Int? = null
+    ): Call<MasterWilayahResponse>
+
+    /**
+     * GET detail satu wilayah berdasarkan ID.
+     */
+    @GET("master-wilayah/{level}/{id}")
+    fun getDetailMasterWilayah(
+        @Path("level") level: String,
+        @Path("id") id: Int
+    ): Call<MasterWilayahDetailResponse>
+
+    /**
+     * POST tambah wilayah.
+     * Memerlukan autentikasi dan role super_admin.
+     */
+    @POST("master-wilayah/{level}")
+    fun tambahMasterWilayah(
+        @Path("level") level: String,
+        @Body request: MasterWilayahRequest,
+        @Header("Authorization") authorization: String
+    ): Call<MasterWilayahDetailResponse>
+    /**
+     * PUT ubah wilayah.
+     * Memerlukan autentikasi dan role super_admin.
+     */
+    @PUT("master-wilayah/{level}/{id}")
+    fun ubahMasterWilayah(
+        @Path("level") level: String,
+        @Path("id") id: Int,
+        @Body request: MasterWilayahRequest,
+        @Header("Authorization") authorization: String
+    ): Call<MasterWilayahDetailResponse>
+
+    /**
+     * DELETE wilayah.
+     * Memerlukan autentikasi dan role super_admin.
+     */
+    @DELETE("master-wilayah/{level}/{id}")
+    fun hapusMasterWilayah(
+        @Path("level") level: String,
+        @Path("id") id: Int,
+        @Header("Authorization") authorization: String
+    ): Call<MasterWilayahDeleteResponse>
 }

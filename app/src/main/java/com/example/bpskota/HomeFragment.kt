@@ -1,6 +1,7 @@
 package com.example.bpskota
 
 import android.animation.ObjectAnimator
+import android.net.Uri
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.Drawable
@@ -169,9 +170,10 @@ class HomeFragment : Fragment(), RefreshableFragment {
         loadBerita(view)
         loadPublikasi(view)
     }
+
     // =========================================================
-// SETUP SWIPE REFRESH
-// =========================================================
+    // SETUP SWIPE REFRESH
+    // =========================================================
 
     private fun setupSwipeRefreshState(
         view: View
@@ -182,12 +184,10 @@ class HomeFragment : Fragment(), RefreshableFragment {
                 R.id.homeScrollView
             )
 
-
         val swipeRefreshHome =
             requireActivity().findViewById<SwipeRefreshLayout>(
                 R.id.swipeRefreshHome
             )
-
 
         fun updateState() {
 
@@ -195,70 +195,39 @@ class HomeFragment : Fragment(), RefreshableFragment {
                 return
             }
 
-
             val homeActivity =
                 activity as? HomeActivity
-
 
             if (homeActivity == null) {
                 return
             }
 
-
-            /*
-             * HomeFragment hanya boleh mengatur
-             * SwipeRefreshLayout ketika halaman
-             * Home sedang aktif.
-             */
             if (
                 homeActivity.currentPage != 0
             ) {
                 return
             }
 
-
-            /*
-             * Cek apakah ScrollView masih bisa
-             * bergerak ke atas.
-             *
-             * true  = masih di tengah/bawah
-             * false = sudah mentok paling atas
-             */
             val isAtTop =
                 !homeScrollView.canScrollVertically(-1)
-
 
             swipeRefreshHome.isEnabled =
                 isAtTop
         }
 
-
-        /*
-         * Update ketika posisi ScrollView berubah.
-         */
         homeScrollView.setOnScrollChangeListener {
-
-                _,
-                _,
-                _,
-                _,
-                _ ->
-
+                _, _, _, _, _ ->
             updateState()
         }
 
-
-        /*
-         * Jalankan setelah layout selesai.
-         */
         homeScrollView.post {
-
             updateState()
         }
     }
+
     // =========================================================
-// UPDATE STATUS REFRESH
-// =========================================================
+    // UPDATE STATUS REFRESH
+    // =========================================================
 
     override fun updateRefreshState() {
 
@@ -266,31 +235,22 @@ class HomeFragment : Fragment(), RefreshableFragment {
             return
         }
 
-
         val currentView =
             view ?: return
-
 
         val homeScrollView =
             currentView.findViewById<ScrollView>(
                 R.id.homeScrollView
             )
 
-
         val swipeRefreshHome =
             requireActivity().findViewById<SwipeRefreshLayout>(
                 R.id.swipeRefreshHome
             )
 
-
-        /*
-         * Pastikan HomeFragment memang sedang
-         * menjadi halaman aktif.
-         */
         val homeActivity =
             activity as? HomeActivity
                 ?: return
-
 
         if (
             homeActivity.currentPage != 0
@@ -298,14 +258,8 @@ class HomeFragment : Fragment(), RefreshableFragment {
             return
         }
 
-
-        /*
-         * Refresh hanya aktif jika ScrollView
-         * sudah benar-benar mentok paling atas.
-         */
         val isAtTop =
             !homeScrollView.canScrollVertically(-1)
-
 
         swipeRefreshHome.isEnabled =
             isAtTop
@@ -324,16 +278,13 @@ class HomeFragment : Fragment(), RefreshableFragment {
         val currentView =
             view ?: return
 
-        // Hentikan auto-scroll sementara
         statistikHandler.removeCallbacks(
             statistikAutoScrollRunnable
         )
 
-        // Reset posisi carousel
         statistikCurrentPosition = 0
         statistikCardCount = 0
 
-        // Muat ulang seluruh data Home
         loadStatistikTerkini(
             currentView
         )
@@ -350,7 +301,6 @@ class HomeFragment : Fragment(), RefreshableFragment {
             currentView
         )
 
-        // Selesai refresh
         (activity as? HomeActivity)
             ?.finishSwipeRefresh()
     }
@@ -362,6 +312,31 @@ class HomeFragment : Fragment(), RefreshableFragment {
     private fun setupNavigationListeners(
         view: View
     ) {
+        // Menu PPID membuka website melalui browser Chrome
+        view.findViewById<View>(R.id.statistik10)
+            ?.setOnClickListener {
+
+                val url = "https://ppid.bps.go.id/?mfd=3574&_gl=1*1qtyvkd*_ga*MjEzNDg2MzM4LjE3OTM2MDczNTM.*_ga_XXTTVXWHDB*czE3OTM3NjA5ODUkbzIkZzEkdDE3OTM3NjM1NTUkajUkbDAkaDA."
+
+                val intent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(url)
+                ).apply {
+                    setPackage("com.android.chrome")
+                }
+
+                try {
+                    startActivity(intent)
+                } catch (e: android.content.ActivityNotFoundException) {
+                    // Jika Chrome tidak tersedia, gunakan browser default
+                    startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse(url)
+                        )
+                    )
+                }
+            }
 
         val menuMap = mapOf(
 
@@ -602,7 +577,7 @@ class HomeFragment : Fragment(), RefreshableFragment {
     }
 
     // ============================================================
-    // LOAD STATISTIK TERKINI
+    // LOAD STATISTIK TERKINI (DENGAN PLACEHOLDER LOADING)
     // ============================================================
 
     private fun loadStatistikTerkini(
@@ -621,44 +596,220 @@ class HomeFragment : Fragment(), RefreshableFragment {
 
         setupStatistikIndicator()
 
+        // 1. Placeholder & Load Tenaga Kerja
         daftarStatistikTerkini.forEachIndexed {
                 index,
                 item ->
+
+            val placeholderCard = tampilkanCardLoading(
+                container = container,
+                judulPlaceholder = "Memuat Data...",
+                kategoriPlaceholder = "Statistik",
+                index = index
+            )
 
             cariDataStatistikTerbaru(
                 variable = item.variable,
                 tahun = TAHUN_MULAI,
                 index = index,
-                container = container
+                cardToUpdate = placeholderCard
             )
         }
 
-        loadPdrbTerkini(
-            container
+        // 2. Placeholder & Load PDRB
+        val pdrbCard = tampilkanCardLoading(
+            container = container,
+            judulPlaceholder = "Laju Pertumbuhan PDRB",
+            kategoriPlaceholder = "Neraca Ekonomi",
+            index = 2
+        )
+        loadPdrbTerkini(container, pdrbCard)
+
+        // 3. Placeholder & Load IKG
+        val ikgCard = tampilkanCardLoading(
+            container = container,
+            judulPlaceholder = "Indeks Ketimpangan Gender (IKG)",
+            kategoriPlaceholder = "Gender",
+            index = 3
+        )
+        loadIkgTerkini(container, ikgCard)
+
+        // 4. Placeholder & Load Harga-Harga
+        daftarHargaVariable.forEachIndexed {
+                index,
+                variable ->
+
+            val hargaCard = tampilkanCardLoading(
+                container = container,
+                judulPlaceholder = "Harga-Harga",
+                kategoriPlaceholder = "Harga",
+                index = index + 4
+            )
+
+            cariHargaTerkini(
+                variable = variable,
+                tahun = TAHUN_MULAI,
+                index = index + 4,
+                cardToUpdate = hargaCard
+            )
+        }
+    }
+
+    private fun tampilkanCardLoading(
+        container: LinearLayout,
+        judulPlaceholder: String,
+        kategoriPlaceholder: String,
+        index: Int
+    ): View {
+        val card =
+            LayoutInflater.from(
+                requireContext()
+            ).inflate(
+                R.layout.card_home,
+                container,
+                false
+            )
+
+        card.findViewById<TextView>(
+            R.id.tvStatistikJudul
+        ).text = judulPlaceholder
+
+        card.findViewById<TextView>(
+            R.id.tvStatistikKategori
+        ).text = kategoriPlaceholder
+
+        card.findViewById<TextView>(
+            R.id.tvStatistikPersentase
+        ).text = "Memuat..."
+
+        container.addView(card)
+
+        statistikCardCount =
+            container.childCount
+
+        updateStatistikCarouselLayout()
+
+        animateCardIn(
+            card,
+            index
         )
 
-        loadIkgTerkini(
-            container
-        )
+        return card
+    }
 
-        loadHargaTerkini(
-            container
-        )
+    private fun updateCardStatistikData(
+        card: View,
+        judul: String,
+        kategori: String,
+        nilai: Double,
+        tahun: String,
+        unit: String,
+        bukaEkonomi: Boolean = false,
+        bukaGender: Boolean = false,
+        bisaDiklik: Boolean = true,
+        bukaHarga: Boolean = false
+    ) {
+        card.findViewById<TextView>(
+            R.id.tvStatistikJudul
+        ).text = judul
+
+        card.findViewById<TextView>(
+            R.id.tvStatistikKategori
+        ).text = "$kategori\n$tahun"
+
+        // Bersihkan unit jika mengandung kalimat "tidak ada" atau kosong
+        val cleanUnit = if (unit.contains("tidak ada", true) || unit.isBlank()) {
+            ""
+        } else {
+            unit
+        }
+
+        card.findViewById<TextView>(
+            R.id.tvStatistikPersentase
+        ).text =
+            when {
+                cleanUnit.contains("%", true) ||
+                        cleanUnit.equals("Persen", true) -> {
+                    String.format(
+                        Locale.US,
+                        "%.2f%%",
+                        nilai
+                    )
+                }
+
+                judul.contains(
+                    "Ketimpangan Gender",
+                    ignoreCase = true
+                ) -> {
+                    String.format(
+                        Locale.US,
+                        "%.3f",
+                        nilai
+                    )
+                }
+
+                cleanUnit.isNotBlank() -> {
+                    String.format(
+                        Locale.US,
+                        "%.2f %s",
+                        nilai,
+                        cleanUnit
+                    )
+                }
+
+                else -> {
+                    String.format(
+                        Locale.US,
+                        "%.2f",
+                        nilai
+                    )
+                }
+            }
+
+        if (bisaDiklik) {
+            card.setOnClickListener {
+                if (bukaHarga) {
+                    val intent = Intent(
+                        requireContext(),
+                        DataKategoriActivity::class.java
+                    ).apply {
+                        putExtra("NAMA_KATEGORI", kategori)
+                    }
+                    startActivity(intent)
+                    return@setOnClickListener
+                }
+
+                val tujuan = when {
+                    bukaEkonomi -> EkonomiActivity::class.java
+                    bukaGender -> GenderActivity::class.java
+                    else -> TenagakerjaActivity::class.java
+                }
+
+                startActivity(
+                    Intent(
+                        requireContext(),
+                        tujuan
+                    )
+                )
+            }
+        }
+
     }
 
     private fun cariDataStatistikTerbaru(
         variable: Int,
         tahun: Int,
         index: Int,
-        container: LinearLayout
+        cardToUpdate: View
     ) {
 
         if (tahun < TAHUN_MINIMUM) {
+            cardToUpdate.findViewById<TextView>(R.id.tvStatistikJudul).text = "Data Tidak Tersedia"
+            cardToUpdate.findViewById<TextView>(R.id.tvStatistikPersentase).text = "-"
             return
         }
 
-        val th =
-            tahun - 1900
+        val th = tahun - 1900
 
         repository.getTenagaKerja(
             "3574",
@@ -674,8 +825,7 @@ class HomeFragment : Fragment(), RefreshableFragment {
                     response: Response<TenagaKerjaResponse>
                 ) {
 
-                    val body =
-                        response.body()
+                    val body = response.body()
 
                     if (
                         !response.isSuccessful ||
@@ -687,7 +837,7 @@ class HomeFragment : Fragment(), RefreshableFragment {
                             variable,
                             tahun - 1,
                             index,
-                            container
+                            cardToUpdate
                         )
 
                         return
@@ -716,7 +866,7 @@ class HomeFragment : Fragment(), RefreshableFragment {
                             variable,
                             tahun - 1,
                             index,
-                            container
+                            cardToUpdate
                         )
 
                         return
@@ -748,15 +898,14 @@ class HomeFragment : Fragment(), RefreshableFragment {
                                 return@runOnUiThread
                             }
 
-                            tampilkanStatistikTerkini(
-                                container = container,
+                            updateCardStatistikData(
+                                card = cardToUpdate,
                                 judul = judul,
                                 kategori = kategori,
                                 nilai = nilai,
                                 tahun = tahunLabel,
                                 unit = unit,
-                                index = index,
-                                bukaEkonomi = false,
+                                bisaDiklik = true
                             )
                         }
                 }
@@ -770,7 +919,7 @@ class HomeFragment : Fragment(), RefreshableFragment {
                         variable,
                         tahun - 1,
                         index,
-                        container
+                        cardToUpdate
                     )
                 }
             }
@@ -782,13 +931,9 @@ class HomeFragment : Fragment(), RefreshableFragment {
     // ============================================================
 
     private fun loadPdrbTerkini(
-        container: LinearLayout
+        container: LinearLayout,
+        cardToUpdate: View
     ) {
-
-        Log.d(
-            "HOME_PDRB",
-            "Memuat tabel PDRB langsung"
-        )
 
         repository.getEkonomiDetail(
             domain = "3574",
@@ -804,407 +949,89 @@ class HomeFragment : Fragment(), RefreshableFragment {
                     response: Response<EkonomiDetailResponse>
                 ) {
 
-                    if (!response.isSuccessful) {
+                    if (!response.isSuccessful) return
 
-                        Log.e(
-                            "HOME_PDRB",
-                            "Gagal mengambil detail PDRB. HTTP ${response.code()}"
-                        )
+                    val body = response.body()
+                    if (body == null || body.status != "OK") return
 
-                        return
-                    }
-
-                    val body =
-                        response.body()
-
-                    if (
-                        body == null ||
-                        body.status != "OK"
-                    ) {
-
-                        Log.e(
-                            "HOME_PDRB",
-                            "Response detail PDRB tidak valid"
-                        )
-
-                        return
-                    }
-
-                    prosesDetailPdrb(
-                        body = body,
-                        container = container
-                    )
+                    prosesDetailPdrb(body, cardToUpdate)
                 }
 
                 override fun onFailure(
                     call: Call<EkonomiDetailResponse>,
                     t: Throwable
-                ) {
-
-                    Log.e(
-                        "HOME_PDRB",
-                        "Gagal mengambil detail PDRB",
-                        t
-                    )
-                }
+                ) {}
             }
         )
     }
 
     private fun prosesDetailPdrb(
         body: EkonomiDetailResponse,
-        container: LinearLayout
+        cardToUpdate: View
     ) {
 
         val variable =
             body.variables?.firstOrNull {
-
-                it.valId?.toString() ==
-                        PDRB_VARIABLE_ID ||
-
-                        it.value?.toString() ==
-                        PDRB_VARIABLE_ID
-            }
-
-        if (variable == null) {
-
-            Log.e(
-                "HOME_PDRB",
-                "Variable $PDRB_VARIABLE_ID tidak ditemukan"
-            )
-
-            return
-        }
+                it.valId?.toString() == PDRB_VARIABLE_ID ||
+                        it.value?.toString() == PDRB_VARIABLE_ID
+            } ?: return
 
         val vervar =
             body.vervar?.firstOrNull {
+                (it.value ?: it.valId)?.toString() == PDRB_VERVAR_ID.toString()
+            } ?: return
 
-                (it.value ?: it.valId)
-                    ?.toString() ==
-                        PDRB_VERVAR_ID.toString()
-            }
-
-        if (vervar == null) {
-
-            Log.e(
-                "HOME_PDRB",
-                "Vervar $PDRB_VERVAR_ID tidak ditemukan"
-            )
-
-            return
-        }
-
-        val dataContent =
-            body.dataContent
-
-        if (dataContent == null) {
-
-            Log.e(
-                "HOME_PDRB",
-                "datacontent kosong"
-            )
-
-            return
-        }
+        val dataContent = body.dataContent ?: return
 
         val tahunData =
             body.tahun
-                ?.sortedByDescending {
-                    it.label
-                        ?.toIntOrNull()
-                        ?: 0
-                }
-                ?.firstOrNull()
+                ?.sortedByDescending { it.label?.toIntOrNull() ?: 0 }
+                ?.firstOrNull() ?: return
 
-        if (tahunData == null) {
-            return
-        }
+        val tahunVal = tahunData.value ?: tahunData.valId ?: return
+        val tahunFormatted = tahunVal.toString().padStart(4, '0')
 
-        val tahunVal =
-            tahunData.value
-                ?: tahunData.valId
+        val urutanTriwulan = listOf(34, 33, 32, 31)
+        var triwulanTerpilih: EkonomiItem? = null
+        var nilaiTerpilih: Double? = null
 
-        if (tahunVal == null) {
-            return
-        }
+        for (kodeTriwulan in urutanTriwulan) {
+            val triwulan = body.turtahun?.firstOrNull { it.valId == kodeTriwulan } ?: continue
+            val key = "${PDRB_VERVAR_ID}${PDRB_VARIABLE_ID}${tahunFormatted}${kodeTriwulan}"
+            val jsonValue = dataContent.get(key)
 
-        val tahunFormatted =
-            tahunVal
-                .toString()
-                .padStart(
-                    4,
-                    '0'
-                )
-
-        val urutanTriwulan =
-            listOf(
-                34,
-                33,
-                32,
-                31
-            )
-
-        var triwulanTerpilih:
-                EkonomiItem? = null
-
-        var nilaiTerpilih:
-                Double? = null
-
-        for (
-        kodeTriwulan in urutanTriwulan
-        ) {
-
-            val triwulan =
-                body.turtahun
-                    ?.firstOrNull {
-
-                        it.valId ==
-                                kodeTriwulan
-                    }
-
-            if (triwulan == null) {
-                continue
-            }
-
-            val key =
-                "${PDRB_VERVAR_ID}" +
-                        "${PDRB_VARIABLE_ID}" +
-                        "${tahunFormatted}" +
-                        "${kodeTriwulan}"
-
-            val jsonValue =
-                dataContent.get(
-                    key
-                )
-
-            if (
-                jsonValue != null &&
-                !jsonValue.isJsonNull
-            ) {
-
+            if (jsonValue != null && !jsonValue.isJsonNull) {
                 try {
-
-                    val nilai =
-                        jsonValue.asDouble
-
-                    triwulanTerpilih =
-                        triwulan
-
-                    nilaiTerpilih =
-                        nilai
-
+                    nilaiTerpilih = jsonValue.asDouble
+                    triwulanTerpilih = triwulan
                     break
-
-                } catch (e: Exception) {
-
-                    Log.e(
-                        "HOME_PDRB",
-                        "Gagal membaca nilai key=$key",
-                        e
-                    )
-                }
+                } catch (e: Exception) {}
             }
         }
 
-        if (
-            triwulanTerpilih == null ||
-            nilaiTerpilih == null
-        ) {
+        if (triwulanTerpilih == null || nilaiTerpilih == null) return
 
-            val tahunTerakhir =
-                tahunData.label
-                    ?.toIntOrNull()
-                    ?: TAHUN_MULAI
-
-            if (
-                tahunTerakhir >
-                TAHUN_MINIMUM
-            ) {
-
-                cariPdrbTahunLain(
-                    body = body,
-                    tahunTarget =
-                    tahunTerakhir - 1,
-                    container = container
-                )
-            }
-
-            return
-        }
-
-        val nilai =
-            nilaiTerpilih
-
-        val triwulan =
-            triwulanTerpilih
-
-        val tahunLabel =
-            tahunData.label
-                ?: tahunFormatted
-
-        val triwulanLabel =
-            triwulan.label
-                ?: "Triwulan"
-
-        val subject =
-            body.subject?.firstOrNull()
-
-        val kategori =
-            subject?.label
-                ?: "Neraca Ekonomi"
+        val nilai = nilaiTerpilih
+        val triwulan = triwulanTerpilih
+        val tahunLabel = tahunData.label ?: tahunFormatted
+        val triwulanLabel = triwulan.label ?: "Triwulan"
+        val subject = body.subject?.firstOrNull()
+        val kategori = subject?.label ?: "Neraca Ekonomi"
 
         if (!isAdded) return
 
-        requireActivity()
-            .runOnUiThread {
+        requireActivity().runOnUiThread {
+            if (!isAdded) return@runOnUiThread
 
-                if (!isAdded) {
-                    return@runOnUiThread
-                }
-
-                tampilkanStatistikTerkini(
-                    container = container,
-                    judul = "Laju Pertumbuhan PDRB",
-                    kategori = kategori,
-                    nilai = nilai,
-                    tahun =
-                    "$tahunLabel • $triwulanLabel",
-                    unit = "Persen",
-                    index = 2,
-                    bukaEkonomi = true
-                )
-            }
-    }
-
-    private fun cariPdrbTahunLain(
-        body: EkonomiDetailResponse,
-        tahunTarget: Int,
-        container: LinearLayout
-    ) {
-
-        if (
-            tahunTarget <
-            TAHUN_MINIMUM
-        ) {
-            return
-        }
-
-        val dataContent =
-            body.dataContent
-                ?: return
-
-        body.vervar?.firstOrNull {
-
-            (it.value ?: it.valId)
-                ?.toString() ==
-                    PDRB_VERVAR_ID.toString()
-
-        } ?: return
-
-        val tahunData =
-            body.tahun?.firstOrNull {
-
-                it.label ==
-                        tahunTarget.toString()
-            }
-
-        if (tahunData == null) {
-            return
-        }
-
-        val tahunVal =
-            tahunData.value
-                ?: tahunData.valId
-                ?: return
-
-        val tahunFormatted =
-            tahunVal
-                .toString()
-                .padStart(
-                    4,
-                    '0'
-                )
-
-        val urutanTriwulan =
-            listOf(
-                34,
-                33,
-                32,
-                31
+            updateCardStatistikData(
+                card = cardToUpdate,
+                judul = "Laju Pertumbuhan PDRB",
+                kategori = kategori,
+                nilai = nilai,
+                tahun = "$tahunLabel $triwulanLabel",
+                unit = "Persen",
+                bukaEkonomi = true
             )
-
-        for (
-        kodeTriwulan in urutanTriwulan
-        ) {
-
-            val triwulan =
-                body.turtahun
-                    ?.firstOrNull {
-
-                        it.valId ==
-                                kodeTriwulan
-                    }
-                    ?: continue
-
-            val key =
-                "${PDRB_VERVAR_ID}" +
-                        "${PDRB_VARIABLE_ID}" +
-                        "${tahunFormatted}" +
-                        "${kodeTriwulan}"
-
-            val jsonValue =
-                dataContent.get(
-                    key
-                )
-
-            if (
-                jsonValue != null &&
-                !jsonValue.isJsonNull
-            ) {
-
-                val nilai =
-                    try {
-                        jsonValue.asDouble
-                    } catch (
-                        e: Exception
-                    ) {
-                        null
-                    }
-
-                if (nilai != null) {
-
-                    val subject =
-                        body.subject?.firstOrNull()
-
-                    if (!isAdded) return
-
-                    requireActivity()
-                        .runOnUiThread {
-
-                            if (!isAdded) {
-                                return@runOnUiThread
-                            }
-
-                            tampilkanStatistikTerkini(
-                                container = container,
-                                judul =
-                                "Laju Pertumbuhan PDRB",
-                                kategori =
-                                subject?.label
-                                    ?: "Neraca Ekonomi",
-                                nilai = nilai,
-                                tahun =
-                                "${tahunData.label ?: tahunTarget} • " +
-                                        "${triwulan.label ?: "Triwulan"}",
-                                unit = "Persen",
-                                index = 2,
-                                bukaEkonomi = true
-                            )
-                        }
-
-                    return
-                }
-            }
         }
     }
 
@@ -1213,26 +1040,20 @@ class HomeFragment : Fragment(), RefreshableFragment {
     // ============================================================
 
     private fun loadIkgTerkini(
-        container: LinearLayout
+        container: LinearLayout,
+        cardToUpdate: View
     ) {
-
-        cariIkgTerkini(
-            tahun = TAHUN_MULAI,
-            container = container
-        )
+        cariIkgTerkini(TAHUN_MULAI, cardToUpdate)
     }
 
     private fun cariIkgTerkini(
         tahun: Int,
-        container: LinearLayout
+        cardToUpdate: View
     ) {
 
-        if (tahun < TAHUN_MINIMUM) {
-            return
-        }
+        if (tahun < TAHUN_MINIMUM) return
 
-        val kodeTahun =
-            tahun - 1900
+        val kodeTahun = tahun - 1900
 
         repository.getTenagaKerja(
             domain = "3574",
@@ -1249,97 +1070,49 @@ class HomeFragment : Fragment(), RefreshableFragment {
                 ) {
 
                     if (!response.isSuccessful) {
-
-                        cariIkgTerkini(
-                            tahun - 1,
-                            container
-                        )
-
+                        cariIkgTerkini(tahun - 1, cardToUpdate)
                         return
                     }
 
-                    val body =
-                        response.body()
-
-                    if (
-                        body == null ||
-                        body.status?.uppercase(
-                            Locale.ROOT
-                        ) != "OK"
-                    ) {
-
-                        cariIkgTerkini(
-                            tahun - 1,
-                            container
-                        )
-
+                    val body = response.body()
+                    if (body == null || body.status?.uppercase(Locale.ROOT) != "OK") {
+                        cariIkgTerkini(tahun - 1, cardToUpdate)
                         return
                     }
 
-                    val nilai =
-                        body.dataContent
-                            ?.values
-                            ?.firstOrNull()
-
+                    val nilai = body.dataContent?.values?.firstOrNull()
                     if (nilai == null) {
-
-                        cariIkgTerkini(
-                            tahun - 1,
-                            container
-                        )
-
+                        cariIkgTerkini(tahun - 1, cardToUpdate)
                         return
                     }
 
-                    val variableData =
-                        body.variable?.firstOrNull()
-
-                    val subject =
-                        body.subject?.firstOrNull()
-
-                    val tahunLabel =
-                        body.tahun
-                            ?.firstOrNull()
-                            ?.label
-                            ?: tahun.toString()
-
-                    val kategori =
-                        subject?.label
-                            ?: variableData?.subject
-                            ?: "Gender"
+                    val variableData = body.variable?.firstOrNull()
+                    val subject = body.subject?.firstOrNull()
+                    val tahunLabel = body.tahun?.firstOrNull()?.label ?: tahun.toString()
+                    val kategori = subject?.label ?: variableData?.subject ?: "Gender"
 
                     if (!isAdded) return
 
-                    requireActivity()
-                        .runOnUiThread {
+                    requireActivity().runOnUiThread {
+                        if (!isAdded) return@runOnUiThread
 
-                            if (!isAdded) {
-                                return@runOnUiThread
-                            }
-
-                            tampilkanStatistikTerkini(
-                                container = container,
-                                judul =
-                                "Indeks Ketimpangan Gender (IKG)",
-                                kategori = kategori,
-                                nilai = nilai,
-                                tahun = tahunLabel,
-                                unit = "",
-                                index = 3,
-                                bukaGender = true
-                            )
-                        }
+                        updateCardStatistikData(
+                            card = cardToUpdate,
+                            judul = "Indeks Ketimpangan Gender (IKG)",
+                            kategori = kategori,
+                            nilai = nilai,
+                            tahun = tahunLabel,
+                            unit = "",
+                            bukaGender = true
+                        )
+                    }
                 }
 
                 override fun onFailure(
                     call: Call<TenagaKerjaResponse>,
                     t: Throwable
                 ) {
-
-                    cariIkgTerkini(
-                        tahun - 1,
-                        container
-                    )
+                    cariIkgTerkini(tahun - 1, cardToUpdate)
                 }
             }
         )
@@ -1351,40 +1124,18 @@ class HomeFragment : Fragment(), RefreshableFragment {
 
     private fun loadHargaTerkini(
         container: LinearLayout
-    ) {
-
-        daftarHargaVariable.forEachIndexed {
-                index,
-                variable ->
-
-            cariHargaTerkini(
-                variable = variable,
-                tahun = TAHUN_MULAI,
-                index = index + 4,
-                container = container
-            )
-        }
-    }
+    ) {}
 
     private fun cariHargaTerkini(
         variable: Int,
         tahun: Int,
         index: Int,
-        container: LinearLayout
+        cardToUpdate: View
     ) {
 
-        if (tahun < TAHUN_MINIMUM) {
+        if (tahun < TAHUN_MINIMUM) return
 
-            Log.e(
-                "HOME_HARGA",
-                "Tidak ada data untuk variable=$variable"
-            )
-
-            return
-        }
-
-        val kodeTahun =
-            tahun - 1900
+        val kodeTahun = tahun - 1900
 
         repository.getHarga(
             domain = "3574",
@@ -1401,262 +1152,54 @@ class HomeFragment : Fragment(), RefreshableFragment {
                 ) {
 
                     if (!response.isSuccessful) {
-
-                        cariHargaTerkini(
-                            variable = variable,
-                            tahun = tahun - 1,
-                            index = index,
-                            container = container
-                        )
-
+                        cariHargaTerkini(variable, tahun - 1, index, cardToUpdate)
                         return
                     }
 
-                    val body =
-                        response.body()
-
-                    if (
-                        body == null ||
-                        body.status?.uppercase(
-                            Locale.ROOT
-                        ) != "OK"
-                    ) {
-
-                        cariHargaTerkini(
-                            variable = variable,
-                            tahun = tahun - 1,
-                            index = index,
-                            container = container
-                        )
-
+                    val body = response.body()
+                    if (body == null || body.status?.uppercase(Locale.ROOT) != "OK") {
+                        cariHargaTerkini(variable, tahun - 1, index, cardToUpdate)
                         return
                     }
 
-                    val nilai =
-                        body.dataContent
-                            ?.values
-                            ?.firstOrNull()
-
+                    val nilai = body.dataContent?.values?.firstOrNull()
                     if (nilai == null) {
-
-                        cariHargaTerkini(
-                            variable = variable,
-                            tahun = tahun - 1,
-                            index = index,
-                            container = container
-                        )
-
+                        cariHargaTerkini(variable, tahun - 1, index, cardToUpdate)
                         return
                     }
 
-                    val variableData =
-                        body.variable?.firstOrNull()
-
-                    val subject =
-                        body.subject?.firstOrNull()
-
-                    val tahunLabel =
-                        body.tahun
-                            ?.firstOrNull()
-                            ?.label
-                            ?: tahun.toString()
-
-                    val judul =
-                        variableData?.label
-                            ?: "Harga-Harga"
-
-                    val kategori =
-                        subject?.label
-                            ?: variableData?.subject
-                            ?: "Harga-Harga"
-
-                    val unit =
-                        variableData?.unit
-                            ?: ""
+                    val variableData = body.variable?.firstOrNull()
+                    val subject = body.subject?.firstOrNull()
+                    val tahunLabel = body.tahun?.firstOrNull()?.label ?: tahun.toString()
+                    val judul = variableData?.label ?: "Harga-Harga"
+                    val kategori = subject?.label ?: variableData?.subject ?: "Harga-Harga"
+                    val unit = variableData?.unit ?: ""
 
                     if (!isAdded) return
 
-                    requireActivity()
-                        .runOnUiThread {
+                    requireActivity().runOnUiThread {
+                        if (!isAdded) return@runOnUiThread
 
-                            if (!isAdded) {
-                                return@runOnUiThread
-                            }
-
-                            tampilkanStatistikTerkini(
-                                container = container,
-                                judul = judul,
-                                kategori = kategori,
-                                nilai = nilai,
-                                tahun = tahunLabel,
-                                unit = unit,
-                                index = index,
-                                bisaDiklik = true,
-                                bukaHarga = true,
-                            )
-                        }
+                        updateCardStatistikData(
+                            card = cardToUpdate,
+                            judul = judul,
+                            kategori = kategori,
+                            nilai = nilai,
+                            tahun = tahunLabel,
+                            unit = unit,
+                            bisaDiklik = true,
+                            bukaHarga = true
+                        )
+                    }
                 }
 
                 override fun onFailure(
                     call: Call<HargaResponse>,
                     t: Throwable
                 ) {
-
-                    cariHargaTerkini(
-                        variable = variable,
-                        tahun = tahun - 1,
-                        index = index,
-                        container = container
-                    )
+                    cariHargaTerkini(variable, tahun - 1, index, cardToUpdate)
                 }
             }
-        )
-    }
-
-    // ============================================================
-    // TAMPILKAN STATISTIK
-    // ============================================================
-
-    private fun tampilkanStatistikTerkini(
-        container: LinearLayout,
-        judul: String,
-        kategori: String,
-        nilai: Double,
-        tahun: String,
-        unit: String,
-        index: Int,
-        bukaEkonomi: Boolean = false,
-        bukaGender: Boolean = false,
-        bisaDiklik: Boolean = true,
-        bukaHarga : Boolean = false,
-    ) {
-
-        val card =
-            LayoutInflater.from(
-                requireContext()
-            ).inflate(
-                R.layout.card_home,
-                container,
-                false
-            )
-
-        card.findViewById<TextView>(
-            R.id.tvStatistikJudul
-        ).text =
-            judul
-
-        card.findViewById<TextView>(
-            R.id.tvStatistikKategori
-        ).text =
-            "$kategori • $tahun"
-
-        card.findViewById<TextView>(
-            R.id.tvStatistikPersentase
-        ).text =
-            when {
-
-                unit.contains(
-                    "%",
-                    true
-                ) ||
-                        unit.equals(
-                            "Persen",
-                            true
-                        ) -> {
-
-                    String.format(
-                        Locale.US,
-                        "%.2f%%",
-                        nilai
-                    )
-                }
-
-                judul.contains(
-                    "Ketimpangan Gender",
-                    ignoreCase = true
-                ) -> {
-
-                    String.format(
-                        Locale.US,
-                        "%.3f",
-                        nilai
-                    )
-                }
-
-                unit.isNotBlank() -> {
-
-                    String.format(
-                        Locale.US,
-                        "%.2f %s",
-                        nilai,
-                        unit
-                    )
-                }
-
-                else -> {
-
-                    String.format(
-                        Locale.US,
-                        "%.2f",
-                        nilai
-                    )
-                }
-            }
-
-        if (bisaDiklik) {
-
-            card.setOnClickListener {
-
-                if (bukaHarga) {
-                    val intent = Intent(requireContext(), DataKategoriActivity::class.java).apply {
-                        putExtra("NAMA_KATEGORI", kategori)
-                    }
-                    startActivity(intent)
-                    return@setOnClickListener
-                }
-
-                val tujuan = when {
-                    bukaEkonomi -> {
-                        EkonomiActivity::class.java
-                    }
-                    bukaGender -> {
-                        GenderActivity::class.java
-                    }
-                    else -> {
-                        TenagakerjaActivity::class.java
-                    }
-                }
-
-                startActivity(
-                    Intent(
-                        requireContext(),
-                        tujuan
-                    )
-                )
-            }
-        }
-
-        container.addView(
-            card
-        )
-
-        statistikCardCount =
-            container.childCount
-
-        updateStatistikCarouselLayout()
-
-        animateCardIn(
-            card,
-            index
-        )
-
-        statistikHandler.removeCallbacks(
-            statistikAutoScrollRunnable
-        )
-
-        statistikHandler.postDelayed(
-            statistikAutoScrollRunnable,
-            5000L
         )
     }
 
@@ -2079,8 +1622,7 @@ class HomeFragment : Fragment(), RefreshableFragment {
                     response: Response<InfographicResponse>
                 ) {
 
-                    val body =
-                        response.body()
+                    val body = response.body()
 
                     if (
                         !response.isSuccessful ||
@@ -2091,121 +1633,59 @@ class HomeFragment : Fragment(), RefreshableFragment {
                         return
                     }
 
-                    val gson =
-                        Gson()
-
-                    val data =
-                        mutableListOf<Infografik>()
+                    val gson = Gson()
+                    val data = mutableListOf<Infografik>()
 
                     body.data.forEach { element ->
-
-                        if (
-                            element.isJsonArray
-                        ) {
-
-                            element.asJsonArray
-                                .forEach { item ->
-
-                                    try {
-
-                                        if (
-                                            item.isJsonObject
-                                        ) {
-
-                                            data.add(
-                                                gson.fromJson(
-                                                    item,
-                                                    Infografik::class.java
-                                                )
+                        if (element.isJsonArray) {
+                            element.asJsonArray.forEach { item ->
+                                try {
+                                    if (item.isJsonObject) {
+                                        data.add(
+                                            gson.fromJson(
+                                                item,
+                                                Infografik::class.java
                                             )
-                                        }
-
-                                    } catch (
-                                        e: Exception
-                                    ) {
-
-                                        Log.e(
-                                            "HOME_INFOGRAFIK",
-                                            "Gagal convert infografis",
-                                            e
                                         )
                                     }
-                                }
+                                } catch (e: Exception) {}
+                            }
                         }
                     }
 
                     val limaTerbaru =
                         data
-                            .distinctBy {
-                                it.infId
-                            }
-                            .sortedByDescending {
-                                it.date ?: ""
-                            }
+                            .distinctBy { it.infId }
+                            .sortedByDescending { it.date ?: "" }
                             .take(5)
 
-                    if (!isAdded) {
-                        return
-                    }
+                    if (!isAdded) return
 
-                    requireActivity()
-                        .runOnUiThread {
+                    requireActivity().runOnUiThread {
+                        if (!isAdded) return@runOnUiThread
 
-                            if (!isAdded) {
-                                return@runOnUiThread
-                            }
+                        container.removeAllViews()
 
-                            container.removeAllViews()
-
-                            limaTerbaru.forEach {
-
-                                tambahCardInfografik(
-                                    container,
-                                    it
-                                )
-                            }
-
-                            val scrollView =
-                                view.findViewById<ScrollView>(
-                                    R.id.homeScrollView
-                                )
-
-                            val infografik =
-                                view.findViewById<View>(
-                                    R.id.sectionInfografik
-                                )
-
-                            val berita =
-                                view.findViewById<View>(
-                                    R.id.sectionBerita
-                                )
-
-                            val publikasi =
-                                view.findViewById<View>(
-                                    R.id.sectionPublikasi
-                                )
-
-                            scrollView.post {
-
-                                if (!isAdded) {
-                                    return@post
-                                }
-
-                                checkSectionAnimations(
-                                    scrollView,
-                                    infografik,
-                                    berita,
-                                    publikasi
-                                )
-                            }
+                        limaTerbaru.forEach {
+                            tambahCardInfografik(container, it)
                         }
+
+                        val scrollView = view.findViewById<ScrollView>(R.id.homeScrollView)
+                        val infografik = view.findViewById<View>(R.id.sectionInfografik)
+                        val berita = view.findViewById<View>(R.id.sectionBerita)
+                        val publikasi = view.findViewById<View>(R.id.sectionPublikasi)
+
+                        scrollView.post {
+                            if (!isAdded) return@post
+                            checkSectionAnimations(scrollView, infografik, berita, publikasi)
+                        }
+                    }
                 }
 
                 override fun onFailure(
                     call: Call<InfographicResponse>,
                     t: Throwable
-                ) {
-                }
+                ) {}
             }
         )
     }
@@ -2223,6 +1703,9 @@ class HomeFragment : Fragment(), RefreshableFragment {
                 container,
                 false
             )
+        card.setOnClickListener {
+            (activity as? HomeActivity)?.goToPage(1)
+        }
 
         card.findViewById<TextView>(
             R.id.tvHomeTitle
@@ -2414,14 +1897,7 @@ class HomeFragment : Fragment(), RefreshableFragment {
 
             } catch (
                 e: Exception
-            ) {
-
-                Log.e(
-                    "HOME_BERITA",
-                    "Error",
-                    e
-                )
-            }
+            ) {}
         }
     }
 
@@ -2438,6 +1914,7 @@ class HomeFragment : Fragment(), RefreshableFragment {
 
         container.removeAllViews()
 
+
         berita.forEach { item ->
 
             val card =
@@ -2448,6 +1925,9 @@ class HomeFragment : Fragment(), RefreshableFragment {
                     container,
                     false
                 )
+            card.setOnClickListener{
+                (activity as?HomeActivity)?.goToPage(0)
+            }
 
             card.findViewById<TextView>(
                 R.id.tvHomeTitle
@@ -2624,14 +2104,7 @@ class HomeFragment : Fragment(), RefreshableFragment {
 
             } catch (
                 e: Exception
-            ) {
-
-                Log.e(
-                    "HOME_PUBLIKASI",
-                    "Error",
-                    e
-                )
-            }
+            ) {}
         }
     }
 
@@ -2673,10 +2146,10 @@ class HomeFragment : Fragment(), RefreshableFragment {
                 DiskCacheStrategy.ALL
             )
             .placeholder(
-                R.drawable.ic_publikasi
+                R.drawable.ic_bpslogo
             )
             .error(
-                R.drawable.ic_publikasi
+                R.drawable.ic_bpslogo
             )
             .into(
                 card.findViewById(
@@ -2687,7 +2160,7 @@ class HomeFragment : Fragment(), RefreshableFragment {
         card.setOnClickListener {
 
             (activity as? HomeActivity)
-                ?.goToPage(3)
+                ?.goToPage(2)
         }
 
         container.addView(

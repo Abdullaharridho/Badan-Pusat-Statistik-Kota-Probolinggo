@@ -7,6 +7,7 @@ import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -21,12 +22,26 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
+import android.view.Gravity
+import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
+import android.widget.ScrollView
+
 class PertanianActivity : AppCompatActivity() {
 
     private lateinit var cardContainer: LinearLayout
     private lateinit var loadingAnimation: LottieAnimationView
     private lateinit var btnBack: ImageView
-    private lateinit var btnFilter: ImageView
+
+    // FILTER TAHUN
+    private lateinit var btnFilter: LinearLayout
+    private lateinit var tvFilterTahun: TextView
+
+    private lateinit var tvHeaderTitle: TextView
 
     private lateinit var adapter: PertanianTableAdapter
     private lateinit var activityTracker: ActivityTracker
@@ -91,6 +106,8 @@ class PertanianActivity : AppCompatActivity() {
 
         tahunTerpilih = 2025
 
+        updateHeaderTahun()
+
         loadTahun(
             tahunTerpilih
         )
@@ -117,6 +134,25 @@ class PertanianActivity : AppCompatActivity() {
             findViewById(
                 R.id.btnFilter
             )
+
+        tvFilterTahun =
+            findViewById(
+                R.id.tvFilterTahun
+            )
+
+        tvHeaderTitle =
+            findViewById(
+                R.id.tvHeaderTitle
+            )
+    }
+
+    private fun updateHeaderTahun() {
+
+        tvFilterTahun.text =
+            tahunTerpilih.toString()
+
+        tvHeaderTitle.text =
+            "$BAB_PERTANIAN ($tahunTerpilih)"
     }
 
     private fun setupLoading() {
@@ -154,6 +190,7 @@ class PertanianActivity : AppCompatActivity() {
             PertanianTableAdapter(
 
                 container = cardContainer,
+
                 kategori =
                 "Pertanian, Kehutanan, Peternakan, dan Perikanan",
 
@@ -182,99 +219,243 @@ class PertanianActivity : AppCompatActivity() {
 
     private fun tampilkanFilterTahun() {
 
-        val daftarTahun =
-            (
-                    TAHUN_MULAI downTo
-                            TAHUN_MINIMUM
-                    )
-                .map {
-                    it.toString()
-                }
-                .toTypedArray()
+        // Konversi dp lokal agar tidak membutuhkan fungsi dp() tambahan.
+        fun dp(value: Int): Int {
+            return (value * resources.displayMetrics.density).toInt()
+        }
 
-        val spinner =
-            Spinner(this)
+        val daftarTahun = (TAHUN_MULAI downTo TAHUN_MINIMUM).toList()
 
-        spinner.setPadding(
-            32,
-            0,
-            32,
-            0
-        )
+        // Container utama dialog
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
 
-        val spinnerAdapter =
-            ArrayAdapter(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                daftarTahun
+            setPadding(
+                dp(20),
+                dp(20),
+                dp(20),
+                dp(16)
             )
 
-        spinner.adapter =
-            spinnerAdapter
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(Color.WHITE)
+                cornerRadius = dp(24).toFloat()
+                setStroke(
+                    dp(2),
+                    Color.parseColor("#F97316")
+                )
+            }
+        }
 
-        val posisiTerpilih =
-            daftarTahun.indexOf(
-                tahunTerpilih.toString()
-            )
+        // Judul dialog
+        val tvJudul = TextView(this).apply {
+            text = "Pilih Tahun Data"
+            textSize = 18f
+            setTextColor(Color.parseColor("#F97316"))
+            setTypeface(null, Typeface.BOLD)
+            gravity = Gravity.CENTER
 
-        if (
-            posisiTerpilih >= 0
-        ) {
-
-            spinner.setSelection(
-                posisiTerpilih
+            setPadding(
+                0,
+                dp(4),
+                0,
+                dp(18)
             )
         }
 
-        AlertDialog.Builder(this)
-
-            .setTitle(
-                "Pilih Tahun"
+        root.addView(
+            tvJudul,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
             )
+        )
 
-            .setView(
-                spinner
-            )
+        // Scroll daftar tahun
+        val scrollView = ScrollView(this).apply {
+            isFillViewport = false
+            clipToPadding = false
+        }
 
-            .setNegativeButton(
-                "Batal",
-                null
-            )
+        val daftarTahunContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
 
-            .setPositiveButton(
-                "Tampilkan"
-            ) { _, _ ->
+        val dialog = AlertDialog.Builder(this)
+            .setView(root)
+            .create()
 
-                val posisi =
-                    spinner.selectedItemPosition
+        daftarTahun.forEach { tahun ->
 
-                if (
-                    posisi < 0 ||
-                    posisi >= daftarTahun.size
-                ) {
-                    return@setPositiveButton
+            val terpilih = tahun == tahunTerpilih
+
+            val itemTahun = TextView(this).apply {
+
+                text = tahun.toString()
+                textSize = 15f
+                gravity = Gravity.CENTER
+
+                setTypeface(
+                    null,
+                    Typeface.BOLD
+                )
+
+                setTextColor(
+                    if (terpilih) {
+                        Color.WHITE
+                    } else {
+                        Color.parseColor("#C2410C")
+                    }
+                )
+
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = dp(12).toFloat()
+
+                    setColor(
+                        if (terpilih) {
+                            Color.parseColor("#F97316")
+                        } else {
+                            Color.parseColor("#FFF7ED")
+                        }
+                    )
                 }
 
-                val tahunBaru =
-                    daftarTahun[
-                            posisi
-                    ].toInt()
+                setPadding(
+                    dp(12),
+                    dp(12),
+                    dp(12),
+                    dp(12)
+                )
 
-                if (
-                    tahunBaru !=
-                    tahunTerpilih
-                ) {
+                setOnClickListener {
 
-                    tahunTerpilih =
-                        tahunBaru
+                    // Jika memilih tahun yang sedang aktif,
+                    // cukup tutup dialog tanpa memuat ulang.
+                    if (tahun == tahunTerpilih) {
+                        dialog.dismiss()
+                        return@setOnClickListener
+                    }
 
-                    loadTahun(
-                        tahunTerpilih
-                    )
+                    dialog.dismiss()
+
+                    tahunTerpilih = tahun
+
+                    updateHeaderTahun()
+
+                    loadTahun(tahunTerpilih)
                 }
             }
 
-            .show()
+            val itemParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(44)
+            ).apply {
+                bottomMargin = dp(8)
+            }
+
+            daftarTahunContainer.addView(
+                itemTahun,
+                itemParams
+            )
+        }
+
+        scrollView.addView(
+            daftarTahunContainer,
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        root.addView(
+            scrollView,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        )
+
+        // Tombol tutup
+        val tvTutup = TextView(this).apply {
+            text = "Tutup"
+            textSize = 14f
+            gravity = Gravity.CENTER
+
+            setTextColor(
+                Color.parseColor("#9CA3AF")
+            )
+
+            setPadding(
+                dp(12),
+                dp(14),
+                dp(12),
+                dp(4)
+            )
+
+            setOnClickListener {
+                dialog.dismiss()
+            }
+        }
+
+        root.addView(
+            tvTutup,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        // Tampilkan dialog
+        dialog.show()
+
+        dialog.window?.let { window ->
+
+            val displayMetrics = resources.displayMetrics
+
+            val width = (displayMetrics.widthPixels * 0.70f).toInt()
+            val height = (displayMetrics.heightPixels * 0.50f).toInt()
+
+            val params = window.attributes
+
+            params.gravity = Gravity.CENTER
+            params.x = 0
+            params.y = 0
+            params.width = width
+            params.height = height
+            params.windowAnimations = 0
+
+            window.attributes = params
+
+            window.setBackgroundDrawable(
+                ColorDrawable(Color.TRANSPARENT)
+            )
+
+            // Animasi zoom dan fade
+            window.decorView.post {
+
+                val decorView = window.decorView
+
+                decorView.pivotX = decorView.width / 2f
+                decorView.pivotY = decorView.height / 2f
+
+                decorView.alpha = 0f
+                decorView.scaleX = 0.85f
+                decorView.scaleY = 0.85f
+
+                decorView.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(300)
+                    .setInterpolator(
+                        DecelerateInterpolator(2f)
+                    )
+                    .start()
+            }
+        }
     }
 
     private fun loadTahun(
@@ -487,9 +668,7 @@ class PertanianActivity : AppCompatActivity() {
             table.kodeTabel
         )
 
-        startActivity(
-            intent
-        )
+        startActivity(intent)
     }
 
     override fun onDestroy() {
